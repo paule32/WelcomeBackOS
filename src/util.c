@@ -2,8 +2,6 @@
 // \file util.c
 // \note  (c) 2025 by Jens Kallup - paule32
 //        all rights reserved.
-//
-// \desc  Create a dBASE MS-Windows 11 64-bit Pro EXE.
 // ---------------------------------------------------------------------------
 #define INT_MAX  2147483647
 #define INT_MIN -2147483648

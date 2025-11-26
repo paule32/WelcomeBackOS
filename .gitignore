@@ -1,0 +1,5 @@
+*.bak
+*.o
+bin/LOADER.COM
+bin/KERNEL.BIN
+obj/kernel.coff

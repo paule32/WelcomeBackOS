@@ -2,8 +2,6 @@
 ; \file loader.asm – A simple freestanding C-Kernel
 ; \note  (c) 2025 by Jens Kallup - paule32
 ;        all rights reserved.
-;
-; \desc  Create a dBASE MS-Windows 11 64-bit Pro EXE.
 ; ---------------------------------------------------------------------------
 ; loader.asm – Minimaler 16-Bit-DOS-Loader, der KERNEL.BIN lädt
 ; Build: nasm -f bin loader.asm -o LOADER.COM
