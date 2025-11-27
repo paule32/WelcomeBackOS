@@ -23,12 +23,15 @@ ASMFLAGS := -f win32 -O2 -DDOS_MODE=32
 # -----------------------------------------------------------------------------
 # input/output directories to hold the source tree clean ...
 # -----------------------------------------------------------------------------
-SRC   := ../src
-OBJ   := ../obj
-BIN   := ../bin
+SRC  := ../src
+OBJ  := ../obj
+BIN  := ../bin
 
-SRCC  := $(SRC)/kernel.c $(SRC)/util.c $(SRC)/math.c
-OBJS  := $(OBJ)/kernel.o $(OBJ)/util.o $(OBJ)/math.o $(OBJ)/isr.o
+SRCC := $(SRC)/kernel.c $(SRC)/util.c $(SRC)/math.c $(SRC)/timer.c \
+        $(SRC)/video.c
+        
+OBJS := $(OBJ)/kernel.o $(OBJ)/util.o $(OBJ)/math.o $(OBJ)/timer.o \
+        $(OBJ)/video.o  $(OBJ)/isr.o
 
 all: dirs $(BIN)/LOADER.COM $(BIN)/KERNEL.BIN
 

@@ -13,6 +13,8 @@
 #define INT_MAX  2147483647
 #define INT_MIN -2147483648
 
+#define NUMBER_GDT_GATES 5
+
 unsigned char ShiftKeyDown = 0; // Variable for Shift Key Down
 unsigned char KeyPressed   = 0; // Variable for Key Pressed
 unsigned char scan         = 0; // Scan code from Keyboard
@@ -84,14 +86,38 @@ struct idt_ptr
 struct idt_entry idt[256];
 struct idt_ptr   idt_register;
 
-unsigned long timer_ticks = 0;
-unsigned long eticks;
+/* Defines a GDT entry */
+struct gdt_entry
+{
+    unsigned short limit_low;
+    unsigned short base_low;
+    unsigned char  base_middle;
+    unsigned char  access;
+    unsigned char  granularity;
+    unsigned char  base_high;
+} __attribute__((packed));
 
+struct gdt_ptr
+{
+    unsigned short limit;
+    unsigned int base;
+} __attribute__((packed));
+
+/* Our GDT, with 3 entries, and finally our special GDT pointer */
+struct gdt_entry gdt[NUMBER_GDT_GATES];
+struct gdt_ptr   gdt_register;
+
+static void idt_load(){ asm volatile("lidt %0" : "=m" (idt_register)); }
+static void gdt_load(){ asm volatile("lgdt %0" : "=m" (gdt_register)); }
+
+void gdt_install();
+void idt_install();
 void irq_install();
+void isr_install();
 
-void timer_install  ();
-void timer_uninstall();
-void timer_handler(struct regs* r);
+extern void timer_install  ();
+extern void timer_uninstall();
+extern void timer_handler(struct regs* r);
 
 /* Own ISR pointing to individual IRQ handler instead of the regular 'fault_handler' function */
 extern void irq0 (); extern void irq1 (); extern void irq2 (); extern void irq3 ();
@@ -109,6 +135,11 @@ extern void isr16(); extern void isr17(); extern void isr18(); extern void isr19
 extern void isr20(); extern void isr21(); extern void isr22(); extern void isr23();
 extern void isr24(); extern void isr25(); extern void isr26(); extern void isr27();
 extern void isr28(); extern void isr29(); extern void isr30(); extern void isr31();
+
+extern void* k_memcpy(void*, const void*, unsigned int);
+extern void* k_memset(void*, char       , unsigned int);
+
+extern unsigned short* k_memsetw(unsigned short, unsigned short, unsigned int);
 
 unsigned int k_printf(char* message, unsigned int line)
 {
@@ -137,7 +168,7 @@ unsigned int k_printf(char* message, unsigned int line)
     return 1;
 }
 
-void k_cursor(int row, int col)
+void set_cursor(int row, int col)
 {
     unsigned short    position = (row * 80) + col;
     // cursor LOW port to vga INDEX register
@@ -171,30 +202,38 @@ void kmain(void) {
     char bufferASCII_hex[10];
 
     k_clear_screen();
+
+    gdt_install();
+    idt_install();
+    isr_install();
+    irq_install();
     
-    k_printf("Welcome to WelcomeBack OS.", 0);
-    k_printf("The C kernel has been loaded.", 1);
-    
-    k_cursor(3, 0);
+    timer_install();
     
     int i;
-    for(i = 0; i < 10000000; ++i)
+    for(i = 0; i < 300000000; ++i)
     {
         int j;
-        for(j = 0; j < 1000000; ++j);
-       
+        for(j = 0; j < 300000000; ++j);
+        
+        k_printf("Welcome to WelcomeBack OS."   , 0);
+        k_printf("The C kernel has been loaded.", 1);
+        
+        set_cursor(4, 0);
         KeyGot = k_getch();   // port 0x60 -> scancode + shift key -> ASCII
        
         bufferKEY[0] = KeyGot;
         
         k_itoa(KeyGot , bufferASCII);
         k_i2hex(KeyGot, (unsigned char*)bufferASCII_hex, 2);
+
+        k_printf("             ", 4);
+        k_printf("             ", 5);
+        k_printf("             ", 6);
         
-        k_clear_screen();
-        
-        k_printf(bufferKEY,       0); // the ASCII character
-        k_printf(bufferASCII,     1); // ASCII decimal
-        k_printf(bufferASCII_hex, 2); // ASCII hexadecimal
+        k_printf(bufferKEY,       4); // the ASCII character
+        k_printf(bufferASCII,     5); // ASCII decimal
+        k_printf(bufferASCII_hex, 6); // ASCII hexadecimal
     }
 }
 
@@ -250,48 +289,6 @@ unsigned char k_getch(void) // Scancode --> ASCII
     return 0;
 }
 
-void timer_handler(struct regs* r)
-{
-    ++timer_ticks;
-    if (eticks)
-        --eticks;
-}
-
-void timer_wait (unsigned long ticks)
-{
-    timer_uninstall();
-    eticks = ticks;
-    timer_install();
-
-    // busy wait...
-    while (eticks)
-    {
-        k_printf("waiting time runs",   8);
-        /* do nothing */;
-    };
-    k_printf("waiting time has passed", 9);
-}
-
-void sleepSeconds (unsigned long seconds)
-{
-    // based upon timer tick frequence of 18.222 Hz
-    timer_wait((unsigned long)18.222*seconds);
-}
-
-void timer_install()
-{
-    /* Enable 'timer_handler' by IRQ0 */
-    irq_install_handler(0, timer_handler);
-}
-
-void timer_uninstall()
-{
-    /* Disable 'timer_handler' by IRQ0 */
-    irq_uninstall_handler(0);
-}
-
-//static void idt_load(){ asm volatile("lidt %0" : "=m" (idt_register)); } // load IDT register (IDTR)
-
 // Put an entry into the IDT
 void idt_set_gate(unsigned char num, unsigned long base, unsigned short sel, unsigned char flags)
 {
@@ -316,6 +313,55 @@ void irq_remap()
     outportb(0x21, 0x04); outportb(0xA1, 0x02);
     outportb(0x21, 0x01); outportb(0xA1, 0x01);
     outportb(0x21, 0x00); outportb(0xA1, 0x00);
+}
+
+void idt_install()
+{
+    // Sets the special IDT pointer up
+    idt_register.limit = (sizeof (struct idt_entry) * 256)-1;
+    idt_register.base  = (unsigned int) &idt;
+
+    k_memset(&idt, 0, sizeof(struct idt_entry) * 256); // Clear out the entire IDT
+
+    // Add any new ISRs to the IDT here using idt_set_gate
+    // ...
+
+    idt_load(); // The IDT register (IDTR) has to point to the IDT
+}
+
+/* Setup a descriptor in the Global Descriptor Table */
+void gdt_set_gate(int num, unsigned long base, unsigned long limit, unsigned char access, unsigned char gran)
+{
+    /* Setup the descriptor base address */
+    gdt[num].base_low = (base & 0xFFFF);
+    gdt[num].base_middle = (base >> 16) & 0xFF;
+    gdt[num].base_high = (base >> 24) & 0xFF;
+
+    /* Setup the descriptor limits */
+    gdt[num].limit_low = (limit & 0xFFFF);
+    gdt[num].granularity = ((limit >> 16) & 0x0F);
+
+    /* Finally, set up the granularity and access flags */
+    gdt[num].granularity |= (gran & 0xF0);
+    gdt[num].access = access;
+}
+
+/* Should be called by main. This will setup the special GDT pointer,
+ * set up the first 3 entries in our GDT, and then finally call gdt_load() */
+void gdt_install()
+{
+    /* Setup the GDT pointer and limit */
+    gdt_register.limit = (sizeof(struct gdt_entry) * NUMBER_GDT_GATES)-1;
+    gdt_register.base  = (unsigned int) &gdt;
+
+    /* GDT GATES -  desriptors with pointers to the linear memory address */
+    gdt_set_gate(0, 0, 0, 0, 0);                // NULL descriptor
+    gdt_set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF); // CODE, privilege level 0 for kernel code
+    gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF); // DATA, privilege level 0 for kernel code
+    gdt_set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF); // CODE, privilege level 3 for user code
+    gdt_set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF); // DATA, privilege level 3 for user code
+
+    gdt_load(); // The GDT register (GDTR) of the CPU points to the GDT
 }
 
 /* After remap of the interrupt controllers the appropriate ISRs are connected to the correct entries in the IDT. */
@@ -352,7 +398,7 @@ void irq_handler(struct regs* r)
 
 /* Set the first 32 entries in the IDT to the first 32 ISRs. Access flag is set to 0x8E: present, ring 0,
 *  lower 5 bits set to the required '14' (hexadecimal '0x0E'). */
-void isrs_install()
+void isr_install()
 {
     idt_set_gate( 0, (unsigned) isr0, 0x08, 0x8E);    idt_set_gate( 1, (unsigned) isr1, 0x08, 0x8E);
     idt_set_gate( 2, (unsigned) isr2, 0x08, 0x8E);    idt_set_gate( 3, (unsigned) isr3, 0x08, 0x8E);
