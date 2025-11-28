@@ -10,31 +10,108 @@ org  0x100               ; .COM start offset
 bits 16
 
 start:
+    mov dx, msg_before
+    mov ah, 9
+    int 21h
+    
     mov ax, cs
+    mov ds, ax
+    mov es, ax
+    
+    mov word [exec_block_env_seg], 0
     
     mov [exec_block_cmd_seg ], ax
     mov [exec_block_fcb1_seg], ax
     mov [exec_block_fcb2_seg], ax
     
-    mov dx, GzipAppName
-    mov ax, cs
-    mov ds, ax
+    mov word [exec_block_env_seg_2], 0
     
-    mov bx, exec_block
-    mov es, ax
-    
-    mov ax, 4B00h           ; 4B00h = load & execute
-    int 21h
-    jc exec_error
+    mov [exec_block_cmd_seg_2 ], ax
+    mov [exec_block_fcb1_seg_2], ax
+    mov [exec_block_fcb2_seg_2], ax
 
-    mov ax, 0x4C00
-    mov bx, 0
+    ; -------------------------------
+    ; open KERNEL.BIZ
+    ; -------------------------------
+    mov dx, kernel_fgzip
+    mov ax, 0x4300
+    int 0x21
+    jnc depacked
+    
+    cmp ax, 0x02
+    je  __check_02
+    cmp ax, 0x03
+    je  error_03
+    cmp ax, 0x05
+    je  error_05
+    
+    jmp packed
+    
+    depacked:
+    mov dx, GzipAppName
+    mov bx, exec_block_2
+    mov ax, 0x4B00           ; 4B00h = load & execute
+    int 0x21
+    jc exec_error
+    
+    __check_02:
+    packed:
+    mov dx, GzipAppName
+    mov bx, exec_block
+    mov ax, 0x4B00           ; 4B00h = load & execute
+    int 0x21
+    jc exec_error
+    
+    mov dx, msg_after
+    mov ah, 9
     int 0x21
     
+    jmp exit_ok
+
     exec_error:
+    cmp ax, 0x02
+    je  error_02
+    cmp ax, 0x03
+    je  error_03
+    cmp ax, 0x08
+    je  error_08
+
+    error_02:
+    mov dx, msg_error_02
+    mov ah, 9
+    int 0x21
+    jmp exit_error
+    error_03:
+    mov dx, msg_error_03
+    mov ah, 9
+    int 0x21
+    jmp exit_error
+    error_08:
+    mov dx, msg_error_05
+    mov ah, 9
+    int 0x21
+    jmp exit_error
+    error_05:
+    mov dx, msg_error_08
+    mov ah, 9
+    int 0x21
+    jmp exit_error
+
+    exit_error:
+    mov dx, msg_error
+    mov ah, 9
+    int 0x21
+    
     mov ax, 0x4C01
     int 0x21
     
+    exit_ok:
+    mov dx, GzipAppName
+    mov bx, exec_block_2
+    mov ax, 0x4B00           ; 4B00h = load & execute
+    int 0x21
+    jc exec_error
+
     ; initialize segments
     cli
     mov ax, cs
@@ -45,7 +122,7 @@ start:
     sti
 
     ; -------------------------------
-    ; open KERNEL.BIN
+    ; open KERNEL.BI
     ; -------------------------------
     mov dx, kernel_fname ; DS:DX -> ASCIIZ-filebame
     mov ax, 0x3D00       ; DOS: open (read-only)
@@ -119,6 +196,10 @@ exit_dos:
     mov ax, 0x4C01       ; DOS: terminate with error code 1
     int 0x21
 
+    mov ax, 0x4C00
+    mov bx, 0
+    int 0x21
+
 ; ---------------------------------------------------------------------------
 ; GDT ...
 ; ---------------------------------------------------------------------------
@@ -160,10 +241,11 @@ hang:
 ; Data (16-Bit)
 ; ---------------------------------------------------------------------------
 bits 16
-kernel_fname db "KERNEL.BIN",0
+kernel_fname db "KERNEL.BIZ",0
+kernel_fgzip db "KERNEL.BI",0
 
-msg_file db "open error: KERNEL.BIN$",0
-msg_read db "read error: KERNEL.BIN$",0
+msg_file db "open error: KERNEL.BI$",0
+msg_read db "read error: KERNEL.BI$",0
 
 GzipAppName:    db 'GZ.EXE', 0
 GzipErrorMsg:   db 'exec of gzip.exe failed.', 0
@@ -180,12 +262,40 @@ exec_block_fcb1_seg  dw 0
 exec_block_fcb2_off  dw 6Ch
 exec_block_fcb2_seg  dw 0
 
+exec_block_2:
+exec_block_env_seg_2   dw 0
+
+exec_block_cmd_off_2   dw GzipCmdTail_2
+exec_block_cmd_seg_2   dw 0
+
+exec_block_fcb1_off_2  dw 5Ch
+exec_block_fcb1_seg_2  dw 0
+
+exec_block_fcb2_off_2  dw 6Ch
+exec_block_fcb2_seg_2  dw 0
+
 GzipCmdTail:
     db GzipCmdTextEnd - GzipCmdText          ; Länge
 GzipCmdText:
-    db ' --help'
+    db ' -d KERNEL.BIZ'
 GzipCmdTextEnd:
     db 13
+
+GzipCmdTail_2:
+    db GzipCmdTextEnd_2 - GzipCmdText_2          ; Länge
+GzipCmdText_2:
+    db ' -9 KERNEL.BI'
+GzipCmdTextEnd_2:
+    db 13
+
+msg_before db "start GZ.EXE ...", 13, 10, "$"
+msg_after  db 13,10, "GZ.EXE return.", 13,10, "$"
+msg_error  db 13,10, "Error: GZ.EXE could not be load.", 13,10, "$"
+
+msg_error_02: db "Error: file not found.", 13, 10, '$'
+msg_error_03: db "Error: path not found.", 13, 10, '$'
+msg_error_05: db "Error: access denied." , 13, 10, '$'
+msg_error_08: db "Error: memory error."  , 13, 10, '$'
 
 section .bss
 ; EXEC-Parameterblock (14 Bytes)
