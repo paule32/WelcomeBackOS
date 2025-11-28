@@ -3,3 +3,5 @@
 bin/LOADER.COM
 bin/KERNEL.BIN
 obj/kernel.coff
+bin/KERNEL.BIZ
+bin/GZ.EXE

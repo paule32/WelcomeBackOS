@@ -5,6 +5,7 @@
 # -----------------------------------------------------------------------------
 CROSS    ?= 
 AS       := nasm
+GZIP     := gzip
 RM       := rm
 MKDIR    := mkdir
 CC       := $(CROSS)gcc
@@ -27,13 +28,19 @@ SRC  := ../src
 OBJ  := ../obj
 BIN  := ../bin
 
+# -----------------------------------------------------------------------------
+# source files for the C-kernel ...
+# -----------------------------------------------------------------------------
 SRCC := $(SRC)/kernel.c $(SRC)/util.c $(SRC)/math.c $(SRC)/timer.c \
         $(SRC)/video.c
-        
+
+# -----------------------------------------------------------------------------
+# *.o bject files for linkage stage of the C-kernel ...
+# -----------------------------------------------------------------------------
 OBJS := $(OBJ)/kernel.o $(OBJ)/util.o $(OBJ)/math.o $(OBJ)/timer.o \
         $(OBJ)/video.o  $(OBJ)/isr.o
 
-all: dirs $(BIN)/LOADER.COM $(BIN)/KERNEL.BIN
+all: dirs $(BIN)/LOADER.COM $(BIN)/KERNEL.BIZ
 
 # -----------------------------------------------------------------------------
 # loader to load the system from DOS console ...
@@ -41,17 +48,33 @@ all: dirs $(BIN)/LOADER.COM $(BIN)/KERNEL.BIN
 $(BIN)/LOADER.COM: $(SRC)/loader.asm
 	$(AS) -f bin $< -o $@
 
+# -----------------------------------------------------------------------------
+# compile all *.c files to *.o bject files ...
+# -----------------------------------------------------------------------------
 $(OBJ)/%.o: $(SRC)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# -----------------------------------------------------------------------------
+# compile all *.asm files to *.o bject files ...
+# -----------------------------------------------------------------------------
 $(OBJ)/%.o: $(SRC)/%.asm
 	$(AS) $(ASMFLAGS) $< -o $@
 
 $(OBJ)/kernel.coff: $(OBJS) $(SRC)/kernel.ld
 	$(LD) $(LDFLAGS) -m i386pe -o $@ $(OBJS)
 
+# -----------------------------------------------------------------------------
+# link C-kernel to finaly output binary image ...
+# -----------------------------------------------------------------------------
 $(BIN)/KERNEL.BIN: $(OBJ)/kernel.coff
 	$(OBJCOPY) -O binary $< $@
+
+# -----------------------------------------------------------------------------
+# compress kernel to distribute it in a floppy disc ...
+# -----------------------------------------------------------------------------
+$(BIN)/KERNEL.BIZ: $(BIN)/KERNEL.BIN
+	$(GZIP) -9 -c $< > $@
+	$(RM) -f $<
 
 # -----------------------------------------------------------------------------
 # create directories for output object code ...
@@ -61,7 +84,7 @@ dirs:
 	$(MKDIR) -p $(OBJ)
 
 # -----------------------------------------------------------------------------
-# before you compile, you can clean the tree from old crap ...
+# before you compile, you can clean the source tree from old crap ...
 # -----------------------------------------------------------------------------
 clean:
 	$(RM) -f *.o *.coff *.BIN *.COM
