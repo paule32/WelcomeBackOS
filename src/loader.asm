@@ -10,43 +10,31 @@ org  0x100               ; .COM start offset
 bits 16
 
 start:
-    mov  word [ExecBlk + 0x00], 0
-    mov  word [ExecBlk + 0x02], GzipCmdTail  ; OFFSET
-    mov  word [ExecBlk + 0x04], ds           ; SEGMENT
-    mov  word [ExecBlk + 0x06], 0x005C       ; FCB1 OFFSET
-    mov  word [ExecBlk + 0x08], cs           ; FCB1 SEGMENT
-    mov  word [ExecBlk + 0x0A], 0x006C       ; FCB2 OFFSET
-    mov  word [ExecBlk + 0x0C], cs           ; FCB2 SEGMENT
-
-    ; -------------------------------------------------------
-    ; EXEC AH=4Bh, AL=00h (Load & Execute) ...
-    ; -------------------------------------------------------
-    mov  dx, GzipAppName    ; ASCIIZ "gzip.exe"
-    push ds
-    pop  es
-    mov  bx, ExecBlk        ; Parameterblock
-    mov  ax, 0x4B00
-    int  0x21
-    jc   go_error           ; CF=1 => Fehler, AX=Errorcode
-
-    ; -------------------------------------------------------
-    ; optional: return code of child (INT 21h/4Dh)
-    ; -------------------------------------------------------
-    mov  ax, 0x4D00
-    int  0x21
-    jc   go_error
-    jnc  go_forward
+    mov ax, cs
     
-    go_error:
-    mov ax, 0x4C00
-    mov bx, 1
-    int 0x21
+    mov [exec_block_cmd_seg ], ax
+    mov [exec_block_fcb1_seg], ax
+    mov [exec_block_fcb2_seg], ax
     
-    go_forward:
+    mov dx, GzipAppName
+    mov ax, cs
+    mov ds, ax
+    
+    mov bx, exec_block
+    mov es, ax
+    
+    mov ax, 4B00h           ; 4B00h = load & execute
+    int 21h
+    jc exec_error
+
     mov ax, 0x4C00
     mov bx, 0
     int 0x21
-
+    
+    exec_error:
+    mov ax, 0x4C01
+    int 0x21
+    
     ; initialize segments
     cli
     mov ax, cs
@@ -134,6 +122,7 @@ exit_dos:
 ; ---------------------------------------------------------------------------
 ; GDT ...
 ; ---------------------------------------------------------------------------
+section .data
 align 8
 gdt_start:
     dq 0x0000000000000000       ; Null-Deskriptor
@@ -179,10 +168,22 @@ msg_read db "read error: KERNEL.BIN$",0
 GzipAppName:    db 'GZ.EXE', 0
 GzipErrorMsg:   db 'exec of gzip.exe failed.', 0
 
+exec_block:
+exec_block_env_seg   dw 0
+
+exec_block_cmd_off   dw GzipCmdTail
+exec_block_cmd_seg   dw 0
+
+exec_block_fcb1_off  dw 5Ch
+exec_block_fcb1_seg  dw 0
+
+exec_block_fcb2_off  dw 6Ch
+exec_block_fcb2_seg  dw 0
+
 GzipCmdTail:
     db GzipCmdTextEnd - GzipCmdText          ; Länge
 GzipCmdText:
-    db ' -d KERNEL.BIZ'
+    db ' --help'
 GzipCmdTextEnd:
     db 13
 
