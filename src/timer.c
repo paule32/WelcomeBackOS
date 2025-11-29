@@ -1,35 +1,23 @@
-/* This defines what the stack looks like after an ISR was running */
-struct regs
-{
-    unsigned int gs, fs, es, ds;
-    unsigned int edi, esi, ebp, esp, ebx, edx, ecx, eax;
-    unsigned int int_no, err_code;
-    unsigned int eip, cs, eflags, useresp, ss;
-};
+#include "os.h"
 
-extern void outportb(unsigned int, unsigned int);
-extern void update_cursor();
+//TASKSWITCH
+#include "task.h"
+extern ULONG read_eip();
+extern page_directory_t* current_directory;
+extern task_t* current_task;
+extern tss_entry_t tss_entry;
 
-extern void irq_install();
-extern void irq_uninstall_handler(int);
-
-extern void irq_install_handler  (int irq, void (*handler)(struct regs* r));
-
-unsigned long const FREQ  = 100; // 100 "ticks" per second
-unsigned long timer_ticks =   0;
-unsigned long eticks;
-
-void timer_install();
-void timer_uninstall();
+ULONG timer_ticks = 0;
+ULONG eticks;
 
 void timer_handler(struct regs* r)
 {
     ++timer_ticks;
-    if (eticks)
+    if(eticks)
         --eticks;
 }
 
-void timer_wait (unsigned long ticks)
+void timer_wait (ULONG ticks)
 {
     timer_uninstall();
     eticks = ticks;
@@ -42,33 +30,35 @@ void timer_wait (unsigned long ticks)
     }
 }
 
-void sleepSeconds (unsigned long seconds)
+void sleepSeconds (ULONG seconds)
 {
-    timer_wait(FREQ * seconds);
+    timer_wait((ULONG)100*seconds);
 }
 
-void sleepMilliSeconds (unsigned long ms)
+void sleepMilliSeconds (ULONG ms)
 {
-    timer_wait(FREQ * ms/1000UL);
+    timer_wait((ULONG)(ms/10));
 }
 
-static void systemTimer_setFrequency( unsigned long freq )
+void systemTimer_setFrequency( ULONG freq )
 {
-   unsigned long divisor = 1193180 / freq; //divisor must fit into 16 bits
+    ULONG divisor = 1193180 / freq; //divisor must fit into 16 bits
 
-   // Send the command byte.
-   outportb(0x43, 0x36);
+    //TODO: save frequency globally
 
-   // Send divisor.
-   outportb(0x40, (unsigned char)(  divisor     & 0xFF )); // low  byte
-   outportb(0x40, (unsigned char)( (divisor>>8) & 0xFF )); // high byte
+    // Send the command byte
+    outportb(0x43, 0x36);
+
+    // Send divisor
+    outportb(0x40, (unsigned char)(  divisor     & 0xFF )); // low  byte
+    outportb(0x40, (unsigned char)( (divisor>>8) & 0xFF )); // high byte
 }
 
 void timer_install()
 {
     /* Installs 'timer_handler' to IRQ0 */
     irq_install_handler(0, timer_handler);
-    systemTimer_setFrequency( FREQ ); // FREQ Hz, meaning a tick every 1000/FREQ milliseconds
+    systemTimer_setFrequency( 100 ); // 100 Hz, meaning a tick every 10 milliseconds
 }
 
 void timer_uninstall()
@@ -76,3 +66,4 @@ void timer_uninstall()
     /* Uninstalls IRQ0 */
     irq_uninstall_handler(0);
 }
+
