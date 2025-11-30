@@ -1,4 +1,7 @@
 ; data for ramdisk
+bits 32
+section .text
+
 global _file_data_start
 global _file_data_end
 _file_data_start:

@@ -63,19 +63,23 @@ SRCC := $(SRC)/ckernel.c            \
 # *.o bject files for linkage stage of the C-kernel ...
 # -----------------------------------------------------------------------------
 OBJS := $(OBJ)/ckernel.o            \
+        $(OBJ)/data.o               \
         $(OBJ)/descriptor_table.o   \
         $(OBJ)/flpydisk.o           \
+        $(OBJ)/flush.o              \
         $(OBJ)/fs.o                 \
         $(OBJ)/gdt.o                \
         $(OBJ)/idt.o                \
         $(OBJ)/initrd.o             \
         $(OBJ)/irq.o                \
+        $(OBJ)/isr.o                \
         $(OBJ)/isrs.o               \
         $(OBJ)/keyboard.o           \
         $(OBJ)/kheap.o              \
         $(OBJ)/math.o               \
         $(OBJ)/ordered_array.o      \
         $(OBJ)/paging.o             \
+        $(OBJ)/process.o            \
         $(OBJ)/shared_pages.o       \
         $(OBJ)/syscall.o            \
         $(OBJ)/task.o               \
@@ -84,7 +88,7 @@ OBJS := $(OBJ)/ckernel.o            \
         $(OBJ)/video.o
 
 all: config\
-     $(BIN)/INITRD.EXE $(BIN)/BOOT1.SYS $(BIN)/BOOT2.SYS $(BIN)/KERNEL.SYS
+     $(OBJ)/data.o $(BIN)/BOOT2.SYS $(BIN)/floppy.img
 
 # -----------------------------------------------------------------------------
 # loader to load the system from DOS console ...
@@ -107,32 +111,42 @@ $(OBJ)/%.o: $(SRC)/%.c
 $(OBJ)/%.o: $(SRC)/%.asm
 	$(AS) $(ASMFLAGS) $< -o $@
 
-$(OBJ)/kernel.coff: $(OBJS) $(SRC)/kernel.ld
-	$(LD) $(LDFLAGS) -m i386pe -o $@ $(OBJS)
-
 # -----------------------------------------------------------------------------
 # link C-kernel to finaly output binary image ...
 # -----------------------------------------------------------------------------
-$(BIN)/KERNEL.SYS: $(OBJS)
-	$(LD) $(LDFLAGS) $+ -o $@
+$(OBJ)/kernel.o: $(OBJS)
+	$(LD) $(LDFLAGS) -o $(OBJ)/kernel.o $(OBJS)
+#$(CC) -o $(OBJ)/kernel.o $(OBJS)
 
 # -----------------------------------------------------------------------------
-$(OBJ)/data.o: $(OBJ)/initrd.dat $(SRC)/data.asm
+$(OBJ)/data.o: $(SRC)/initrd.dat $(SRC)/data.asm
 	$(AS) $(ASMFLAGS) $(SRC)/data.asm -o $(OBJ)/data.o
     
 # -----------------------------------------------------------------------------
 # create the initial ram disk ...
 # -----------------------------------------------------------------------------
-$(OBJ)/initrd.dat: $(OBJ)/make_initrd.o
+$(SRC)/initrd.dat: $(BIN)/INITRD.EXE
 	$(BIN)/INITRD.EXE                 \
     $(SRC)/content/test1.txt   file1  \
     $(SRC)/content/test2.txt   file2  \
     $(SRC)/content/test3.txt   file3  \
     $(SRC)/content/program.elf shell
 
-$(BIN)/INITRD.EXE: $(OBJ)/initrd.dat
+$(BIN)/INITRD.EXE: $(OBJ)/make_initrd.o
 	$(CC) -m32 -mconsole -O2 -Wall -Wextra -o $@ $<
 	$(STRIP) $@
+
+$(BIN)/KERNEL.SYS: $(OBJ)/kernel.o
+	$(OBJCOPY) -O binary $(OBJ)/kernel.o $(BIN)/KERNEL.SYS
+
+$(BIN)/floppy.img: $(BIN)/BOOT1.SYS $(BIN)/KERNEL.SYS
+	dd if=/dev/zero of=$(BIN)/floppy.img bs=1024 count=1440
+	dd if=$(BIN)/BOOT1.SYS of=$(BIN)/floppy.img bs=512 count=1 conv=notrunc
+	imdisk -a -f $(BIN)/floppy.img -m O:
+	ls /o/
+	    
+	#cp ../bin/KERNEL.SYS /o/
+	imdisk -d -m O:
 
 # -----------------------------------------------------------------------------
 # create directories for output object code ...

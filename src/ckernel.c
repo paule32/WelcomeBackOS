@@ -20,8 +20,8 @@
 
 extern page_directory_t* kernel_directory;
 extern page_directory_t* current_directory;
-extern ULONG file_data_start;
-extern ULONG file_data_end;
+extern ULONG file_data_start __asm__("_file_data_start");
+extern ULONG file_data_end   __asm__("_file_data_end"  );
 ULONG address_user;
 unsigned char address_TEST[FILEBUFFERSIZE];
 unsigned char buf[FILEBUFFERSIZE];
@@ -41,11 +41,12 @@ static void init()
     placement_address = 0x200000;
 }
 
+void __main(void) { }
 int main()
 {
     init();
     k_clear_screen(); settextcolor(14,0);
-    printformat("PrettyOS [Version 0.1.0104]  (C) 2009 henkessoft.de\n");
+    printformat("WelcomeBackOS [Version 1.0]  (C) 2025 paule32 \n");
     gdt_install();
     idt_install();
     isrs_install();

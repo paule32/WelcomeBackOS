@@ -5,7 +5,7 @@ inline void sti() {	asm volatile ( "sti" ); }	// Enable interrupts
 inline void cli() { asm volatile ( "cli" ); }	// Disable interrupts
 inline void nop() { asm volatile ( "nop" ); }	// Do nothing
 oda_t* pODA = &ODA;
-
+oda_t ODA;
 void initODA()
 {
     int i;

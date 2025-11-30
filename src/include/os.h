@@ -42,7 +42,7 @@ typedef struct oda
 }oda_t;
 
 // operatings system common data area
-oda_t ODA;
+extern oda_t ODA;
 extern oda_t* pODA;
 
 typedef struct Mem_Chunk_struct

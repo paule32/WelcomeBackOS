@@ -7,7 +7,7 @@
 
 #define KERNEL_STACK_SIZE 2048       // Use a 2kb kernel stack.
 
-ULONG initial_esp;
+extern ULONG initial_esp;
 
 typedef struct task
 {

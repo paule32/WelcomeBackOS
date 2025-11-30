@@ -6,3 +6,6 @@ obj/kernel.coff
 bin/KERNEL.BIZ
 bin/GZ.EXE
 src/content/program.elf
+*.SYS
+*.EXE
+*.img
