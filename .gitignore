@@ -9,3 +9,5 @@ src/content/program.elf
 *.SYS
 *.EXE
 *.img
+*.SYS
+*.SYS

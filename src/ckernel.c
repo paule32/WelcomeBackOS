@@ -45,8 +45,10 @@ void __main(void) { }
 int main()
 {
     init();
-    k_clear_screen(); settextcolor(14,0);
+    //k_clear_screen();
+    settextcolor(14,0);
     printformat("WelcomeBackOS [Version 1.0]  (C) 2025 paule32 \n");
+    for (;;) {};
     gdt_install();
     idt_install();
     isrs_install();

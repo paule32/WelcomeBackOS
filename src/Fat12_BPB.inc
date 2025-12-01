@@ -29,7 +29,7 @@ DriveNum            db 0
 Reserved            db 0
 BootSig             db 0x29
 VolumeSerialNum     dd 0xD00FC0DE      
-VolumeLabel         db "ComeBackOS "   ; 11 byte
-FileSys             db "FAT12   "      ;  8 byte
+VolumeLabel         db "ComeBackOS"   ; 11 byte
+FileSys             db "FAT12   "     ;  8 byte
 
 %endif
