@@ -10,7 +10,7 @@
 ;	Enable A20 address line
 ;******************************************************************************
 
-[BITS 16]
+BITS 16
 
 EnableA20:
     in  al, 0x92      ; switch A20 gate via fast A20 port 92

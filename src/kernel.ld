@@ -12,6 +12,7 @@ SECTIONS
 { 
     . = 0x00040000;
     .text : {
+        LONG(_main);
         __code_start = .;
         *(EXCLUDE_FILE(
             ../obj/shared_pages.o

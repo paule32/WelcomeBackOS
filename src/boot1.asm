@@ -20,8 +20,8 @@ jmp  near entry_point                       ; jump to bootloader entry point
 ;******************************************************************************
 entry_point:
     xor     ax, ax     		           ; set registers
-;    mov     ds, ax
-;    mov     es, ax
+    mov     ds, ax
+    mov     es, ax
     mov     fs, ax
     mov     gs, ax
     

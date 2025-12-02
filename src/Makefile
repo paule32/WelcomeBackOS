@@ -114,7 +114,7 @@ $(OBJ)/%.o: $(SRC)/%.asm
 # -----------------------------------------------------------------------------
 # link C-kernel to finaly output binary image ...
 # -----------------------------------------------------------------------------
-$(OBJ)/kernel.o: $(OBJS)
+$(OBJ)/kernel.o: $(OBJS) $(SRC)/kernel.ld
 	$(LD) $(LDFLAGS) -o $(OBJ)/kernel.o $(OBJS)
 #$(CC) -o $(OBJ)/kernel.o $(OBJS)
 

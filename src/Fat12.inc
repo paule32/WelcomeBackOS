@@ -6,7 +6,7 @@
 ;	FAT12 filesystem for 3,5" floppy disk
 ;******************************************************************************
 
-[BITS 16]
+BITS 16
 
 %include "Fat12_BPB.inc"
 
