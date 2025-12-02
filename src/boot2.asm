@@ -20,7 +20,7 @@ jmp entry_point             ; go to entry point
 
 %define IMAGE_PMODE_BASE 0x40000 ; where the kernel is to be loaded to in protected mode
 %define IMAGE_RMODE_BASE 0x3000  ; where the kernel is to be loaded to in real mode
-ImageName     db "KERNEL SYS"
+ImageName     db "KERNEL  SYS"
 ImageSize     dw 0
 
 ;*******************************************************
@@ -30,6 +30,10 @@ msgLoading db 13, 10, "jump to OS Kernel...", 0
 msgFailure db 13, 10, "missing KERNEL.SYS"  , 13, 10, 10, 0
 
 entry_point:
+sti
+mov si, msgLoading
+call print_string
+
    cli	              ; clear interrupts
    xor ax, ax         ; null segments
    mov ds, ax
@@ -87,7 +91,6 @@ EnterProtectedMode:
     mov eax, cr0                          ; set bit 0 in cr0 --> enter PM
     or eax, 1
     mov cr0, eax
-    ret
     jmp DWORD CODE_DESC:ProtectedMode     ; far jump to fix CS. Remember that the code selector is 0x8!
 
 [Bits 32]
@@ -121,12 +124,19 @@ EXECUTE:
 ;*******************************************************
 BITS 16
 print_string:
-    ret
-   lodsb          ; grab a byte from SI
-   or al, al      ; logical or AL by itself
-   jz .done       ; if the result is zero, get out
-   mov ah, 0x0E
-   int 0x10       ; otherwise, print out the character!
-   jmp print_string
+    mov cx, 0
+.next:
+    lodsb
+    cmp al, 0x00    ; AL next char
+    je .done
+    cmp cx, 50
+    je .done
+    mov ah, 0x0E    ; BIOS function 0x0E: teletype
+    mov bh, 0
+    mov bl, 0x07
+    int 0x10
+    
+    inc cx
+    jmp .next
 .done:
    ret
