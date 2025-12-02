@@ -6,7 +6,7 @@
 CROSS    ?= 
 
 EXPORT   := export
-AS       := ../bin/nasm
+AS       := nasm
 GZIP     := gzip
 RM       := rm
 MKDIR    := mkdir
@@ -169,7 +169,7 @@ config:
 clean:
 	$(RM) -f  $(OBJ)/*.o $(OBJ)/*.coff
 	$(RM) -f  $(BIN)/*.BIN $(BIN)/*.COM $(BIN)/*.SYS $(BIN)/kernel.map
-	$(RM) -f  $(SRC)/content/KERNEL.SYS
-	$(RM) -f  $(SRC)/content/BOOT2.SYS
+	$(RM) -f  $(SRC)/content/*.SYS
+	$(RM) -f  $(SRC)/initrd.dat
 	$(RM) -f  $(BIN)/floppy.img
 	$(RM) -rf $(OBJ)
