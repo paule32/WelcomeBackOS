@@ -139,7 +139,7 @@ $(BIN)/INITRD.EXE: $(OBJ)/make_initrd.o
 $(BIN)/KERNEL.SYS: $(OBJ)/kernel.o
 	$(OBJCOPY) -O binary $(OBJ)/kernel.o $(SRC)/content/KERNEL.SYS
 
-$(BIN)/floppy.img: $(BIN)/BOOT1.SYS $(BIN)/KERNEL.SYS
+$(BIN)/floppy.img: $(BIN)/BOOT1.SYS $(BIN)/BOOT2.SYS $(BIN)/KERNEL.SYS
 	dd if=/dev/zero of=$(BIN)/floppy.img bs=1024 count=1440
 	mformat -t 80 -h 2 -s 18 -f 1440 \
         -B ../bin/BOOT1.SYS \
@@ -153,6 +153,7 @@ $(BIN)/floppy.img: $(BIN)/BOOT1.SYS $(BIN)/KERNEL.SYS
             print "Error: Bootsignatur incorrect. (" $$1 " " $$2 ")"; \
             exit 1;  \
 	    } }'
+	cp $(BIN)/BOOT2.SYS $(SRC)/content/BOOT2.SYS
 	mcopy -i $(BIN)/floppy.img $(SRC)/content/* ::/
 
 # -----------------------------------------------------------------------------
