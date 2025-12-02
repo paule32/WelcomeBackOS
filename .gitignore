@@ -11,3 +11,4 @@ src/content/program.elf
 *.SYS
 *.exe
 bin/kernel.map
+*.dat

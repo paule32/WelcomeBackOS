@@ -129,8 +129,9 @@ $(SRC)/initrd.dat: $(BIN)/INITRD.EXE
 	$(BIN)/INITRD.EXE                 \
     $(SRC)/content/test1.txt   file1  \
     $(SRC)/content/test2.txt   file2  \
-    $(SRC)/content/test3.txt   file3  \
-    $(SRC)/content/program.elf shell
+    $(SRC)/content/test3.txt   file3
+
+#    $(SRC)/content/program.elf shell
 
 $(BIN)/INITRD.EXE: $(OBJ)/make_initrd.o
 	$(CC) -m32 -mconsole -O2 -Wall -Wextra -o $@ $<

@@ -1,7 +1,7 @@
 ; boot.asm
 bits 16
 org  0x7C00                            ; start address of bootloader
-jmp  short entry_point                       ; jump to bootloader entry point
+jmp  near entry_point                       ; jump to bootloader entry point
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -48,8 +48,6 @@ Load_Root_Directory_Table:
     add ax, WORD [ReservedSec]                ; adjust for bootsector
     mov WORD [datasector], ax                 ; base of root directory
     add WORD [datasector], cx
-    mov si, msgLoading
-call print_string
 
     ; read root directory into memory (7E00h)
     mov bx, 0x7E00                            ; copy root dir above bootcode
