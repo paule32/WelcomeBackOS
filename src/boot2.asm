@@ -26,8 +26,8 @@ ImageSize     dw 0
 ;*******************************************************
 ;	Data Section
 ;*******************************************************
-msgLoading db 0x0D, 0x0A, "jump to OS Kernel...", 0
-msgFailure db 0x0D, 0x0A, "missing KERNEL.SYS", 13, 10, 10, 0
+msgLoading db 13, 10, "jump to OS Kernel...", 0
+msgFailure db 13, 10, "missing KERNEL.SYS"  , 13, 10, 10, 0
 
 entry_point:
    cli	              ; clear interrupts
@@ -68,24 +68,22 @@ Load_Root:
     je EnterProtectedMode
     mov si, msgFailure
     call print_string
-    ll:
-    jmp ll
     xor ah, ah
 
 ;*******************************************************
 ;   Switch from Real Mode (RM) to Protected Mode (PM)              
 ;*******************************************************
 EnterProtectedMode:
-    ;mov si, msgLoading
-    ;call print_string
+    mov si, msgLoading
+    call print_string
 
     ; switch off floppy disk motor
-    ;mov dx,0x3F2      
-    ;mov al,0x0C
-    ;out dx,al     	
-	
+    mov dx,0x3F2      
+    mov al,0x0C
+    out dx,al     	
+
     ; switch to PM
-    cli	                           
+    cli
     mov eax, cr0                          ; set bit 0 in cr0 --> enter PM
     or eax, 1
     mov cr0, eax
@@ -117,8 +115,6 @@ CopyImage:
 ;*******************************************************
 EXECUTE:
     jmp DWORD CODE_DESC:IMAGE_PMODE_BASE
-loop:
-    jmp loop
 	
 ;*******************************************************
 ;   calls, e.g. print_string

@@ -19,8 +19,8 @@ jmp  entry_point                       ; jump to bootloader entry point
 ;******************************************************************************
 entry_point:
     xor     ax, ax     		           ; set registers
-    mov     ds, ax
-    mov     es, ax
+;    mov     ds, ax
+;    mov     es, ax
     mov     fs, ax
     mov     gs, ax
     
@@ -228,13 +228,20 @@ ReadSectors:
 ;	DS:SI   null-terminated string
 ;******************************************************************************
 print_string:
-    mov ah, 0x0E      ; BIOS function 0x0E: teletype
-.loop:   
-    lodsb             ; grab a byte from SI
-    test al, al       ; NUL?
-    jz .done          ; if the result is zero: get out
-    int 0x10          ; else: print out the character
-    jmp .loop
+    mov cx, 0
+.next:
+    lodsb
+    cmp al, 0x00    ; AL next char
+    je .done
+    cmp cx, 50
+    je .done
+    mov ah, 0x0E    ; BIOS function 0x0E: teletype
+    mov bh, 0
+    mov bl, 0x07
+    int 0x10
+    
+    inc cx
+    jmp .next
 .done:
     ret	
 	

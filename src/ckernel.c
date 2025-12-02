@@ -44,10 +44,10 @@ static void init()
 void __main(void) { }
 int main()
 {
-    //init();
-    //k_clear_screen();
-    //settextcolor(14,0);
-    //printformat("WelcomeBackOS [Version 1.0]  (C) 2025 paule32 \n");
+    init();
+    k_clear_screen();
+    settextcolor(14,0);
+    printformat("WelcomeBackOS [Version 1.0]  (C) 2025 paule32 \n");
     label:
     while (1) {
         __asm__("nop");
