@@ -25,7 +25,7 @@ extern __end
 	
 extern _main    ; entry point in ckernel.c
 	call _main  ; ->-> C-Kernel
-    
+    ret
 	cli
 	hlt
  

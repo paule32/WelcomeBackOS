@@ -68,25 +68,28 @@ Load_Root:
     je EnterProtectedMode
     mov si, msgFailure
     call print_string
+    ll:
+    jmp ll
     xor ah, ah
 
 ;*******************************************************
 ;   Switch from Real Mode (RM) to Protected Mode (PM)              
 ;*******************************************************
 EnterProtectedMode:
-    mov si, msgLoading
-    call print_string
+    ;mov si, msgLoading
+    ;call print_string
 
     ; switch off floppy disk motor
-    mov dx,0x3F2      
-    mov al,0x0C
-    out dx,al     	
+    ;mov dx,0x3F2      
+    ;mov al,0x0C
+    ;out dx,al     	
 	
     ; switch to PM
     cli	                           
     mov eax, cr0                          ; set bit 0 in cr0 --> enter PM
     or eax, 1
     mov cr0, eax
+    ret
     jmp DWORD CODE_DESC:ProtectedMode     ; far jump to fix CS. Remember that the code selector is 0x8!
 
 [Bits 32]
@@ -114,14 +117,15 @@ CopyImage:
 ;*******************************************************
 EXECUTE:
     jmp DWORD CODE_DESC:IMAGE_PMODE_BASE
-   	cli
-    hlt
+loop:
+    jmp loop
 	
 ;*******************************************************
 ;   calls, e.g. print_string
 ;*******************************************************
-[BITS 16]
+BITS 16
 print_string:
+    ret
    lodsb          ; grab a byte from SI
    or al, al      ; logical or AL by itself
    jz .done       ; if the result is zero, get out
