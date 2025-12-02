@@ -11,3 +11,7 @@ src/content/program.elf
 *.img
 *.SYS
 *.SYS
+*.SYS
+*.SYS
+*.exe
+bin/kernel.map
