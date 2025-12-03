@@ -9,10 +9,13 @@ oda_t ODA;
 void initODA()
 {
     int i;
-    for(i=0;i<KQSIZE;++i)
-       pODA->KEYQUEUE[i]=0;          // circular queue buffer
+    for(i = 0; i < KQSIZE; ++i)
+       pODA->KEYQUEUE[i] = 0;        // circular queue buffer
+
     pODA->pHeadKQ = pODA->KEYQUEUE;  // pointer to the head of valid data
+    //for (;;);
     pODA->pTailKQ = pODA->KEYQUEUE;  // pointer to the tail of valid data
+for (;;);    
     pODA->KQ_count_read  = 0;        // number of data read from queue buffer
     pODA->KQ_count_write = 0;        // number of data put into queue buffer
 }

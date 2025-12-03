@@ -8,11 +8,15 @@ extern void irq8();  extern void irq9();  extern void irq10(); extern void irq11
 extern void irq12(); extern void irq13(); extern void irq14(); extern void irq15();
 
 /* Array of function pointers handling custom IRQ handlers for a given IRQ */
-//void* irq_routines[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-void* irq_routines[128];
+void* irq_routines[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+//void* irq_routines[128];
 
 /* Implement a custom IRQ handler for the given IRQ */
-void irq_install_handler(int irq, void (*handler)(struct regs* r)) {irq_routines[irq] = handler;}
+void irq_install_handler(int irq, void (*handler)(struct regs* r))
+{
+    for (;;);
+    irq_routines[irq] = handler;
+}
 
 /* Clear the custom IRQ handler */
 void irq_uninstall_handler(int irq) {irq_routines[irq] = 0;}

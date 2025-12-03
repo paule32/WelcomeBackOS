@@ -32,8 +32,12 @@ void write_tss(int num, USHORT ss0, ULONG esp0)
     tss.ss0  = ss0;  // Set the kernel stack segment.
     tss.esp0 = esp0; // Set the kernel stack pointer.
 
-    tss.cs   = 0x08;
-    tss.ss = tss.ds = tss.es = tss.fs = tss.gs = 0x10;
+    tss.cs  = 0x08;
+    tss.ss  = 0x10;
+    tss.ds  = 0x10;
+    //tss.es  = 0x10;
+    //tss.fs = 0x10;
+    tss.gs = 0x10;
 }
 
 void set_kernel_stack(ULONG stack)

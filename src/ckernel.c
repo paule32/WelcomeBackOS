@@ -41,20 +41,19 @@ static void init()
     placement_address = 0x200000;
 }
 
-int main();
-void __main(void) { main(); }
-int main()
+int kmain()
 {
     init();
     k_clear_screen();
     settextcolor(14,0);
-    printformat("WelcomeBackOS [Version 1.0]  (C) 2025 paule32 \n");
+    printformat("Back to 1985 OS [Version 1.0]  (C) 2025 paule32 \n");
     gdt_install();
     idt_install();
     isrs_install();
     irq_install();
-    initODA();
+    initODA();for (;;);
     timer_install();
+    for (;;);
     keyboard_install();
 
     // get physical memory which is usable RAM

@@ -20,7 +20,7 @@ jmp entry_point             ; go to entry point
 
 %define IMAGE_PMODE_BASE 0x40000 ; where the kernel is to be loaded to in protected mode
 %define IMAGE_RMODE_BASE 0x3000  ; where the kernel is to be loaded to in real mode
-ImageName     db "KERNEL   SYS"
+ImageName     db "KERNEL  SYS"
 ImageSize     dw 0
 
 ;*******************************************************
@@ -110,8 +110,8 @@ CopyImage:
 ;   Execute Kernel
 ;*******************************************************
 EXECUTE:
-    jmp DWORD CODE_DESC:IMAGE_PMODE_BASE
-;    jmp [IMAGE_PMODE_BASE]
+;    jmp DWORD CODE_DESC:IMAGE_PMODE_BASE
+    jmp [IMAGE_PMODE_BASE]
 	
 ;*******************************************************
 ;   calls, e.g. print_string
