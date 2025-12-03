@@ -65,12 +65,20 @@ fs_node_t* install_initrd(ULONG location)
 
     initrd_root = (fs_node_t*) k_malloc( sizeof(fs_node_t),1,0 );
     k_strcpy(initrd_root->name, "initrd");
-    initrd_root->mask    = initrd_root->uid = initrd_root->gid = initrd_root->inode = initrd_root->length = 0;
-    initrd_root->flags   = FS_DIRECTORY;
+    
+    initrd_root->length  = 0;
+    initrd_root->inode   = 0;
+    initrd_root->gid     = 0;
+    initrd_root->uid     = 0;
+    initrd_root->mask    = 0;
+    //for(;;);
+    initrd_root->flags   = (ULONG)0x02; //FS_DIRECTORY;
+    for(;;);
     initrd_root->read    = 0;
     initrd_root->write   = 0;
     initrd_root->open    = 0;
     initrd_root->close   = 0;
+    for(;;);
     initrd_root->readdir = &initrd_readdir;
     initrd_root->finddir = &initrd_finddir;
     initrd_root->ptr     = 0;
@@ -84,7 +92,7 @@ fs_node_t* install_initrd(ULONG location)
     settextcolor(15,0);
     #endif
     ///
-
+for(;;);
     initrd_dev = (fs_node_t*)k_malloc(sizeof(fs_node_t),1,0);
     k_strcpy(initrd_dev->name, "dev");
     initrd_dev->mask     = initrd_dev->uid = initrd_dev->gid = initrd_dev->inode = initrd_dev->length = 0;

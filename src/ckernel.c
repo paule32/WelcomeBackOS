@@ -29,13 +29,13 @@ unsigned char flag1 = 0; // status of user-space-program
 Mem_Chunk_t Mem_Chunk[10]; // contiguous parts of memory detected by int 15h eax = 820h
 
 extern ULONG placement_address;
-heap_t* kheap = 0;
+extern heap_t* kheap;
 
 extern const int DMA_BUFFER;
 
 static void init()
 {
-    kheap = 0;
+    kheap = (void*)0;
     kernel_directory  = 0;
     current_directory = 0;
     placement_address = 0x200000;
@@ -46,24 +46,30 @@ int kmain()
     init();
     k_clear_screen();
     settextcolor(14,0);
-    printformat("Back to 1985 OS [Version 1.0]  (C) 2025 paule32 \n");
+    printformat("Back to 1985 OS [Version 1.0] (C) 2025 paule32\n");
     gdt_install();
+    printformat("gdt     installed\n");
     idt_install();
+    printformat("idt     installed\n");
     isrs_install();
+    printformat("isr     installed\n");
     irq_install();
-    initODA();for (;;);
+    printformat("irq     installed\n");
+    initODA();
+    printformat("ODA init\n");
     timer_install();
-    for (;;);
+    printformat("timer   installed\n");
     keyboard_install();
+    printformat("keybrd  installed\n");
 
     // get physical memory which is usable RAM
     USHORT num_of_entries = *( (USHORT*)(ADDR_MEM_ENTRIES) );
 
-    #ifdef _DIAGNOSIS_
+    //#ifdef _DIAGNOSIS_
     settextcolor(2,0);
     printformat("\nNUM of RAM-Entries: %d", num_of_entries);
     settextcolor(15,0);
-    #endif
+    //#endif
 
     pODA->Memory_Size = 0;
     ULONG i,j;
@@ -95,7 +101,8 @@ int kmain()
 
     // paging, kernel heap, multitasking
     paging_install();
-    kheap = create_heap(KHEAP_START, KHEAP_START+KHEAP_INITIAL_SIZE, KHEAP_MAX, 1, 0); // SV and RW
+    printformat("paging  installed\n");
+    //kheap = create_heap(KHEAP_START, KHEAP_START+KHEAP_INITIAL_SIZE, KHEAP_MAX, 1, 0); // SV and RW
 
     // RAM Disk
     ///
@@ -110,12 +117,14 @@ int kmain()
     printformat("Ram Disk at: %x\n",ramdisk_start);
 
     tasking_install(); // ends with sti()
+    printformat("tasking installed\n");
 
     /// //////////////////////// TEST INSTALL FLOPPY DRIVER
 	printformat("\nFloppy Driver Test!\n\n");
 	flpydsk_set_working_drive(0); // set drive 0 as current drive
 	flpydsk_install(6);           // floppy disk uses IRQ 6
 	/// //////////////////////// TEST INSTALL FLOPPY DRIVER
+    printformat("floppy installed\n");
 
 	/// //////////////////////// TEST FLOPPY DRIVER READ DIRECTORY
 	k_memset((void*)DMA_BUFFER, 0x0, 0x2400);
@@ -161,12 +170,15 @@ int kmain()
 
     // test with data and program from data.asm
     k_memcpy((void*)ramdisk_start, &file_data_start, (ULONG)&file_data_end - (ULONG)&file_data_start);
+    
     fs_root = install_initrd(ramdisk_start);
-
+for(;;);
     // search the content of files <- data from outside "loaded" via incbin ...
     settextcolor(15,0);
     i=0;
+    
     struct dirent* node = 0;
+    
     while( (node = readdir_fs(fs_root, i)) != 0)
     {
         fs_node_t* fsnode = finddir_fs(fs_root, node->name);
@@ -205,7 +217,7 @@ int kmain()
         ++i;
     }
     printformat("\n");
-
+for(;;);
         // shell in elf-executable-format provided by data.asm
     ULONG elf_vaddr     = *( (ULONG*)( address_TEST + 0x3C ) );
     ULONG elf_offset    = *( (ULONG*)( address_TEST + 0x38 ) );

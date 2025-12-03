@@ -18,6 +18,6 @@ typedef struct
 } initrd_file_header_t;
 
 // Installs the initial ramdisk. It gets passed the address, and returns a completed filesystem node.
-fs_node_t* install_initrd(ULONG location);
+extern fs_node_t* install_initrd(ULONG location);
 
 #endif

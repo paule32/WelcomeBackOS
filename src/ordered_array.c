@@ -29,7 +29,9 @@ ordered_array_t place_ordered_array(void* addr, ULONG max_size, lessthan_predica
 {
     ordered_array_t to_ret;
     to_ret.array = (type_t*)addr;
+    
     k_memset(to_ret.array, 0, max_size*sizeof(type_t));
+    
     to_ret.size = 0;
     to_ret.max_size  = max_size;
     to_ret.less_than = less_than;

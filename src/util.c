@@ -14,8 +14,8 @@ void initODA()
 
     pODA->pHeadKQ = pODA->KEYQUEUE;  // pointer to the head of valid data
     //for (;;);
-    pODA->pTailKQ = pODA->KEYQUEUE;  // pointer to the tail of valid data
-for (;;);    
+//    pODA->pTailKQ = pODA->KEYQUEUE;  // pointer to the tail of valid data
+//for (;;);    
     pODA->KQ_count_read  = 0;        // number of data read from queue buffer
     pODA->KQ_count_write = 0;        // number of data put into queue buffer
 }
@@ -166,11 +166,26 @@ char* k_strncpy(char* dest, const char* src, size_t n)
 
 char* k_strcat(char* dest, const char* src)
 {
-    while ( *dest) { dest++;     }
-    do    { *dest++ = *src++;    } while(*src);
+    char *d = dest;
+
+    // ans Ende von dest
+    while (*d != '\0') {
+        d++;
+    }
+
+    // src Zeichen für Zeichen kopieren
+    const char *s = src;
+    while (*s != '\0') {
+        *d = *s;
+        d++;
+        s++;
+    }
+
+    // Nullterminator setzen
+    *d = '\0';
+
     return dest;
 }
-
 
 void reboot()
 {

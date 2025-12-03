@@ -3,7 +3,7 @@
 
 extern page_directory_t* kernel_directory;
 extern page_directory_t* current_directory;
-extern heap_t* kheap;
+heap_t* kheap;
 void kfree( void* p ) { free( p,kheap ); }
 
 static void expand(ULONG new_size, heap_t *heap)
@@ -114,10 +114,10 @@ heap_t* create_heap(ULONG start, ULONG end_addr, ULONG max, unsigned char superv
     // All our assumptions are made on startAddress and endAddress being page-aligned.
     ASSERT(start   %PAGESIZE == 0);
     ASSERT(end_addr%PAGESIZE == 0);
-
+    
     // Initialise the index.
-    heap->index = place_ordered_array( (void*)start, HEAP_INDEX_SIZE, &header_t_less_than );
-
+    heap->index = (ordered_array_t)place_ordered_array( (void*)start, HEAP_INDEX_SIZE, &header_t_less_than );
+for (;;);
     // Shift the start address forward to resemble where we can start putting data.
     start += sizeof(type_t) * HEAP_INDEX_SIZE;
 
