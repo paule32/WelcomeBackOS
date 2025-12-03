@@ -89,7 +89,7 @@ fs_node_t* install_initrd(ULONG location)
     //initrd_root->close   = 0;
     
     initrd_root->readdir = &initrd_readdir;
-    
+    //for(;;);
     initrd_root->finddir = &initrd_finddir;
     for(;;);
     //initrd_root->ptr     = 0;
