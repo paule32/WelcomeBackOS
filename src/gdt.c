@@ -28,7 +28,8 @@ void gdt_install()
 {
     /* Setup the GDT pointer and limit */
     gdt_register.limit = (sizeof(struct gdt_entry) * NUMBER_GDT_GATES)-1;
-    gdt_register.base  = (ULONG) &gdt;
+//  gdt_register.base  = (ULONG) &gdt;
+    gdt_register.base  = gdt;
 
     /* GDT GATES -  desriptors with pointers to the linear memory address */
     gdt_set_gate(0, 0, 0, 0, 0);                // NULL descriptor
@@ -39,6 +40,7 @@ void gdt_install()
 
     write_tss(5, 0x10, 0x0);                    // num, ss0, esp0
 
-    gdt_flush((ULONG)&gdt_register);
+//  gdt_flush((ULONG)&gdt_register);
+    gdt_flush(&gdt_register);
     tss_flush();
 }

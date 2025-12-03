@@ -19,14 +19,16 @@ void idt_install()
 {
     // Sets the special IDT pointer up
     idt_register.limit = (sizeof (struct idt_entry) * 256)-1;
-    idt_register.base  = (ULONG) &idt;
+//  idt_register.base  = (ULONG) &idt;
+    idt_register.base  = idt;
 
     k_memset(&idt, 0, sizeof(idt_entry_t) * 256); // Clear out the entire IDT
 
     // Add any new ISRs to the IDT here using idt_set_gate
     // ...
 
-    idt_flush((ULONG)&idt_register); // inclusive idt_load() in assembler code
+//  idt_flush((ULONG)&idt_register); // inclusive idt_load() in assembler code
+    idt_flush(&idt_register); // inclusive idt_load() in assembler code
 
 }
 

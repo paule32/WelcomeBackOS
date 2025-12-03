@@ -5,11 +5,6 @@
 
 void write_tss(int num, USHORT ss0, ULONG esp0);
 
-// asm functions in flush.asm
-extern void gdt_flush(ULONG);
-extern void tss_flush();
-extern void idt_flush(ULONG);
-
 // Initialisation function is publicly accessible.
 void init_descriptor_tables();
 
@@ -30,7 +25,8 @@ struct gdt_entry
 struct gdt_ptr
 {
     USHORT limit;
-    ULONG   base;
+//    ULONG   base;
+    struct gdt_entry* base;
 }__attribute__((packed));
 
 typedef struct gdt_entry gdt_entry_t;
@@ -49,7 +45,7 @@ struct idt_entry
 struct idt_ptr
 {
     USHORT limit;
-    ULONG  base;
+    struct idt_entry*  base;
 }__attribute__((packed)); //prevent compiler optimization
 
 typedef struct idt_entry idt_entry_t;
@@ -89,5 +85,10 @@ struct tss_entry_struct
 } __attribute__((packed));
 
 typedef struct tss_entry_struct tss_entry_t;
+
+// asm functions in flush.asm
+extern void gdt_flush(gdt_ptr_t*);
+extern void tss_flush();
+extern void idt_flush(idt_ptr_t*);
 
 #endif

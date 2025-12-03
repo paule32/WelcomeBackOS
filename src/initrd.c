@@ -37,14 +37,23 @@ static struct dirent* initrd_readdir(fs_node_t* node, ULONG index)
     return &dirent;
 }
 
-static fs_node_t* initrd_finddir(fs_node_t* node, char* name)
+fs_node_t* initrd_finddir(fs_node_t* node, char* name)
 {
     if( (node == initrd_root) && (!k_strcmp(name,"dev")) )
         return initrd_dev;
+    
     int i;
-    for( i=0; i<nroot_nodes; ++i)
-        if( !k_strcmp(name, root_nodes[i].name) )
+    for( i = 0; i < nroot_nodes; ++i) {
+        if ((void*)0 == (void*)&root_nodes[i]) {
+            printformat("nulli\n");
+            continue;
+        }
+        if( !k_strcmp(name, root_nodes[i].name) ) {
+            printformat(root_nodes[i].name);
             return &root_nodes[i];
+        }
+    }
+    printformat("fini\n");
     return 0;
 }
 
@@ -72,17 +81,19 @@ fs_node_t* install_initrd(ULONG location)
     initrd_root->uid     = 0;
     initrd_root->mask    = 0;
     //for(;;);
-    initrd_root->flags   = (ULONG)0x02; //FS_DIRECTORY;
-    for(;;);
-    initrd_root->read    = 0;
-    initrd_root->write   = 0;
-    initrd_root->open    = 0;
-    initrd_root->close   = 0;
-    for(;;);
+    //initrd_root->flags   = FS_DIRECTORY;
+    //for(;;);
+    //initrd_root->read    = 0;
+    //initrd_root->write   = 0;
+    //initrd_root->open    = 0;
+    //initrd_root->close   = 0;
+    
     initrd_root->readdir = &initrd_readdir;
+    
     initrd_root->finddir = &initrd_finddir;
-    initrd_root->ptr     = 0;
-    initrd_root->impl    = 0;
+    for(;;);
+    //initrd_root->ptr     = 0;
+    //initrd_root->impl    = 0;
 
     // Initialise the /dev directory (required!)
     ///

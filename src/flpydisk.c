@@ -203,7 +203,7 @@ void flpydsk_write_ccr(unsigned char val)
 */
 
 // wait for irq
-inline void flpydsk_wait_irq()
+void flpydsk_wait_irq()
 {
     while ( _FloppyDiskIRQ == 0) // wait for irq to fire
 		;
