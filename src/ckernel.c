@@ -178,6 +178,107 @@ int kmain()
     settextcolor(15,0);
     i=0;
 
+    struct dirent* node = 0;
+    
+    #if 0
+    node = readdir_fs(fs_root, 0);
+    fs_node_t* fsnode = finddir_fs(fs_root, node->name);
+    printformat("===>  %s\n", node->name);
+    ULONG sz = read_fs(fsnode, 0, 10, buf);
+    printformat("oo> %s\n", buf);
+    #endif
+
+    
+    while( (node = readdir_fs(fs_root, i)) != 0)
+    {
+        fs_node_t* fsnode = finddir_fs(fs_root, node->name);
+
+        if((fsnode->flags & 0x7) == FS_DIRECTORY)
+        {
+            printformat("<DIR> %s\n",node->name);
+        }
+        else
+        {
+            ULONG sz = read_fs(fsnode, 0, fsnode->length, buf);
+
+            char name[40];
+            k_memset((void*)name, 0, 40);
+            k_memcpy((void*)name, node->name, 35); // protection against wrong / too long filename
+            //printformat("%d \t%s\n",sz,name);
+
+            ULONG j;
+            if( k_strcmp(node->name,"shell")==0 )
+            {
+                flag1=1;
+
+                if(sz>=FILEBUFFERSIZE)
+                {
+                    sz = 0;
+                    settextcolor(4,0);
+                    printformat("Buffer Overflow prohibited!\n");
+                    settextcolor(15,0);
+                }
+
+                for(j=0; j<sz; ++j)
+                    address_TEST[j] = buf[j];
+            }   else {
+                printformat(" buffer: %s", buf);
+            }
+        }
+        ++i;
+    }
+    printformat("->\n");
+for(;;);
+
+#if 0
+        // shell in elf-executable-format provided by data.asm
+    ULONG elf_vaddr     = *( (ULONG*)( address_TEST + 0x3C ) );
+    ULONG elf_offset    = *( (ULONG*)( address_TEST + 0x38 ) );
+    ULONG elf_filesize  = *( (ULONG*)( address_TEST + 0x44 ) );
+
+    ///
+    #ifdef _DIAGNOSIS_
+    settextcolor(5,0);
+    printformat("virtual address: %x offset: %x size: %x", elf_vaddr, elf_offset, elf_filesize);
+    printformat("\n\n");
+    settextcolor(15,0);
+    #endif
+    ///
+
+    if( (elf_vaddr>0x5FF000) || (elf_vaddr<0x400000) || (elf_offset>0x130) || (elf_filesize>0x1000) )
+    {
+        flag1=2;
+    }
+
+    // Test-Programm ==> user space
+    if(flag1==1)
+    {
+        address_user = elf_vaddr;
+        k_memcpy((void*)address_user, address_TEST + elf_offset, elf_filesize); // ELF LOAD: Offset VADDR FileSize
+    }
+
+    pODA->ts_flag = 1; // enable task_switching
+
+    if(flag1==1)
+    {
+      create_task ((void*)getAddressUserProgram(),3); // program in user space (ring 3) takes over
+    }
+    else
+    {
+        if(flag1==0)
+        {
+            settextcolor(4,0);
+            printformat("Program not found.\n");
+            settextcolor(15,0);
+        }
+        else
+        {
+            settextcolor(4,0);
+            printformat("Program corrupt.\n");
+            settextcolor(15,0);
+        }
+    }
+#endif
     while(TRUE){/*  */}
     return 0;
 }

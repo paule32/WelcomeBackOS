@@ -4,7 +4,7 @@ fs_node_t* fs_root = 0; // The root of the filesystem.
 
 ULONG read_fs(fs_node_t* node, ULONG offset, ULONG size, unsigned char* buffer)
 {
-    if (node->read != 0) // Has the node got a read callback?
+    if (node->read != 0)  // Has the node got a read callback?
         return node->read(node, offset, size, buffer);
     else
         return 0;

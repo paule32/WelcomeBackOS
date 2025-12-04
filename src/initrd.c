@@ -11,11 +11,16 @@ struct dirent dirent;
 
 static ULONG initrd_read(fs_node_t* node, ULONG offset, ULONG size, unsigned char* buffer)
 {
-    initrd_file_header_t header = file_headers[node->inode];
-    size = header.length;
-    if (offset > header.length)      return 0;
-    if (offset+size > header.length) size = header.length-offset;
-    k_memcpy(buffer, (void*)(header.off + offset), size);
+    if (!file_headers) {
+        printformat("file_headers null\n");
+    }
+    initrd_file_header_t* header = &file_headers[node->inode];
+    size = header->length;
+
+    if (offset > header->length)      return 0;
+    if (offset+size > header->length) size = header->length-offset;
+    k_memcpy(buffer, (void*)(header->off + offset), size);
+    
     return size;
 }
 
@@ -54,6 +59,14 @@ fs_node_t* initrd_finddir(fs_node_t* node, char* name)
 }
 
 static void initrd_open(fs_node_t *node) {
+    //(void)node; // aktuell nichts zu tun
+    //if (k_strcmp(node->name, "TEST2.TXT"))
+    {
+        printformat("---> %d", node->length);
+    }
+}
+
+static void initrd_close(fs_node_t *node) {
     (void)node; // aktuell nichts zu tun
 }
 
@@ -84,11 +97,11 @@ fs_node_t* install_initrd(ULONG location)
     initrd_root->impl    = 0;
     initrd_root->ptr     = 0;
     
-    initrd_root->read    = &read_fs;
+    initrd_root->read    = &initrd_read;
     initrd_root->write   = &write_fs;
     
     initrd_root->open    = &initrd_open;
-    initrd_root->close   = &close_fs;
+    initrd_root->close   = &initrd_close;
     
     initrd_root->flags   = FS_DIRECTORY;
     
