@@ -11,6 +11,7 @@
 #define FS_SYMLINK     0x06
 #define FS_MOUNTPOINT  0x08 // Is the file an active mountpoint?
 
+struct dirent;
 struct fs_node;
 
 // These typedefs define the type of callbacks - called when read/write/open/close are called.

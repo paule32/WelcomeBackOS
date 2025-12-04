@@ -9,7 +9,7 @@ int                    nroot_nodes;   // Number of file nodes.
 
 struct dirent dirent;
 
-static ULONG initrd_read(fs_node_t* node, ULONG offset, ULONG size, char* buffer)
+static ULONG initrd_read(fs_node_t* node, ULONG offset, ULONG size, unsigned char* buffer)
 {
     initrd_file_header_t header = file_headers[node->inode];
     size = header.length;
@@ -19,7 +19,7 @@ static ULONG initrd_read(fs_node_t* node, ULONG offset, ULONG size, char* buffer
     return size;
 }
 
-static struct dirent* initrd_readdir(fs_node_t* node, ULONG index)
+struct dirent* initrd_readdir(struct fs_node* node, ULONG index)
 {
     if( (node == initrd_root) && (index == 0) )
     {
@@ -44,10 +44,6 @@ fs_node_t* initrd_finddir(fs_node_t* node, char* name)
     
     int i;
     for( i = 0; i < nroot_nodes; ++i) {
-        if ((void*)0 == (void*)&root_nodes[i]) {
-            printformat("nulli\n");
-            continue;
-        }
         if( !k_strcmp(name, root_nodes[i].name) ) {
             printformat(root_nodes[i].name);
             return &root_nodes[i];
@@ -55,6 +51,10 @@ fs_node_t* initrd_finddir(fs_node_t* node, char* name)
     }
     printformat("fini\n");
     return 0;
+}
+
+static void initrd_open(fs_node_t *node) {
+    (void)node; // aktuell nichts zu tun
 }
 
 fs_node_t* install_initrd(ULONG location)
@@ -73,6 +73,7 @@ fs_node_t* install_initrd(ULONG location)
     ///
 
     initrd_root = (fs_node_t*) k_malloc( sizeof(fs_node_t),1,0 );
+    k_memset(initrd_root, 0, sizeof(fs_node_t));
     k_strcpy(initrd_root->name, "initrd");
     
     initrd_root->length  = 0;
@@ -80,21 +81,20 @@ fs_node_t* install_initrd(ULONG location)
     initrd_root->gid     = 0;
     initrd_root->uid     = 0;
     initrd_root->mask    = 0;
-    //for(;;);
-    //initrd_root->flags   = FS_DIRECTORY;
-    //for(;;);
-    //initrd_root->read    = 0;
-    //initrd_root->write   = 0;
-    //initrd_root->open    = 0;
-    //initrd_root->close   = 0;
+    initrd_root->impl    = 0;
+    initrd_root->ptr     = 0;
+    
+    initrd_root->read    = &read_fs;
+    initrd_root->write   = &write_fs;
+    
+    initrd_root->open    = &initrd_open;
+    initrd_root->close   = &close_fs;
+    
+    initrd_root->flags   = FS_DIRECTORY;
     
     initrd_root->readdir = &initrd_readdir;
-    //for(;;);
     initrd_root->finddir = &initrd_finddir;
-    for(;;);
-    //initrd_root->ptr     = 0;
-    //initrd_root->impl    = 0;
-
+    
     // Initialise the /dev directory (required!)
     ///
     #ifdef _DIAGNOSIS_
@@ -103,7 +103,7 @@ fs_node_t* install_initrd(ULONG location)
     settextcolor(15,0);
     #endif
     ///
-for(;;);
+
     initrd_dev = (fs_node_t*)k_malloc(sizeof(fs_node_t),1,0);
     k_strcpy(initrd_dev->name, "dev");
     initrd_dev->mask     = initrd_dev->uid = initrd_dev->gid = initrd_dev->inode = initrd_dev->length = 0;

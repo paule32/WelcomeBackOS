@@ -18,10 +18,11 @@ ULONG write_fs(fs_node_t* node, ULONG offset, ULONG size, unsigned char* buffer)
         return 0;
 }
 
-void open_fs(fs_node_t* node, unsigned char read, unsigned char write)
-{
-    if (node->open != 0) // Has the node got an open callback?
-        return node->open(node);
+void open_fs(fs_node_t* node, unsigned char read, unsigned char write) {
+    (void)read; (void)write;
+    if (node && node->open) {
+        node->open(node);
+    }
 }
 
 void close_fs(fs_node_t* node)

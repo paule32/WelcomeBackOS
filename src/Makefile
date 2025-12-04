@@ -20,7 +20,7 @@ OBJCOPY  := $(CROSS)objcopy
 # -----------------------------------------------------------------------------
 # compiler flags ...
 # -----------------------------------------------------------------------------
-CFLAGS   := -m32 -O2 -ffreestanding -fno-stack-protector -fno-builtin   \
+CFLAGS   := -m32 -O0 -ffreestanding -fno-stack-protector -fno-builtin   \
             -nostdlib -nostartfiles -Wall -Wextra                       \
             -mno-ms-bitfields                                           \
             -Wno-unused-value -Wno-unused-parameter -Wno-sign-compare   \
@@ -127,10 +127,10 @@ $(OBJ)/data.o: $(SRC)/initrd.dat $(SRC)/data.asm
 # create the initial ram disk ...
 # -----------------------------------------------------------------------------
 $(SRC)/initrd.dat: $(BIN)/INITRD.EXE
-	$(BIN)/INITRD.EXE                 \
-    $(SRC)/content/test1.txt   file1  \
-    $(SRC)/content/test2.txt   file2  \
-    $(SRC)/content/test3.txt   file3
+	$(BIN)/INITRD.EXE \
+    test1.txt   file1 \
+    test2.txt   file2 \
+    test3.txt   file3
 
 #    $(SRC)/content/program.elf shell
 
