@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// \file kernel.c – A simple freestanding C-Kernel
+// \file  kernel.c – A simple freestanding C-Kernel
 // \note  (c) 2025 by Jens Kallup - paule32
 //        all rights reserved.
 // ---------------------------------------------------------------------------
@@ -32,6 +32,8 @@ extern ULONG placement_address;
 extern heap_t* kheap;
 
 extern const int DMA_BUFFER;
+
+extern void user_program_1(void);
 
 static void init()
 {
@@ -227,58 +229,9 @@ int kmain()
         }
         ++i;
     }
-    printformat("->\n");
-for(;;);
+    printformat("-> ");
 
-#if 0
-        // shell in elf-executable-format provided by data.asm
-    ULONG elf_vaddr     = *( (ULONG*)( address_TEST + 0x3C ) );
-    ULONG elf_offset    = *( (ULONG*)( address_TEST + 0x38 ) );
-    ULONG elf_filesize  = *( (ULONG*)( address_TEST + 0x44 ) );
+    user_program_1();
 
-    ///
-    #ifdef _DIAGNOSIS_
-    settextcolor(5,0);
-    printformat("virtual address: %x offset: %x size: %x", elf_vaddr, elf_offset, elf_filesize);
-    printformat("\n\n");
-    settextcolor(15,0);
-    #endif
-    ///
-
-    if( (elf_vaddr>0x5FF000) || (elf_vaddr<0x400000) || (elf_offset>0x130) || (elf_filesize>0x1000) )
-    {
-        flag1=2;
-    }
-
-    // Test-Programm ==> user space
-    if(flag1==1)
-    {
-        address_user = elf_vaddr;
-        k_memcpy((void*)address_user, address_TEST + elf_offset, elf_filesize); // ELF LOAD: Offset VADDR FileSize
-    }
-
-    pODA->ts_flag = 1; // enable task_switching
-
-    if(flag1==1)
-    {
-      create_task ((void*)getAddressUserProgram(),3); // program in user space (ring 3) takes over
-    }
-    else
-    {
-        if(flag1==0)
-        {
-            settextcolor(4,0);
-            printformat("Program not found.\n");
-            settextcolor(15,0);
-        }
-        else
-        {
-            settextcolor(4,0);
-            printformat("Program corrupt.\n");
-            settextcolor(15,0);
-        }
-    }
-#endif
-    while(TRUE){/*  */}
     return 0;
 }

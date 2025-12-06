@@ -6,11 +6,26 @@ unsigned char  csr_y  = 0;
 unsigned char  saved_csr_x  = 0;
 unsigned char  saved_csr_y  = 0;
 unsigned char  attrib = 0x0F;
-USHORT* vidmem = (USHORT*) 0xb8000;
+
+USHORT* tui_vidmem = (USHORT*) 0xb8000;
+USHORT* gui_vidmem = (USHORT*) 0xb8000;
+
+/*
+uint16_t detect_bios_area_hardware(void)
+{
+    const uint16_t* bda_detected_hardware_ptr = (const uint16_t*) 0x410;
+    return *bda_detected_hardware_ptr;
+}
+
+enum video_type get_bios_area_video_type(void)
+{
+    return (enum video_type) (detect_bios_area_hardware() & 0x30);
+}
+*/
 
 void k_clear_screen()
 {
-    k_memsetw (vidmem, 0x20 | (attrib << 8), 80 * 25);
+    k_memsetw (tui_vidmem, 0x20 | (attrib << 8), 80 * 25);
     csr_x = 0; csr_y = 0; update_cursor();
 }
 
@@ -105,7 +120,7 @@ void putch(char c)
     *  Index = [(y * width) + x] */
     else if(c >= ' ')
     {
-        pos = vidmem + (csr_y * 80 + csr_x);
+        pos = tui_vidmem + (csr_y * 80 + csr_x);
         *pos = c | att; // Character AND attributes: color
         ++csr_x;
     }
@@ -133,8 +148,8 @@ void scroll()
     if(csr_y >= 25)
     {
         temp = csr_y - 25 + 1;
-        k_memcpy (vidmem, vidmem + temp * 80, (25 - temp) * 80 * 2);
-        k_memsetw (vidmem + (25 - temp) * 80, blank, 80);
+        k_memcpy (tui_vidmem, tui_vidmem + temp * 80, (25 - temp) * 80 * 2);
+        k_memsetw (tui_vidmem + (25 - temp) * 80, blank, 80);
         csr_y = 25 - 1;
     }
 }

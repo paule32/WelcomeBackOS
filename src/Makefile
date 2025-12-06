@@ -58,7 +58,8 @@ SRCC := $(SRC)/ckernel.c            \
         $(SRC)/task.c               \
         $(SRC)/timer.c              \
         $(SRC)/util.c               \
-        $(SRC)/video.c
+        $(SRC)/video.c              \
+        $(SRC)/program_1.c
 
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the C-kernel ...
@@ -86,7 +87,8 @@ OBJS := $(OBJ)/ckernel.o            \
         $(OBJ)/task.o               \
         $(OBJ)/timer.o              \
         $(OBJ)/util.o               \
-        $(OBJ)/video.o
+        $(OBJ)/video.o              \
+        $(OBJ)/program_1.o
 
 all: config\
      $(OBJ)/data.o $(BIN)/BOOT2.SYS $(BIN)/floppy.img

@@ -12,3 +12,4 @@ src/content/program.elf
 *.exe
 bin/kernel.map
 *.dat
+src/program.elf
