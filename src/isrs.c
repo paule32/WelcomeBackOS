@@ -105,11 +105,11 @@ ULONG fault_handler(ULONG esp)
 
             // Output an error message.
                           printformat("\nPage Fault (");
-            if (present)  printformat("page not present");
-            if (rw)       printformat(" read-only - write operation");
-            if (us)       printformat(" user-mode");
-            if (reserved) printformat(" overwritten CPU-reserved bits of page entry");
-            if (id)       printformat(" caused by an instruction fetch");
+            if (present)  { printformat("page not present"); }
+            if (rw)       { printformat(" read-only - write operation"); }
+            if (us)       { printformat(" user-mode"); }
+            if (reserved) { printformat(" overwritten CPU-reserved bits of page entry"); }
+            if (id)       { printformat(" caused by an instruction fetch"); }
                           printformat(") at %x - EIP: %x\n", faulting_address, r->eip);
         }
 

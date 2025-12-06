@@ -30,6 +30,16 @@ msgLoading db 13, 10, "jump to OS Kernel...", 0
 msgFailure db 13, 10, "missing KERNEL.SYS"  , 13, 0
 msgNoVBE   db 13, 10, "no VBE gfx support." , 13, 0
 
+; ------------------------------------------------------------
+; Daten für LFB und Auflösung
+; ------------------------------------------------------------
+_lfb_base   dd 0
+_lfb_pitch  dd 0
+_lfb_xres   dd 0
+_lfb_yres   dd 0
+_lfb_bpp    dd 0
+_color16    dw 0
+
 no_vbe:
     mov si, msgNoVBE
     call    print_string
@@ -37,26 +47,31 @@ no_vbe:
     jmp .loop
     
 entry_point:
-    cli	              ; clear interrupts
-    xor ax, ax         ; null segments
+    cli	                 ; clear interrupts
+    xor ax, ax           ; null segments
     mov ds, ax
     mov es, ax
     mov ss, ax
-    mov sp, 0xFFFF     ; stack begins at 0xffff (downwards)
-    sti	              ; enable interrupts
-
+    mov sp, 0xFFFF       ; stack begins at 0xffff (downwards)
+    sti	                 ; enable interrupts
+    
     push es
-	mov  ax, 0x4F00      ; get VBE mode info
-	mov  di, Mode_Info
+	mov  ax, 0x4F01      ; get VBE mode info
+    mov  cx, 0x115       ; 800x600x16bpp mode
+	mov  di, 0x9000      ; es:di -> buffer
+    xor  ax, ax
+    mov  es, ax
+    mov  ax, 0x4F01
 	int  0x10
 	pop  es
+    
     cmp  ax, 0x004F      ; test for error
     jne  no_vbe
 
     push es
     mov  ax, 0x4f02
-    mov  bx, 0x4114     ; enable LFB
-    mov  di, 0
+    mov  bx, 0x0115      ; enable LFB
+    or   bx, 0x4000
     int  0x10
     pop  es
     
@@ -134,7 +149,7 @@ CopyImage:
 EXECUTE:
 ;    jmp DWORD CODE_DESC:IMAGE_PMODE_BASE
     jmp [IMAGE_PMODE_BASE]
-	
+
 ;*******************************************************
 ;   calls, e.g. print_string
 ;*******************************************************
@@ -148,41 +163,3 @@ print_string:
    jmp print_string
 .done:
    ret
-
-bits 16
-section .bss
-Mode_Info:		
-ModeInfo_ModeAttributes         resw 1
-ModeInfo_WinAAttributes         resb 1
-ModeInfo_WinBAttributes         resb 1
-ModeInfo_WinGranularity         resw 1
-ModeInfo_WinSize                resw 1
-ModeInfo_WinASegment            resw 1
-ModeInfo_WinBSegment            resw 1
-ModeInfo_WinFuncPtr             resd 1
-ModeInfo_BytesPerScanLine       resw 1
-ModeInfo_XResolution            resw 1
-ModeInfo_YResolution            resw 1
-ModeInfo_XCharSize              resb 1
-ModeInfo_YCharSize              resb 1
-ModeInfo_NumberOfPlanes	        resb 1
-ModeInfo_BitsPerPixel           resb 1
-ModeInfo_NumberOfBanks          resb 1
-ModeInfo_MemoryModel            resb 1
-ModeInfo_BankSize               resb 1
-ModeInfo_NumberOfImagePages     resb 1
-ModeInfo_Reserved_page          resb 1
-ModeInfo_RedMaskSize            resb 1
-ModeInfo_RedMaskPos             resb 1
-ModeInfo_GreenMaskSize          resb 1
-ModeInfo_GreenMaskPos           resb 1
-ModeInfo_BlueMaskSize           resb 1
-ModeInfo_BlueMaskPos            resb 1
-ModeInfo_ReservedMaskSize       resb 1
-ModeInfo_ReservedMaskPos        resb 1
-ModeInfo_DirectColorModeInfo    resb 1
-
-; VBE 2.0 extensions
-ModeInfo_PhysBasePtr            resd 1
-ModeInfo_OffScreenMemOffset     resd 1
-ModeInfo_OffScreenMemSize       resw 1

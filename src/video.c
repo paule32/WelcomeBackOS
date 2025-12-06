@@ -10,6 +10,12 @@ unsigned char  attrib = 0x0F;
 USHORT* tui_vidmem = (USHORT*) 0xb8000;
 USHORT* gui_vidmem = (USHORT*) 0xb8000;
 
+extern UINT   lfb_base ;
+extern UINT   lfb_pitch;
+extern UINT   lfb_xres ;
+extern UINT   lfb_yres ;
+extern USHORT color16  ;
+
 /*
 uint16_t detect_bios_area_hardware(void)
 {
@@ -22,6 +28,24 @@ enum video_type get_bios_area_video_type(void)
     return (enum video_type) (detect_bios_area_hardware() & 0x30);
 }
 */
+
+extern void putpixel16(void) asm("putpixel16");
+
+void putpixel(UINT x, UINT y, USHORT color) {
+    __asm__ __volatile__(
+        "movl %0, %%ecx     \n\t"   // x -> ecx
+        "movl %1, %%ebx     \n\t"   // y -> ebx
+        "movw %2, %%dx      \n\t"   // color -> dx (16 bit)
+        "call _putpixel16   \n\t"
+        : /* return: nothing */
+        : "r"(x), "r"(y), "r"(color)
+        : "ecx", "ebx", "dx"
+    );
+}
+
+void start_gui(void) {
+    for(;;);
+}
 
 void k_clear_screen()
 {

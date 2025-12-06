@@ -7,6 +7,7 @@
 #define FALSE		0
 
 typedef unsigned int   size_t;
+typedef unsigned char  UCHAR;
 typedef unsigned int   UINT;
 typedef unsigned short USHORT;
 typedef unsigned long  ULONG;

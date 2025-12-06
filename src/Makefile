@@ -88,6 +88,7 @@ OBJS := $(OBJ)/ckernel.o            \
         $(OBJ)/timer.o              \
         $(OBJ)/util.o               \
         $(OBJ)/video.o              \
+        $(OBJ)/video_fb.o           \
         $(OBJ)/program_1.o
 
 all: config\
