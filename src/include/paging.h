@@ -22,7 +22,7 @@ typedef struct page
     ULONG accessed   :  1;   // Has the page been accessed since last refresh?
     ULONG dirty      :  1;   // Has the page been written to since last refresh?
     ULONG unused     :  7;   // Combination of unused and reserved bits
-    ULONG frame_addr : 20;   // Frame address (shifted right 12 bits)
+    ULONG frame      : 20;   // Frame address (shifted right 12 bits)
 } page_t;
 
 typedef struct page_table

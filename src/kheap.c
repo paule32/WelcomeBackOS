@@ -117,7 +117,7 @@ heap_t* create_heap(ULONG start, ULONG end_addr, ULONG max, unsigned char superv
     
     // Initialise the index.
     heap->index = (ordered_array_t)place_ordered_array( (void*)start, HEAP_INDEX_SIZE, &header_t_less_than );
-for (;;);
+
     // Shift the start address forward to resemble where we can start putting data.
     start += sizeof(type_t) * HEAP_INDEX_SIZE;
 

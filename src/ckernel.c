@@ -33,6 +33,11 @@ extern heap_t* kheap;
 
 extern const int DMA_BUFFER;
 
+extern void vbe_read_modeinfo_early(void);
+extern void vbe_init_pm(void);
+
+extern void put_pixel(USHORT, USHORT, USHORT);
+extern USHORT rgb565(UCHAR, UCHAR, UCHAR);
 extern void user_program_1(void);
 
 static void init()
@@ -45,24 +50,22 @@ static void init()
 
 int kmain()
 {
+    // --------------------------------------
+    // mother of all is the graphics card ...
+    // --------------------------------------
+    vbe_init_pm();
     init();
+    
     k_clear_screen();
     settextcolor(14,0);
     printformat("Back to 1985 OS [Version 1.0] (C) 2025 paule32\n");
     gdt_install();
-    printformat("gdt     installed\n");
     idt_install();
-    printformat("idt     installed\n");
     isrs_install();
-    printformat("isr     installed\n");
     irq_install();
-    printformat("irq     installed\n");
     initODA();
-    printformat("ODA init\n");
     timer_install();
-    printformat("timer   installed\n");
     keyboard_install();
-    printformat("keybrd  installed\n");
 
     // get physical memory which is usable RAM
     USHORT num_of_entries = *( (USHORT*)(ADDR_MEM_ENTRIES) );
@@ -102,8 +105,8 @@ int kmain()
     printformat("\n\n");
 
     // paging, kernel heap, multitasking
-    paging_install();
-    printformat("paging  installed\n");
+    //paging_install();
+
     //kheap = create_heap(KHEAP_START, KHEAP_START+KHEAP_INITIAL_SIZE, KHEAP_MAX, 1, 0); // SV and RW
 
     // RAM Disk
@@ -119,15 +122,13 @@ int kmain()
     printformat("Ram Disk at: %x\n",ramdisk_start);
 
     tasking_install(); // ends with sti()
-    printformat("tasking installed\n");
-
+    
     /// //////////////////////// TEST INSTALL FLOPPY DRIVER
 	printformat("\nFloppy Driver Test!\n\n");
 	flpydsk_set_working_drive(0); // set drive 0 as current drive
 	flpydsk_install(6);           // floppy disk uses IRQ 6
 	/// //////////////////////// TEST INSTALL FLOPPY DRIVER
-    printformat("floppy installed\n");
-
+    
 	/// //////////////////////// TEST FLOPPY DRIVER READ DIRECTORY
 	k_memset((void*)DMA_BUFFER, 0x0, 0x2400);
 	flpydsk_read_sector(19); // start at 0x2600: root directory (14 sectors)
@@ -229,9 +230,7 @@ int kmain()
         }
         ++i;
     }
-    printformat("-> ");
 
     user_program_1();
-
     return 0;
 }

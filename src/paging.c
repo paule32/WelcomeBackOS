@@ -1,5 +1,6 @@
 #include "paging.h"
 #include "kheap.h"
+#include "vbe.h"
 
 ULONG ULONG_MAX = 0xFFFFFFFF;
 page_directory_t* kernel_directory  = 0;
@@ -7,10 +8,10 @@ page_directory_t* current_directory = 0;
 
 ULONG placement_address = 0x200000;
 extern heap_t* kheap;
+extern ULONG lfb_phys;
 
 // A bitset of frames - used or free
 ULONG*  frames; // pointer to the bitset (functions: set/clear/test)
-
 
 ULONG k_malloc(ULONG size, unsigned char align, ULONG* phys)
 {
@@ -20,7 +21,7 @@ ULONG k_malloc(ULONG size, unsigned char align, ULONG* phys)
         if (phys != 0)
         {
             page_t* page = get_page(addr, 0, kernel_directory);
-            *phys = page->frame_addr * PAGESIZE + (addr&0xFFF);
+            *phys = page->frame * PAGESIZE + (addr&0xFFF);
         }
 
         ///
@@ -110,7 +111,7 @@ static ULONG first_frame() // find the first free frame in frames bitset
 
 void alloc_frame(page_t* page, int is_kernel, int is_writeable) // allocate a frame
 {
-    if( !(page->frame_addr) )
+    if( !(page->frame) )
     {
         ULONG index = first_frame(); // search first free page frame
         if( index == ULONG_MAX )
@@ -121,16 +122,16 @@ void alloc_frame(page_t* page, int is_kernel, int is_writeable) // allocate a fr
         page->present    = 1;
         page->rw         = ( is_writeable == 1 ) ? 1 : 0;
         page->user       = ( is_kernel    == 1 ) ? 0 : 1;
-        page->frame_addr = index;
+        page->frame      = index;
     }
 }
 
 void free_frame(page_t* page) // deallocate a frame
 {
-    if( page->frame_addr )
+    if( page->frame )
     {
-        clear_frame(page->frame_addr);
-        page->frame_addr = 0;
+        clear_frame(page->frame);
+        page->frame = 0;
     }
 }
 
@@ -180,6 +181,24 @@ void paging_install()
             alloc_frame( get_page(i, 1, kernel_directory), SV, RO); // supervisor and read-only
         }
         i += PAGESIZE;
+    }
+    
+    // 2) LFB zusätzlich identity-mappen (nur, wenn vorhanden)
+    if (lfb_phys != 0)
+    {
+        ULONG addr = lfb_phys & 0xFFFFF000;        // auf 4K-Grenze ausrichten
+        ULONG end  = addr + 0x400000;              // z.B. 4MB für den Framebuffer
+
+        while (addr < end)
+        {
+            page_t* page = get_page(addr, 1, kernel_directory);
+            page->present    = 1;
+            page->rw         = 1;
+            page->user       = 0;             // Kernel
+            page->frame      = addr >> 12;    // physische Frame-Nummer
+
+            addr += PAGESIZE;
+        }
     }
 
     //Allocate user space
@@ -257,7 +276,7 @@ static page_table_t *clone_table(page_table_t* src, ULONG* physAddr)
     for(i=0; i<1024; ++i)
     {
         // If the source entry has a frame associated with it...
-        if (!src->pages[i].frame_addr)
+        if (!src->pages[i].frame)
             continue;
         // Get a new frame.
         alloc_frame(&table->pages[i], 0, 0);
@@ -269,7 +288,7 @@ static page_table_t *clone_table(page_table_t* src, ULONG* physAddr)
         if (src->pages[i].dirty)   table->pages[i].dirty = 1;
 
         // Physically copy the data across. This function is in process.s.
-        copy_page_physical(src->pages[i].frame_addr*0x1000, table->pages[i].frame_addr*0x1000);
+        copy_page_physical(src->pages[i].frame*0x1000, table->pages[i].frame*0x1000);
     }
     return table;
 }
@@ -355,12 +374,12 @@ void analyze_frames_bitset(ULONG sec)
 ULONG show_physical_address(ULONG virtual_address)
 {
     page_t* page = get_page(virtual_address, 0, kernel_directory);
-    return( (page->frame_addr)*PAGESIZE + (virtual_address&0xFFF) );
+    return( (page->frame)*PAGESIZE + (virtual_address&0xFFF) );
 }
 
 void analyze_physical_addresses()
 {
-   int i,j,k=0, k_old;
+    int i,j,k=0, k_old;
     for(i=0; i<( (pODA->Memory_Size/PAGESIZE) / 0x18000 + 1 ); ++i)
     {
         for(j=i*0x18000; j<i*0x18000+0x18000; j+=0x1000)

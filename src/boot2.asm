@@ -30,16 +30,6 @@ msgLoading db 13, 10, "jump to OS Kernel...", 0
 msgFailure db 13, 10, "missing KERNEL.SYS"  , 13, 0
 msgNoVBE   db 13, 10, "no VBE gfx support." , 13, 0
 
-; ------------------------------------------------------------
-; Daten für LFB und Auflösung
-; ------------------------------------------------------------
-_lfb_base   dd 0
-_lfb_pitch  dd 0
-_lfb_xres   dd 0
-_lfb_yres   dd 0
-_lfb_bpp    dd 0
-_color16    dw 0
-
 no_vbe:
     mov si, msgNoVBE
     call    print_string
@@ -55,25 +45,28 @@ entry_point:
     mov sp, 0xFFFF       ; stack begins at 0xffff (downwards)
     sti	                 ; enable interrupts
     
-    push es
-	mov  ax, 0x4F01      ; get VBE mode info
-    mov  cx, 0x115       ; 800x600x16bpp mode
-	mov  di, 0x9000      ; es:di -> buffer
+;    push es
     xor  ax, ax
-    mov  es, ax
-    mov  ax, 0x4F01
+    mov  ds, ax          ; DS = 0
+    mov  ax, 0x9000
+    mov  es, ax          ; ES = 0x9000
+    mov  di, 0x0000      ; ES:DI = 9000:0000 -> phys 0x00090000
+                         ; see stack: 0x9FC00 in protected mode !
+                         
+	mov  ax, 0x4F01      ; get VBE mode info
+    mov  cx, 0x114       ; 800x600x16bpp mode
+
 	int  0x10
-	pop  es
+;	pop  es
     
     cmp  ax, 0x004F      ; test for error
     jne  no_vbe
-
-    push es
+;jmp A20
+;    push es
     mov  ax, 0x4f02
-    mov  bx, 0x0115      ; enable LFB
-    or   bx, 0x4000
+    mov  bx, 0x4114       ; enable LFB
     int  0x10
-    pop  es
+;    pop  es
     
 A20:	
    call EnableA20
@@ -129,7 +122,7 @@ ProtectedMode:
     mov ds, ax
     mov ss, ax
     mov es, ax
-    mov esp, 0x9000	
+    mov esp, 0x9FC00     ; ATTENTION: don't use it for VBE struct (0x9000) !!!
 
 CopyImage:
     mov eax, DWORD [ImageSize]

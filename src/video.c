@@ -1,5 +1,6 @@
 #include "os.h"
 #include "my_stdarg.h"
+#include "vbe.h"
 
 unsigned char  csr_x  = 0;
 unsigned char  csr_y  = 0;
@@ -9,12 +10,6 @@ unsigned char  attrib = 0x0F;
 
 USHORT* tui_vidmem = (USHORT*) 0xb8000;
 USHORT* gui_vidmem = (USHORT*) 0xb8000;
-
-extern UINT   lfb_base ;
-extern UINT   lfb_pitch;
-extern UINT   lfb_xres ;
-extern UINT   lfb_yres ;
-extern USHORT color16  ;
 
 /*
 uint16_t detect_bios_area_hardware(void)
