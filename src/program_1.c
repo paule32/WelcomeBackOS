@@ -270,6 +270,65 @@ void draw_line_thick(
     }
 }
 
+void draw_circle(
+    int cx,
+    int cy,
+    int radius,
+    USHORT color) {
+        
+    if (radius <= 0) return;
+
+    int x = radius;
+    int y = 0;
+    int err = 1 - radius;
+
+    while (x >= y)
+    {
+        // 8 symmetrische Punkte
+        put_pixel_back(cx + x, cy + y, color);
+        put_pixel_back(cx + y, cy + x, color);
+        put_pixel_back(cx - y, cy + x, color);
+        //put_pixel_back(cx - x, cy + y, color);  // <--- not commented => crash
+        //put_pixel_back(cx - x, cy - y, color);
+        put_pixel_back(cx - y, cy - x, color);
+        put_pixel_back(cx + y, cy - x, color);
+        put_pixel_back(cx + x, cy - y, color);
+
+        y++;
+
+        if (err < 0) {
+            err += 2*y + 1;
+        } else {
+            x--;
+            err += 2*(y - x) + 1;
+        }
+    }
+}
+
+void draw_circle_thick(
+    int cx,
+    int cy,
+    int radius,
+    int thickness,
+    USHORT color) {
+        
+    //if (radius <= 0 || thickness <= 0)
+    //return;
+
+    int half = 1; //thickness / 2;
+    int r_start = radius - half;
+    int r_end   = radius + (thickness - half - 1);
+
+    if (r_start < 1)
+        r_start = 1;
+    
+    int r = 42;
+    //for (; r <= r_end; ++r)
+    {
+        draw_circle(cx, cy, r, color);
+    }
+}
+
 void gfx_clear(USHORT color)
 {
     UINT size = (UINT)back_pitch_pixels * lfb_yres;
@@ -300,6 +359,20 @@ void gfx_rect_fill(
         for (int xx = 0; xx < w; xx++)
         row[xx] = color;
     }
+}
+
+void gfx_rect_frame(
+    USHORT x,
+    USHORT y,
+    USHORT w, 
+    USHORT h,
+    USHORT thick,
+    USHORT color) {
+        
+    gfx_rect_fill(x, y, w, thick, color);                 // oben
+    gfx_rect_fill(x, y+h-thick, w, thick, color);         // unten
+    gfx_rect_fill(x, y, thick, h, color);                 // links
+    gfx_rect_fill(x+w-thick, y, thick, h, color);         // rechts
 }
 
 //extern void init_vbe (void);
@@ -358,6 +431,18 @@ void user_program_1(void)
     draw_line_thick(50, 300, 300, 450, blue,  8);  // sehr dick
 
     gfx_rect_fill(300, 300, 100, 42, green);
+    
+    gfx_rect_fill (50, 50, 300, 200,    rgb565(0  , 120, 255));  // Block
+    gfx_rect_frame(50, 50, 300, 200, 4, rgb565(255, 255, 255));  // Rahmen
+    
+    
+    // dünn
+    draw_circle_thick(200, 150, 50, 1, red);
+    // mittel
+    //draw_circle_thick(400, 300, 80, 4, green);
+    // sehr dick
+    //draw_circle_thick(600, 400, 60, 8, blue);
+    
     // alles auf einmal anzeigen
     gfx_present();
     
