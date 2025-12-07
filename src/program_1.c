@@ -65,6 +65,17 @@ ULONG   lfb_phys  = 0;
 static UINT* backbuffer        = 0;  // 16-bpp-Backbuffer
 static UINT  back_pitch_pixels = 0;  // in Pixeln
 
+typedef struct {
+    int x;
+    int y;
+} FillPoint;
+
+// 800*600 = 480000 → etwas Reserve
+#define FILL_STACK_MAX 500000
+
+static FillPoint fill_stack[FILL_STACK_MAX];
+static int       fill_sp = 0;
+
 void vbe_read_modeinfo_early(void)
 {
     printformat("VBE: 0x%x\n", lfb_base);
@@ -119,6 +130,24 @@ void gfx_init_backbuffer(void)
     backbuffer[i] = 0;
 }
 
+/*
+void ff_push(int x, int y)
+{
+    if (fill_sp >= FILL_STACK_MAX) return;
+    fill_stack[fill_sp].x = x;
+    fill_stack[fill_sp].y = y;
+    fill_sp++;
+}
+/*
+int ff_pop(int* x, int* y)
+{
+    if (fill_sp <= 0) return 0;
+    fill_sp--;
+    *x = fill_stack[fill_sp].x;
+    *y = fill_stack[fill_sp].y;
+    return 1;
+}*/
+
 void gfx_present(void)
 {
     // Zeile für Zeile kopieren (falls pitch != xres*2)
@@ -136,10 +165,22 @@ void gfx_present(void)
     }
 }
 
+USHORT get_pixel_back(
+    int x,
+    int y) {
+        
+    if (x < 0 || y < 0 || x >= (int)lfb_xres || y >= (int)lfb_yres)
+        return 0;
+    
+    UINT index = (UINT)y * back_pitch_pixels + (UINT)x;
+    return backbuffer[index];
+}
+
 void put_pixel(
-    USHORT x,
-    USHORT y,
+    int x,
+    int y,
     USHORT color) {
+    
     if (x >= lfb_xres || y >= lfb_yres)
     return;
 
@@ -150,8 +191,8 @@ void put_pixel(
     *p = color;
 }
 void put_pixel_back(
-    USHORT x,
-    USHORT y,
+    int x,
+    int y,
     USHORT color) {
         
     if (x < 0 || y < 0 || x >= (int)lfb_xres || y >= (int)lfb_yres)
@@ -162,9 +203,9 @@ void put_pixel_back(
 }
 
 void put_thick_pixel(
-    USHORT x,
-    USHORT y,
-    USHORT thickness,
+    int x,
+    int y,
+    int thickness,
     USHORT color) {
         
     if (thickness <= 1) {
@@ -194,9 +235,9 @@ void put_thick_pixel(
 }
 
 void put_thick_pixel_back(
-    USHORT x,
-    USHORT y,
-    USHORT thickness,
+    int x,
+    int y,
+    int thickness,
     USHORT color) {
         
     if (thickness <= 1) {
@@ -225,10 +266,10 @@ void put_thick_pixel_back(
 }
 
 void draw_line_thick(
-    USHORT x0, USHORT y0,
-    USHORT x1, USHORT y1,
+    int x0, int y0,
+    int x1, int y1,
     USHORT color,
-    USHORT thickness) {
+    int thickness) {
         
     int dx = x1 - x0;
     int dy = y1 - y0;
@@ -288,8 +329,8 @@ void draw_circle(
         put_pixel_back(cx + x, cy + y, color);
         put_pixel_back(cx + y, cy + x, color);
         put_pixel_back(cx - y, cy + x, color);
-        //put_pixel_back(cx - x, cy + y, color);  // <--- not commented => crash
-        //put_pixel_back(cx - x, cy - y, color);
+        put_pixel_back(cx - x, cy + y, color);  // <--- not commented => crash
+        put_pixel_back(cx - x, cy - y, color);
         put_pixel_back(cx - y, cy - x, color);
         put_pixel_back(cx + y, cy - x, color);
         put_pixel_back(cx + x, cy - y, color);
@@ -315,15 +356,14 @@ void draw_circle_thick(
     //if (radius <= 0 || thickness <= 0)
     //return;
 
-    int half = 1; //thickness / 2;
+    int half = thickness / 2;
     int r_start = radius - half;
     int r_end   = radius + (thickness - half - 1);
 
     if (r_start < 1)
         r_start = 1;
     
-    int r = 42;
-    //for (; r <= r_end; ++r)
+    for (int r = 1; r <= r_end; ++r)
     {
         draw_circle(cx, cy, r, color);
     }
@@ -338,10 +378,10 @@ void gfx_clear(USHORT color)
 }
 
 void gfx_rect_fill(
-    USHORT x,
-    USHORT y,
-    USHORT w,
-    USHORT h,
+    int x,
+    int y,
+    int w,
+    int h,
     USHORT color) {
         
     if (x < 0) { w += x; x = 0; }
@@ -362,11 +402,11 @@ void gfx_rect_fill(
 }
 
 void gfx_rect_frame(
-    USHORT x,
-    USHORT y,
-    USHORT w, 
-    USHORT h,
-    USHORT thick,
+    int x,
+    int y,
+    int w, 
+    int h,
+    int thick,
     USHORT color) {
         
     gfx_rect_fill(x, y, w, thick, color);                 // oben
@@ -439,9 +479,9 @@ void user_program_1(void)
     // dünn
     draw_circle_thick(200, 150, 50, 1, red);
     // mittel
-    //draw_circle_thick(400, 300, 80, 4, green);
+    draw_circle_thick(400, 300, 80, 4, green);
     // sehr dick
-    //draw_circle_thick(600, 400, 60, 8, blue);
+    draw_circle_thick(600, 400, 60, 8, blue);
     
     // alles auf einmal anzeigen
     gfx_present();
