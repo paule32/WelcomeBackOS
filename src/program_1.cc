@@ -61,11 +61,6 @@ USHORT  lfb_xres  = 0;
 USHORT  lfb_yres  = 0;
 UCHAR   lfb_bpp   = 0;
 
-ULONG   lfb_phys  = 0;
-
-static UINT backbuffer[0xA000]   ;  // 16-bpp-Backbuffer
-static UINT back_pitch_pixels = 0;  // in Pixeln
-
 void vbe_read_modeinfo_early(void)
 {
     printformat((char*)"VBE: 0x%x\n", lfb_base);
@@ -87,48 +82,6 @@ extern "C" void vbe_init_pm(void)
     lfb_bpp   = mi->BitsPerPixel;
     
     vbe_read_modeinfo_early();
-}
-
-void gfx_init_backbuffer(void)
-{
-    // 16bpp -> 2 Bytes pro Pixel
-    back_pitch_pixels = lfb_pitch / 2;
-
-    // Backbuffer in normalem RAM – hier einfache, statische Variante:
-    // Achtung: 800*600*2 = 960000 Bytes ~ 0,9 MB
-    /*backbuffer = (USHORT*)k_malloc(
-        (UINT)back_pitch_pixels * lfb_yres * sizeof(USHORT),
-        0, 0
-    );*/
-
-    //if (!backbuffer)
-    {
-        // notfalls direkt im LFB weiterzeichnen
-        // oder Fehlermeldung
-        //return;
-    }
-
-    // Bildschirm & Backbuffer löschen
-    UINT size = (UINT)back_pitch_pixels * lfb_yres;
-    for (UINT i = 0; i < size; ++i)
-    backbuffer[i] = 0;
-}
-
-void gfx_present(void)
-{
-    // Zeile für Zeile kopieren (falls pitch != xres*2)
-    for (USHORT y = 0; y < lfb_yres; ++y) {
-        // Quelle im Backbuffer (in Pixeln)
-        UINT* src = &backbuffer[(UINT)y * back_pitch_pixels];
-
-        // Ziel im LFB (in Bytes)
-        UINT dst_off = (UINT)y * lfb_pitch;
-        volatile USHORT* dst = (volatile USHORT*)(lfb_base + dst_off);
-
-        for (USHORT x = 0; x < lfb_xres; ++x) {
-            dst[x] = src[x];
-        }
-    }
 }
 
 USHORT rgb565(UCHAR r, UCHAR g, UCHAR b)
@@ -360,14 +313,6 @@ void gfx_drawCircleFill(
     }
 }
 
-void gfx_clear(USHORT color)
-{
-    UINT size = (UINT)back_pitch_pixels * lfb_yres;
-    
-    for (UINT i = 0; i < size; i++)
-    backbuffer[i] = color;
-}
-
 void gfx_rectFill(
     int x,
     int y,
@@ -411,8 +356,9 @@ void gfx_rectFrame(
     gfx_rectFill(x+w-thick, y, thick, h, color);         // rechts
 }
 
-//extern void init_vbe (void);
-//extern void start_gui(void);
+void gfx_clear(USHORT color) {
+    gfx_rectFill(0,0,lfb_xres,lfb_yres,color);
+}
 
 void call_002(void)
 {
@@ -429,8 +375,6 @@ extern "C" void user_program_1(void)
         putch('O');
     }
     set_cursor(0, 0);*/
-    
-    gfx_init_backbuffer();
     
     USHORT red, green, blue;
     
@@ -458,11 +402,6 @@ extern "C" void user_program_1(void)
     gfx_drawLine(50, 300, 300, 450, blu, 7);
 #endif
     
-    
-    // Backbuffer löschen
-    //for (UINT i = 0; i < (UINT)back_pitch_pixels * lfb_yres; ++i)
-    //    backbuffer[i] = 0;
-
     red   = rgb565(255, 0,   0);
     green = rgb565(0,   255, 0);
     blue  = rgb565(0,   0,   255);
@@ -491,10 +430,13 @@ extern "C" void user_program_1(void)
     
     call_002();
     
-    //gfx_rectFill (30, 350, 20, 100,    rgb565(40  , 120, 255));  // Block
-    //gfx_rectFill (50, 350, 20, 100,    rgb565(40  , 120, 255));  // Block
-    // alles auf einmal anzeigen
-    //gfx_present();
+    gfx_rectFill (30, 350, 20, 100,    rgb565(40  , 120, 255));  // Block
+    gfx_rectFill (50, 350, 20, 100,    rgb565(40  , 120, 255));  // Block
+    
+    
+    gfx_putPixel(100, 50, red  );
+    gfx_putPixel(101, 50, green);
+//    gfx_putPixel(102, 50, blue );
     
     for(;;);
     //init_vbe();
