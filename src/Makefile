@@ -13,7 +13,9 @@ MKDIR    := mkdir
 STRIP    := strip
 COPY     := cp
 
-CC       := $(CROSS)gcc
+GCC      := $(CROSS)gcc
+CPP      := $(CROSS)g++
+
 LD       := $(CROSS)ld
 OBJCOPY  := $(CROSS)objcopy
 
@@ -25,6 +27,7 @@ CFLAGS   := -m32 -O0 -ffreestanding -fno-stack-protector -fno-builtin   \
             -mno-ms-bitfields -Wno-unused-variable                      \
             -Wno-unused-value -Wno-unused-parameter -Wno-sign-compare   \
             -I../src/include
+CPPFLAGS := -std=c++20
 
 LDFLAGS  := -nostdlib -T ../src/kernel.ld -Map ../bin/kernel.map
 ASMFLAGS := -f win32 -O2 -DDOS_MODE=32
@@ -59,7 +62,7 @@ SRCC := $(SRC)/ckernel.c            \
         $(SRC)/timer.c              \
         $(SRC)/util.c               \
         $(SRC)/video.c              \
-        $(SRC)/program_1.c
+        $(SRC)/program_1.cc
 
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the C-kernel ...
@@ -107,7 +110,10 @@ $(BIN)/BOOT2.SYS: $(SRC)/boot2.asm
 # compile all *.c files to *.o bject files ...
 # -----------------------------------------------------------------------------
 $(OBJ)/%.o: $(SRC)/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(GCC) $(CFLAGS) -c $< -o $@
+    
+$(OBJ)/%.o: $(SRC)/%.cc
+	$(CPP) $(CFLAGS) -c $< -o $@
 
 # -----------------------------------------------------------------------------
 # compile all *.asm files to *.o bject files ...
@@ -138,7 +144,7 @@ $(SRC)/initrd.dat: $(BIN)/INITRD.EXE
 #    $(SRC)/content/program.elf shell
 
 $(BIN)/INITRD.EXE: $(OBJ)/make_initrd.o
-	$(CC) -m32 -mconsole -O2 -Wall -Wextra -o $@ $<
+	$(GCC) -m32 -mconsole -O2 -Wall -Wextra -o $@ $<
 	$(STRIP) $@
 
 $(BIN)/KERNEL.SYS: $(OBJ)/kernel.o

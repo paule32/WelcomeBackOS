@@ -12,7 +12,7 @@ typedef unsigned int   UINT;
 typedef unsigned short USHORT;
 typedef unsigned long  ULONG;
 
-extern void* placement_address;
+extern ULONG placement_address;
 
 #define ASSERT(b) ((b) ? (void)0 : panic_assert(__FILE__, __LINE__, #b))
 extern void panic_assert(const char* file, ULONG line, const char* desc);
@@ -64,6 +64,9 @@ typedef struct regs
 }registers_t;
 
 // video.c
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern void k_clear_screen();
 extern void settextcolor(unsigned char forecolor, unsigned char backcolor);
 extern void putch(char c);
@@ -79,6 +82,9 @@ extern void move_cursor_end();
 extern void save_cursor();
 extern void restore_cursor();
 extern void printformat (char *args, ...);
+#ifdef __cplusplus
+};
+#endif
 
 // timer.c
 extern void timer_handler(struct regs* r);

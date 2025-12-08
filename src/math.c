@@ -21,3 +21,16 @@ int k_power(int base,int n)
 int k_abs(int i) {
     return i < 0 ? -i : i;
 }
+
+double k_sqrt(double n) {
+    if (n < 0) return -1; // Fehlerwert für negative Zahlen
+
+    double x = n;
+    double last = 0.0;
+
+    while (x != last) {
+        last = x;
+        x = 0.5 * (x + n / x);
+    }
+    return x;
+}

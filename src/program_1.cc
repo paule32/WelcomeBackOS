@@ -3,14 +3,15 @@
 // \note  (c) 2025 by Jens Kallup - paule32
 //        all rights reserved.
 // ---------------------------------------------------------------------------
-#include "os.h"
-#include "kheap.h"
-#include "task.h"
-#include "initrd.h"
-#include "syscall.h"
-#include "shared_pages.h"
-#include "flpydsk.h"
-#include "vbe.h"
+# include "os.h"
+# include "kheap.h"
+# include "task.h"
+# include "initrd.h"
+# include "syscall.h"
+# include "shared_pages.h"
+# include "flpydsk.h"
+# include "vbe.h"
+# include "math.h"
 
 typedef struct {
     USHORT ModeAttributes;
@@ -62,31 +63,20 @@ UCHAR   lfb_bpp   = 0;
 
 ULONG   lfb_phys  = 0;
 
-static UINT* backbuffer        = 0;  // 16-bpp-Backbuffer
-static UINT  back_pitch_pixels = 0;  // in Pixeln
-
-typedef struct {
-    int x;
-    int y;
-} FillPoint;
-
-// 800*600 = 480000 → etwas Reserve
-#define FILL_STACK_MAX 500000
-
-static FillPoint fill_stack[FILL_STACK_MAX];
-static int       fill_sp = 0;
+static UINT backbuffer[0xA000]   ;  // 16-bpp-Backbuffer
+static UINT back_pitch_pixels = 0;  // in Pixeln
 
 void vbe_read_modeinfo_early(void)
 {
-    printformat("VBE: 0x%x\n", lfb_base);
-    printformat("X=%d Y=%d BPP=%d\n",
+    printformat((char*)"VBE: 0x%x\n", lfb_base);
+    printformat((char*)"X=%d Y=%d BPP=%d\n",
                 lfb_xres,
                 lfb_yres,
                 lfb_bpp
     );
 }
 
-void vbe_init_pm(void)
+extern "C" void vbe_init_pm(void)
 {
     const VbeModeInfo* mi = VBE_MODE_INFO_PTR;
 
@@ -99,15 +89,6 @@ void vbe_init_pm(void)
     vbe_read_modeinfo_early();
 }
 
-USHORT rgb565(UCHAR r, UCHAR g, UCHAR b)
-{
-    USHORT R = (r >> 3) & 0x1F;  // 5 Bit
-    USHORT G = (g >> 2) & 0x3F;  // 6 Bit
-    USHORT B = (b >> 3) & 0x1F;  // 5 Bit
-    
-    return (USHORT)((R << 11) | (G << 5) | B);
-}
-
 void gfx_init_backbuffer(void)
 {
     // 16bpp -> 2 Bytes pro Pixel
@@ -115,39 +96,22 @@ void gfx_init_backbuffer(void)
 
     // Backbuffer in normalem RAM – hier einfache, statische Variante:
     // Achtung: 800*600*2 = 960000 Bytes ~ 0,9 MB
-    backbuffer = (UINT*)k_malloc(
-        back_pitch_pixels * lfb_yres * sizeof(UINT),
+    /*backbuffer = (USHORT*)k_malloc(
+        (UINT)back_pitch_pixels * lfb_yres * sizeof(USHORT),
         0, 0
-    );
+    );*/
 
-    if (!backbuffer) {
+    //if (!backbuffer)
+    {
         // notfalls direkt im LFB weiterzeichnen
         // oder Fehlermeldung
-        return;
+        //return;
     }
 
     // Bildschirm & Backbuffer löschen
     UINT size = (UINT)back_pitch_pixels * lfb_yres;
     for (UINT i = 0; i < size; ++i)
     backbuffer[i] = 0;
-}
-
-
-void ff_push(int x, int y)
-{
-    if (fill_sp >= FILL_STACK_MAX) return;
-    fill_stack[fill_sp].x = x;
-    fill_stack[fill_sp].y = y;
-    fill_sp++;
-}
-
-int ff_pop(int* x, int* y)
-{
-    if (fill_sp <= 0) return 0;
-    fill_sp--;
-    *x = fill_stack[fill_sp].x;
-    *y = fill_stack[fill_sp].y;
-    return 1;
 }
 
 void gfx_present(void)
@@ -159,57 +123,84 @@ void gfx_present(void)
 
         // Ziel im LFB (in Bytes)
         UINT dst_off = (UINT)y * lfb_pitch;
-        volatile UINT* dst = (volatile UINT*)(lfb_base + dst_off);
+        volatile USHORT* dst = (volatile USHORT*)(lfb_base + dst_off);
 
-        for (UINT x = 0; x < lfb_xres; ++x) {
+        for (USHORT x = 0; x < lfb_xres; ++x) {
             dst[x] = src[x];
         }
     }
 }
 
-USHORT get_pixel_back(
-    int x,
-    int y) {
-        
-    if (x < 0 || y < 0 || x >= (int)lfb_xres || y >= (int)lfb_yres)
-    return 0;
+USHORT rgb565(UCHAR r, UCHAR g, UCHAR b)
+{
+    USHORT R = (r >> 3) & 0x1F;  // 5 Bit
+    USHORT G = (g >> 2) & 0x3F;  // 6 Bit
+    USHORT B = (b >> 3) & 0x1F;  // 5 Bit
     
-    UINT index = (UINT)y * back_pitch_pixels + (UINT)x;
-    return backbuffer[index];
+    return (USHORT)((R << 11) | (G << 5) | B);
 }
 
-void put_pixel(
-    int x,
+void gfx_hLine(
+    int x0,
+    int x1,
     int y,
     USHORT color) {
-    
-    if (x < 0 || y < 0 || x >= (int)lfb_xres || y >= (int)lfb_yres)
+        
+    if (y < 0 || y >= lfb_yres)
     return;
 
-    UINT index = (UINT)y * back_pitch_pixels + (UINT)x;
-    backbuffer[index] = color;
+    if (x0 > x1) {
+        int t = x0; x0 = x1; x1 = t;
+    }
+
+    if (x1 < 0 || x0 >= lfb_xres)
+    return;
+
+    if (x0 < 0)         x0 = 0;
+    if (x1 >= lfb_xres) x1 = lfb_xres - 1;
+
+    volatile USHORT* row = (volatile USHORT*)(lfb_base + (UINT)y * (UINT)lfb_pitch);
+
+    for (int x = x0; x <= x1; ++x)
+    row[x] = color;
 }
 
-void put_pixel_back(
+USHORT gfx_getPixel(
+    int x,
+    int y)
+{
+    // Optional: Bounds-Check
+    if (x < 0 || y < 0 || x >= lfb_xres || y >= lfb_yres)
+        return 0;   // oder irgendein Fehlerwert
+
+    // Zeilenanfang in Bytes: y * pitch
+    // Dann x * 2 (weil 2 Bytes pro Pixel)
+    UINT base_off = (UINT)y * (UINT)lfb_pitch + (UINT)x * 2;
+
+    volatile USHORT* p = (volatile USHORT*)(lfb_base + base_off);
+    return *p;
+}
+
+void gfx_putPixel(
     int x,
     int y,
     USHORT color) {
         
-    if (x < 0 || y < 0 || x >= (int)lfb_xres || y >= (int)lfb_yres)
-        return;
+    if (x < 0 || y < 0 || x >= lfb_xres || y >= lfb_yres)
+    return;
 
-    UINT index = (UINT)y * back_pitch_pixels + (UINT)x;
-    backbuffer[index] = color;
+    volatile USHORT* row = (volatile USHORT*)(lfb_base + (UINT)y * (UINT)lfb_pitch);
+    row[x] = color;
 }
 
-void put_thick_pixel(
+void gfx_putPixel(
     int x,
     int y,
     int thickness,
     USHORT color) {
         
     if (thickness <= 1) {
-        put_pixel(x, y, color);
+        gfx_putPixel(x, y, color);
         return;
     }
 
@@ -234,38 +225,7 @@ void put_thick_pixel(
     }
 }
 
-void put_thick_pixel_back(
-    int x,
-    int y,
-    int thickness,
-    USHORT color) {
-        
-    if (thickness <= 1) {
-        put_pixel_back(x, y, color);
-        return;
-    }
-
-    int half = thickness / 2;
-    int y0 = y - half;
-    int y1 = y + half;
-    int x0 = x - half;
-    int x1 = x + half;
-
-    if (y0 < 0) y0 = 0;
-    if (x0 < 0) x0 = 0;
-    if (y1 >= (int)lfb_yres) y1 = lfb_yres - 1;
-    if (x1 >= (int)lfb_xres) x1 = lfb_xres - 1;
-
-    for (int yy = y0; yy <= y1; ++yy) {
-        UINT row_index = (UINT)yy * back_pitch_pixels + (UINT)x0;
-        UINT* p = &backbuffer[row_index];
-        for (int xx = x0; xx <= x1; ++xx) {
-            *p++ = color;
-        }
-    }
-}
-
-void draw_line_thick(
+void gfx_drawLine(
     int x0, int y0,
     int x1, int y1,
     USHORT color,
@@ -286,7 +246,7 @@ void draw_line_thick(
         // flache Linie
         err = dx / 2;
         for (int i = 0; i <= dx; ++i) {
-            put_thick_pixel_back(x0, y0, thickness, color);
+            gfx_putPixel(x0, y0, thickness, color);
 
             x0 += sx;
             err -= dy;
@@ -299,7 +259,7 @@ void draw_line_thick(
         // steile Linie
         err = dy / 2;
         for (int i = 0; i <= dy; ++i) {
-            put_thick_pixel_back(x0, y0, thickness, color);
+            gfx_putPixel(x0, y0, thickness, color);
 
             y0 += sy;
             err -= dx;
@@ -311,7 +271,7 @@ void draw_line_thick(
     }
 }
 
-void draw_circle(
+void gfx_drawCircle(
     int cx,
     int cy,
     int radius,
@@ -326,14 +286,14 @@ void draw_circle(
     while (x >= y)
     {
         // 8 symmetrische Punkte
-        put_pixel_back(cx + x, cy + y, color);
-        put_pixel_back(cx + y, cy + x, color);
-        put_pixel_back(cx - y, cy + x, color);
-        put_pixel_back(cx - x, cy + y, color);  // <--- not commented => crash
-        put_pixel_back(cx - x, cy - y, color);
-        put_pixel_back(cx - y, cy - x, color);
-        put_pixel_back(cx + y, cy - x, color);
-        put_pixel_back(cx + x, cy - y, color);
+        gfx_putPixel(cx + x, cy + y, color);
+        gfx_putPixel(cx + y, cy + x, color);
+        gfx_putPixel(cx - y, cy + x, color);
+        gfx_putPixel(cx - x, cy + y, color);  // <--- not commented => crash
+        gfx_putPixel(cx - x, cy - y, color);
+        gfx_putPixel(cx - y, cy - x, color);
+        gfx_putPixel(cx + y, cy - x, color);
+        gfx_putPixel(cx + x, cy - y, color);
 
         y++;
 
@@ -346,7 +306,7 @@ void draw_circle(
     }
 }
 
-void draw_circle_thick(
+void gfx_drawCircle(
     int cx,
     int cy,
     int radius,
@@ -365,7 +325,38 @@ void draw_circle_thick(
     
     for (int r = 1; r <= r_end; ++r)
     {
-        draw_circle(cx, cy, r, color);
+        gfx_drawCircle(cx, cy, r, color);
+    }
+}
+
+void gfx_drawCircleFill(
+    int cx,
+    int cy,
+    int r,
+    USHORT color) {
+
+    if (r <= 0)
+    return;
+
+    int r2 = r * r;
+
+    for (int dy = -r; dy <= r; ++dy) {
+        int y = cy + dy;
+        if (y < 0 || y >= lfb_yres)
+        continue;
+
+        int dy2 = dy * dy;
+        if (dy2 > r2)
+        continue;
+
+        int dx = 1; //(int)(k_sqrt((double)(r2 - dy2)) + 0.5); // leicht gerundet
+
+        int x0 = cx - dx;
+        int x1 = cx + dx;
+
+        for (int x = x0; x <= x1; ++x) {
+            gfx_putPixel(x, y, color);
+        }
     }
 }
 
@@ -377,31 +368,36 @@ void gfx_clear(USHORT color)
     backbuffer[i] = color;
 }
 
-void gfx_rect_fill(
+void gfx_rectFill(
     int x,
     int y,
     int w,
     int h,
     USHORT color) {
         
+    // --- Clipping ---
     if (x < 0) { w += x; x = 0; }
     if (y < 0) { h += y; y = 0; }
-    
-    if (x + w > lfb_xres) w = lfb_xres-x;
-    if (y + h > lfb_yres) h = lfb_yres-y;
-    
-    if (w <= 0 || h <= 0)
-    return;
 
-    for (int yy = y; yy < y + h; yy++) {
-        UINT  pos = (UINT)yy * back_pitch_pixels + x;
-        UINT* row = &backbuffer[pos];
-        for (int xx = 0; xx < w; xx++)
-        row[xx] = color;
+    if (x + w > lfb_xres) w = lfb_xres - x;
+    if (y + h > lfb_yres) h = lfb_yres - y;
+
+    if (w <= 0 || h <= 0)
+        return;
+
+    // --- Füllen ---
+    for (int yy = y; yy < y + h; ++yy) {
+        // Startadresse der Zeile yy, Pixel x
+        UINT base_off = (UINT)yy * (UINT)lfb_pitch + (UINT)x * 2; // 2 Bytes pro Pixel (16-bit)
+        volatile USHORT* p = (volatile USHORT*)(lfb_base + base_off);
+
+        for (int xx = 0; xx < w; ++xx) {
+            *p++ = color;
+        }
     }
 }
 
-void gfx_rect_frame(
+void gfx_rectFrame(
     int x,
     int y,
     int w, 
@@ -409,16 +405,21 @@ void gfx_rect_frame(
     int thick,
     USHORT color) {
         
-    gfx_rect_fill(x, y, w, thick, color);                 // oben
-    gfx_rect_fill(x, y+h-thick, w, thick, color);         // unten
-    gfx_rect_fill(x, y, thick, h, color);                 // links
-    gfx_rect_fill(x+w-thick, y, thick, h, color);         // rechts
+    gfx_rectFill(x, y, w, thick, color);                 // oben
+    gfx_rectFill(x, y+h-thick, w, thick, color);         // unten
+    gfx_rectFill(x, y, thick, h, color);                 // links
+    gfx_rectFill(x+w-thick, y, thick, h, color);         // rechts
 }
 
 //extern void init_vbe (void);
 //extern void start_gui(void);
 
-void user_program_1(void)
+void call_002(void)
+{
+    gfx_rectFill (350, 350, 200, 100,    rgb565(0  , 120, 255));  // Block
+    gfx_rectFill (30, 350, 20, 100,    rgb565(40  , 120, 255));  // Block
+}
+extern "C" void user_program_1(void)
 {
     /*
     k_clear_screen();
@@ -438,53 +439,62 @@ void user_program_1(void)
     blue  = rgb565(0, 0, 255);
 
     // drei Pixel zeichnen
-    put_pixel_back(100, 50, red  );
-    put_pixel_back(101, 50, green);
-    put_pixel_back(102, 50, blue );
+    gfx_putPixel(100, 50, red  );
+    gfx_putPixel(101, 50, green);
+    gfx_putPixel(102, 50, blue );
 
     for (int y = 1; y < 50; y++) {
         for (int x = 1; x < 20; x++) {
-            put_pixel_back(120+x, 150+y, green);
+            gfx_putPixel(120+x, 150+y, green);
         }
     }
 
 #if 0
     // dünne Linie
-    draw_line_thick(50,  50, 300, 100, red, 1);
+    gfx_drawLine(50,  50, 300, 100, red, 1);
     // mitteldick
-    draw_line_thick(50, 150, 300, 250, grn, 3);
+    gfx_drawLine(50, 150, 300, 250, grn, 3);
     // sehr dick
-    draw_line_thick(50, 300, 300, 450, blu, 7);
+    gfx_drawLine(50, 300, 300, 450, blu, 7);
 #endif
     
     
     // Backbuffer löschen
-    for (UINT i = 0; i < (UINT)back_pitch_pixels * lfb_yres; ++i)
-        backbuffer[i] = 0;
+    //for (UINT i = 0; i < (UINT)back_pitch_pixels * lfb_yres; ++i)
+    //    backbuffer[i] = 0;
 
     red   = rgb565(255, 0,   0);
     green = rgb565(0,   255, 0);
     blue  = rgb565(0,   0,   255);
 
-    draw_line_thick(50,  50, 300, 100, red,   1);  // dünn
-    draw_line_thick(50, 150, 300, 250, green, 4);  // dicker
-    draw_line_thick(50, 300, 300, 450, blue,  8);  // sehr dick
+    gfx_drawLine(50,  50, 300, 100, red,   1);  // dünn
+    gfx_drawLine(50, 150, 300, 250, green, 4);  // dicker
+    gfx_drawLine(50, 300, 300, 450, blue,  8);  // sehr dick
 
-    gfx_rect_fill(300, 300, 100, 42, green);
+    gfx_rectFill(300, 300, 100, 42, green);
     
-    gfx_rect_fill (50, 50, 300, 200,    rgb565(0  , 120, 255));  // Block
-    gfx_rect_frame(50, 50, 300, 200, 4, rgb565(255, 255, 255));  // Rahmen
+    gfx_rectFill (50, 50, 300, 200,    rgb565(0  , 120, 255));  // Block
+    gfx_rectFrame(50, 50, 300, 200, 4, rgb565(255, 255, 255));  // Rahmen
     
     
     // dünn
-    draw_circle_thick(200, 150, 50, 1, red);
+    gfx_drawCircle(200, 150, 50, 1, red);
     // mittel
-    draw_circle_thick(400, 300, 80, 4, green);
+    gfx_drawCircle(400, 300, 80, 4, green);
     // sehr dick
-    draw_circle_thick(600, 400, 60, 8, blue);
+    gfx_drawCircle(600, 400, 60, 8, blue);
     
+    gfx_drawCircle(200, 200, 60, 8, blue);
+    //gfx_drawCircleFill(260, 200, 50, red);
+    
+    gfx_rectFill (50, 50, 300, 100,    rgb565(0  , 120, 255));  // Block
+    
+    call_002();
+    
+    //gfx_rectFill (30, 350, 20, 100,    rgb565(40  , 120, 255));  // Block
+    //gfx_rectFill (50, 350, 20, 100,    rgb565(40  , 120, 255));  // Block
     // alles auf einmal anzeigen
-    gfx_present();
+    //gfx_present();
     
     for(;;);
     //init_vbe();

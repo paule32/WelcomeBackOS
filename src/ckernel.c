@@ -45,7 +45,7 @@ static void init()
     kheap = (void*)0;
     kernel_directory  = 0;
     current_directory = 0;
-    placement_address = (ULONG*)&_end;
+    //placement_address = (ULONG*)&_end;
 }
 
 int kmain()
