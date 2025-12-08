@@ -12,8 +12,6 @@
 #define HEAP_MAGIC          0x123890AB
 #define HEAP_MIN_SIZE       0x70000
 
-extern ULONG placement_address;
-
 typedef struct
 {
     ULONG magic;         // Magic number, used for error checking and identification.

@@ -1,3 +1,4 @@
+#include "os.h"
 #include "paging.h"
 #include "kheap.h"
 #include "vbe.h"
@@ -6,10 +7,10 @@ ULONG ULONG_MAX = 0xFFFFFFFF;
 page_directory_t* kernel_directory  = 0;
 page_directory_t* current_directory = 0;
 
-ULONG placement_address = 0x200000;
 extern heap_t* kheap;
 extern ULONG lfb_phys;
 
+void* placement_address;
 // A bitset of frames - used or free
 ULONG*  frames; // pointer to the bitset (functions: set/clear/test)
 
@@ -36,17 +37,17 @@ ULONG k_malloc(ULONG size, unsigned char align, ULONG* phys)
     }
     else
     {
-        if( !(placement_address == (placement_address & 0xFFFFF000) ) )
+        if( !((UINT)placement_address == ((UINT)placement_address & 0xFFFFF000) ) )
         {
-            placement_address &= 0xFFFFF000;
+            //(UINT)placement_address = (UINT)placement_address & 0xFFFFF000;
             placement_address += PAGESIZE;
         }
 
         if( phys )
         {
-            *phys = placement_address;
+            *phys = (UINT)placement_address;
         }
-        ULONG temp = placement_address;
+        ULONG temp = (ULONG)placement_address;
         placement_address += size;     // new placement_address is increased
 
         ///
@@ -170,7 +171,7 @@ void paging_install()
     // map (phys addr <---> virt addr) from 0x0 to the end of used memory
     // Allocate at least 0x2000 extra, that the kernel heap, tasks, and kernel stacks can be initialized properly
     i=0;
-    while( i < placement_address + 0x6000 ) //important to add more!
+    while( i < (ULONG)placement_address + 0x6000 ) //important to add more!
     {
         if( ((i>=0xb8000) && (i<=0xbf000)) || ((i>=0x17000) && (i<0x18000)) )
         {

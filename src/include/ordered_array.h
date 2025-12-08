@@ -14,8 +14,6 @@ typedef struct
     lessthan_predicate_t less_than;
 } ordered_array_t;
 
-extern ULONG placement_address;
-
 char standard_lessthan_predicate(type_t a, type_t b);
 
 ordered_array_t create_ordered_array  (ULONG max_size, lessthan_predicate_t less_than);

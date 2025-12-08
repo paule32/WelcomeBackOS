@@ -28,7 +28,6 @@ unsigned char buf[FILEBUFFERSIZE];
 unsigned char flag1 = 0; // status of user-space-program
 Mem_Chunk_t Mem_Chunk[10]; // contiguous parts of memory detected by int 15h eax = 820h
 
-extern ULONG placement_address;
 extern heap_t* kheap;
 
 extern const int DMA_BUFFER;
@@ -39,13 +38,14 @@ extern void vbe_init_pm(void);
 extern void put_pixel(USHORT, USHORT, USHORT);
 extern USHORT rgb565(UCHAR, UCHAR, UCHAR);
 extern void user_program_1(void);
+extern ULONG* _end;
 
 static void init()
 {
     kheap = (void*)0;
     kernel_directory  = 0;
     current_directory = 0;
-    placement_address = 0x200000;
+    placement_address = (ULONG*)&_end;
 }
 
 int kmain()

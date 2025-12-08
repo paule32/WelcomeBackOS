@@ -12,7 +12,7 @@ typedef unsigned int   UINT;
 typedef unsigned short USHORT;
 typedef unsigned long  ULONG;
 
-extern ULONG placement_address;
+extern void* placement_address;
 
 #define ASSERT(b) ((b) ? (void)0 : panic_assert(__FILE__, __LINE__, #b))
 extern void panic_assert(const char* file, ULONG line, const char* desc);

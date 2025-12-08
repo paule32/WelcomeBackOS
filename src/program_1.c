@@ -116,21 +116,23 @@ void gfx_init_backbuffer(void)
     // Backbuffer in normalem RAM – hier einfache, statische Variante:
     // Achtung: 800*600*2 = 960000 Bytes ~ 0,9 MB
     backbuffer = (UINT*)k_malloc(
-        back_pitch_pixels * lfb_yres * sizeof(USHORT),
+        back_pitch_pixels * lfb_yres * sizeof(UINT),
         0, 0
     );
 
     if (!backbuffer) {
         // notfalls direkt im LFB weiterzeichnen
         // oder Fehlermeldung
+        return;
     }
 
     // Bildschirm & Backbuffer löschen
-    for (UINT i = 0; i < (UINT)back_pitch_pixels * lfb_yres; ++i)
+    UINT size = (UINT)back_pitch_pixels * lfb_yres;
+    for (UINT i = 0; i < size; ++i)
     backbuffer[i] = 0;
 }
 
-/*
+
 void ff_push(int x, int y)
 {
     if (fill_sp >= FILL_STACK_MAX) return;
@@ -138,7 +140,7 @@ void ff_push(int x, int y)
     fill_stack[fill_sp].y = y;
     fill_sp++;
 }
-/*
+
 int ff_pop(int* x, int* y)
 {
     if (fill_sp <= 0) return 0;
@@ -146,7 +148,7 @@ int ff_pop(int* x, int* y)
     *x = fill_stack[fill_sp].x;
     *y = fill_stack[fill_sp].y;
     return 1;
-}*/
+}
 
 void gfx_present(void)
 {
@@ -157,9 +159,9 @@ void gfx_present(void)
 
         // Ziel im LFB (in Bytes)
         UINT dst_off = (UINT)y * lfb_pitch;
-        volatile USHORT* dst = (volatile USHORT*)(lfb_base + dst_off);
+        volatile UINT* dst = (volatile UINT*)(lfb_base + dst_off);
 
-        for (USHORT x = 0; x < lfb_xres; ++x) {
+        for (UINT x = 0; x < lfb_xres; ++x) {
             dst[x] = src[x];
         }
     }
@@ -170,7 +172,7 @@ USHORT get_pixel_back(
     int y) {
         
     if (x < 0 || y < 0 || x >= (int)lfb_xres || y >= (int)lfb_yres)
-        return 0;
+    return 0;
     
     UINT index = (UINT)y * back_pitch_pixels + (UINT)x;
     return backbuffer[index];
@@ -181,15 +183,13 @@ void put_pixel(
     int y,
     USHORT color) {
     
-    if (x >= lfb_xres || y >= lfb_yres)
+    if (x < 0 || y < 0 || x >= (int)lfb_xres || y >= (int)lfb_yres)
     return;
 
-    // offset in Bytes: y * pitch + x * 2
-    UINT offset = (UINT)y * lfb_pitch + (UINT)x * 2;
-
-    volatile USHORT* p = (volatile USHORT*)(lfb_base + offset);
-    *p = color;
+    UINT index = (UINT)y * back_pitch_pixels + (UINT)x;
+    backbuffer[index] = color;
 }
+
 void put_pixel_back(
     int x,
     int y,
@@ -227,7 +227,7 @@ void put_thick_pixel(
 
     for (int yy = y0; yy <= y1; ++yy) {
         UINT base_off = (UINT)yy * lfb_pitch + (UINT)x0 * 2;
-        volatile ULONG* p = (volatile ULONG*)(lfb_base + base_off);
+        volatile USHORT* p = (volatile USHORT*)(lfb_base + base_off);
         for (int xx = x0; xx <= x1; ++xx) {
             *p++ = color;
         }
