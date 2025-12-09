@@ -10,6 +10,5 @@ src/content/program.elf
 *.img
 *.SYS
 *.exe
-bin/kernel.map
 *.dat
 src/program.elf

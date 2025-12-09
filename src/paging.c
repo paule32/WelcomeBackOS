@@ -5,7 +5,8 @@ ULONG ULONG_MAX = 0xFFFFFFFF;
 page_directory_t* kernel_directory  = 0;
 page_directory_t* current_directory = 0;
 
-ULONG placement_address = 0x200000;
+//ULONG placement_address = 0x200000;
+ULONG placement_address;
 extern heap_t* kheap;
 
 // A bitset of frames - used or free

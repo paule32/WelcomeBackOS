@@ -38,14 +38,14 @@ extern void vbe_init_pm(void);
 extern void put_pixel(USHORT, USHORT, USHORT);
 extern USHORT rgb565(UCHAR, UCHAR, UCHAR);
 extern void user_program_1(void);
-extern ULONG* _end;
+extern void* _end;
 
 static void init()
 {
     kheap = (void*)0;
     kernel_directory  = 0;
     current_directory = 0;
-    //placement_address = (ULONG*)&_end;
+    placement_address = (ULONG)&_end;
 }
 
 int kmain()
@@ -98,7 +98,7 @@ int kmain()
     else
     {
         if(pODA->Memory_Size==0)
-           pODA->Memory_Size = 0x2000000; // 32 MB
+           pODA->Memory_Size = 0x4000000; // 32 MB
 
         printformat("\nMemory detection does not work. Estimated usable RAM: %d KB", (pODA->Memory_Size)/1024);
     }
@@ -117,7 +117,7 @@ int kmain()
     settextcolor(15,0);
     #endif
     ///
-    ULONG ramdisk_start = k_malloc(0x200000, 0, 0);
+    ULONG ramdisk_start = k_malloc(0x400000, 0, 0);
     settextcolor(15,0);
     printformat("Ram Disk at: %x\n",ramdisk_start);
 
