@@ -84,7 +84,7 @@ extern "C" void vbe_init_pm(void)
     vbe_read_modeinfo_early();
 }
 
-USHORT rgb565(UCHAR r, UCHAR g, UCHAR b)
+extern "C" USHORT rgb565(UCHAR r, UCHAR g, UCHAR b)
 {
     USHORT R = (r >> 3) & 0x1F;  // 5 Bit
     USHORT G = (g >> 2) & 0x3F;  // 6 Bit
@@ -302,7 +302,7 @@ void gfx_drawCircleFill(
         if (dy2 > r2)
         continue;
 
-        int dx = 1; //(int)(k_sqrt((double)(r2 - dy2)) + 0.5); // leicht gerundet
+        int dx = 2; //(int)(k_sqrt((double)(r2 - dy2)) + 0.5); // leicht gerundet
 
         int x0 = cx - dx;
         int x1 = cx + dx;
@@ -313,7 +313,7 @@ void gfx_drawCircleFill(
     }
 }
 
-void gfx_rectFill(
+extern "C" void gfx_rectFill(
     int x,
     int y,
     int w,
@@ -363,7 +363,7 @@ void gfx_clear(USHORT color) {
 void call_002(void)
 {
     gfx_rectFill (350, 350, 200, 100,    rgb565(0  , 120, 255));  // Block
-    gfx_rectFill (30, 350, 20, 100,    rgb565(40  , 120, 255));  // Block
+    gfx_rectFill (30, 350, 120, 100,    rgb565(140  , 120, 255));  // Block
     gfx_drawLine(50,  50, 300, 100, rgb565(255, 0, 0), 1);
 }
 extern "C" void user_program_1(void)
@@ -394,14 +394,12 @@ extern "C" void user_program_1(void)
         }
     }
 
-#if 0
     // dünne Linie
     gfx_drawLine(50,  50, 300, 100, red, 1);
     // mitteldick
-    gfx_drawLine(50, 150, 300, 250, grn, 3);
+    gfx_drawLine(50, 150, 300, 250, green, 3);
     // sehr dick
-    gfx_drawLine(50, 300, 300, 450, blu, 7);
-#endif
+    gfx_drawLine(50, 300, 300, 450, blue, 7);
     
     red   = rgb565(255, 0,   0);
     green = rgb565(0,   255, 0);
@@ -425,7 +423,7 @@ extern "C" void user_program_1(void)
     gfx_drawCircle(600, 400, 60, 8, blue);
     
     gfx_drawCircle(200, 200, 60, 8, blue);
-    //gfx_drawCircleFill(260, 200, 50, red);
+    gfx_drawCircleFill(260, 200, 50, red);
     
     gfx_rectFill (50, 50, 300, 100,    rgb565(0  , 120, 255));  // Block
     
@@ -438,7 +436,14 @@ extern "C" void user_program_1(void)
     gfx_putPixel(100, 50, red  );
     gfx_putPixel(101, 50, green);
     gfx_putPixel(102, 50, blue );
+
+    gfx_rectFill (350, 350, 200, 100,    rgb565(0  , 120, 255));  // Block
+    gfx_rectFill (230, 350, 120, 100,    rgb565(140  , 120, 255));  // Block
+    gfx_drawLine (250,  50, 300, 100, rgb565(255, 0, 0), 1);
     
+    gfx_drawCircle(260, 200, 50, red);
+    
+    gfx_rectFill (430, 150, 120, 100,    rgb565(140  , 220, 255));  // Block
     for(;;);
     //init_vbe();
     //start_gui();

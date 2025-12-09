@@ -8,7 +8,14 @@ extern USHORT          lfb_yres;
 extern UCHAR           lfb_bpp;
 extern ULONG           lfb_phys;
 
-//extern page_directory_t* kernel_directory;
-//extern page_t* get_page(ULONG addr, int make, page_directory_t* dir);
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 
-#endif
+extern void gfx_rectFill(int,int,int,int,USHORT);
+extern USHORT rgb565(UCHAR,UCHAR,UCHAR);
+
+#ifdef __cplusplus
+};
+#endif // __cplusplus
+#endif // __VBE_H__

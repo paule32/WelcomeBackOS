@@ -22,8 +22,8 @@ OBJCOPY  := $(CROSS)objcopy
 # -----------------------------------------------------------------------------
 # compiler flags ...
 # -----------------------------------------------------------------------------
-CFLAGS   := -m32 -O0 -ffreestanding -fno-stack-protector -fno-builtin   \
-            -nostdlib -nostartfiles -Wall -Wextra                       \
+CFLAGS   := -m32 -O1 -ffreestanding -fno-stack-protector -fno-builtin   \
+            -nostdlib -nostartfiles -fno-pic -Wall -Wextra              \
             -mno-ms-bitfields -Wno-unused-variable                      \
             -Wno-unused-value -Wno-unused-parameter -Wno-sign-compare   \
             -I../src/include

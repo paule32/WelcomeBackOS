@@ -1,6 +1,7 @@
-#include "os.h"
-#include "task.h"
-#include "syscall.h"
+# include "os.h"
+# include "task.h"
+# include "syscall.h"
+# include "vbe.h"
 
 extern tss_entry_t tss_entry;
 
@@ -58,6 +59,9 @@ ULONG fault_handler(ULONG esp)
 {
     ULONG retVal;
     struct regs* r = (struct regs*)esp;
+
+
+gfx_rectFill (10, 10, lfb_xres-10, 100, rgb565(255, 20, 20));
 
     if(!pODA->ts_flag)
     {

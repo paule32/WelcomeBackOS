@@ -10,7 +10,7 @@
 ENTRY(KernelStart)
 SECTIONS
 { 
-    . = 0x000400000;
+    . = 0x00040000;
     .text : {
         LONG(_kmain);
         __code_start = .;
@@ -25,29 +25,26 @@ SECTIONS
         ../obj/data.o(.text)
     }
     
-    . = ALIGN(0x1000);
     .rodata : {
         __rodata_start = .;
         *(.rodata) *(.rdata)
     }
     
-    . = ALIGN(0x1000);
     .data : {
         __data_start = .;
         *(.data)
     }
     
-    . = ALIGN(0x1000);
     .bss (NOLOAD) : {
         __bss_start = .;
         *(.bss) *(COMMON)
         __bss_end = .;
     }
     
-    __end = .;
-    
     /* reject PE-relocations, we have a flat binary */
     /DISCARD/ : {
         *(.reloc)
     }
+    
+    __end = .;
 }
