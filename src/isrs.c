@@ -61,7 +61,7 @@ ULONG fault_handler(ULONG esp)
     struct regs* r = (struct regs*)esp;
 
 
-gfx_rectFill (10, 10, lfb_xres-10, 100, rgb565(255, 20, 20));
+gfx_rectFill (10, 10, lfb_xres-20, 100, rgb565(255, 20, 20));
 
     if(!pODA->ts_flag)
     {

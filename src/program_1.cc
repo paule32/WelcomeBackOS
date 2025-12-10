@@ -12,44 +12,44 @@
 # include "flpydsk.h"
 # include "vbe.h"
 # include "math.h"
+# include "font8x16.h"
 
 typedef struct {
-    USHORT ModeAttributes;
-    UCHAR  WinAAttributes;
-    UCHAR  WinBAttributes;
-    USHORT WinGranularity;
-    USHORT WinSize;
-    USHORT WinASegment;
-    USHORT WinBSegment;
-    UINT   WinFuncPtr;
-    USHORT BytesPerScanLine;
+    USHORT  ModeAttributes;
+    UCHAR   WinAAttributes;
+    UCHAR   WinBAttributes;
+    USHORT  WinGranularity;
+    USHORT  WinSize;
+    USHORT  WinASegment;
+    USHORT  WinBSegment;
+    UINT    WinFuncPtr;
+    USHORT  BytesPerScanLine;
 
-    USHORT XResolution;
-    USHORT YResolution;
-    UCHAR  XCharSize;
-    UCHAR  YCharSize;
-    UCHAR  NumberOfPlanes;
-    UCHAR  BitsPerPixel;
-    UCHAR  NumberOfBanks;
-    UCHAR  MemoryModel;
-    UCHAR  BankSize;
-    UCHAR  NumberOfImagePages;
-    UCHAR  Reserved1;
+    USHORT  XResolution;
+    USHORT  YResolution;
+    UCHAR   XCharSize;
+    UCHAR   YCharSize;
+    UCHAR   NumberOfPlanes;
+    UCHAR   BitsPerPixel;
+    UCHAR   NumberOfBanks;
+    UCHAR   MemoryModel;
+    UCHAR   BankSize;
+    UCHAR   NumberOfImagePages;
+    UCHAR   Reserved1;
 
-    UCHAR  RedMaskSize;
-    UCHAR  RedFieldPosition;
-    UCHAR  GreenMaskSize;
-    UCHAR  GreenFieldPosition;
-    UCHAR  BlueMaskSize;
-    UCHAR  BlueFieldPosition;
-    UCHAR  RsvdMaskSize;
-    UCHAR  RsvdFieldPosition;
-    UCHAR  DirectColorModeInfo;
+    UCHAR   RedMaskSize;
+    UCHAR   RedFieldPosition;
+    UCHAR   GreenMaskSize;
+    UCHAR   GreenFieldPosition;
+    UCHAR   BlueMaskSize;
+    UCHAR   BlueFieldPosition;
+    UCHAR   RsvdMaskSize;
+    UCHAR   RsvdFieldPosition;
+    UCHAR   DirectColorModeInfo;
 
-    UINT PhysBasePtr;      // <- das Feld, das du suchst
-    UINT OffScreenMemOffset;
-    USHORT OffScreenMemSize;
-    // Rest ignoriert
+    UINT    PhysBasePtr;
+    UINT    OffScreenMemOffset;
+    USHORT  OffScreenMemSize;
 } __attribute__((packed)) VbeModeInfo;
 
 #define VBE_MODE_INFO_PTR ((const VbeModeInfo*)0x00090000)
@@ -302,7 +302,7 @@ void gfx_drawCircleFill(
         if (dy2 > r2)
         continue;
 
-        int dx = 2; //(int)(k_sqrt((double)(r2 - dy2)) + 0.5); // leicht gerundet
+        int dx = (int)(k_sqrt((double)(r2 - dy2)) + 0.5); // leicht gerundet
 
         int x0 = cx - dx;
         int x1 = cx + dx;
@@ -359,7 +359,58 @@ void gfx_rectFrame(
 void gfx_clear(USHORT color) {
     gfx_rectFill(0,0,lfb_xres,lfb_yres,color);
 }
+/*
+void draw_glyph8x16(
+    int    x,
+    int    y,
+    UINT   codepoint,
+    USHORT fg,
+    USHORT bg,
+    int    transparent_bg)
+{
+    if (codepoint > 0xFFFF)
+    return;
 
+    const unsigned char* rows = (const unsigned char*)font8x16[codepoint];
+
+    for (int row    = 0; row < 16; ++row) {
+        UINT  bits  = rows[row];
+        for(int col = 0; col < 8; ++col) {
+            int bit = (bits >> (7 - col)) & 1;
+            int px  = x + col;
+            int py  = y + row;
+
+            if (bit)
+            gfx_putPixel(px, py, fg); else if (!transparent_bg)
+            gfx_putPixel(px, py, bg);
+        }
+    }
+}
+
+void gfx_drawText8x16(
+    int x, int   y,
+    const  char *s,
+    USHORT      fg,
+    USHORT      bg,
+    int transparent_bg)
+{
+    int cx = x;
+    int cy = y;
+
+    while (*s) {
+        unsigned char c = (unsigned char)*s++;
+
+        if (c == '\n') {
+            cx = x;
+            cy += 16;
+            continue;
+        }
+
+        draw_glyph8x16(cx, cy, c, fg, bg, transparent_bg);
+        cx += 8;
+    }
+}
+*/
 void call_002(void)
 {
     gfx_rectFill (350, 350, 200, 100,    rgb565(0  , 120, 255));  // Block
@@ -443,7 +494,8 @@ extern "C" void user_program_1(void)
     
     gfx_drawCircle(260, 200, 50, red);
     
-    gfx_rectFill (430, 150, 120, 100,    rgb565(140  , 220, 255));  // Block
+    //gfx_rectFill (430, 150, 120, 100,    rgb565(140  , 220, 255));  // Block
+    //gfx_drawCircleFill(260, 200, 50, red);
     for(;;);
     //init_vbe();
     //start_gui();

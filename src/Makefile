@@ -126,7 +126,6 @@ $(OBJ)/%.o: $(SRC)/%.asm
 # -----------------------------------------------------------------------------
 $(OBJ)/kernel.o: $(OBJS) $(SRC)/kernel.ld
 	$(LD) $(LDFLAGS) -o $(OBJ)/kernel.o $(OBJS)
-#$(CC) -o $(OBJ)/kernel.o $(OBJS)
 
 # -----------------------------------------------------------------------------
 $(OBJ)/data.o: $(SRC)/initrd.dat $(SRC)/data.asm
@@ -160,7 +159,7 @@ $(BIN)/floppy.img: $(BIN)/BOOT1.SYS $(BIN)/BOOT2.SYS $(BIN)/KERNEL.SYS
         awk '{ if ($$1 == "55" && $$2 == "aa") { \
             print "OK: Bootsignatur 55 aa found."; \
             exit 0;  \
-	    } else { \
+	    }   else {   \
             print "Error: Bootsignatur incorrect. (" $$1 " " $$2 ")"; \
             exit 1;  \
 	    } }'
@@ -168,9 +167,21 @@ $(BIN)/floppy.img: $(BIN)/BOOT1.SYS $(BIN)/BOOT2.SYS $(BIN)/KERNEL.SYS
 	mcopy -i $(BIN)/floppy.img $(SRC)/content/* ::/
 
 # -----------------------------------------------------------------------------
+# prepare font ...
+# -----------------------------------------------------------------------------
+$(SRC)/unifont.hex: $(SRC)/unifont8x16.hex $(SRC)/make_unifont8x16.py
+	python3 $(SRC)/make_unifont8x16.py unifont8x16.hex font8x16.h
+
+$(SRC)/unifont8x16.hex:
+	wget --no-check-certificate \
+    https://mirrors.kernel.org/gnu/unifont/unifont-15.1.05/unifont_all-15.1.05.hex.gz
+	gunzip unifont_all-15.1.05.hex.gz
+	mv $(SRC)/unifont_all-15.1.05.hex $(SRC)/unifont8x16.hex
+
+# -----------------------------------------------------------------------------
 # create directories for output object code ...
 # -----------------------------------------------------------------------------
-config:
+config: $(SRC)/unifont.hex
 	$(MKDIR) -p $(BIN)
 	$(MKDIR) -p $(OBJ)
 
@@ -181,6 +192,8 @@ clean:
 	$(RM) -f  $(OBJ)/*.o $(OBJ)/*.coff
 	$(RM) -f  $(BIN)/*.BIN $(BIN)/*.COM $(BIN)/*.SYS $(BIN)/kernel.map
 	$(RM) -f  $(SRC)/content/*.SYS
+	$(RM) -f  $(SRC)/unifont_all-15.1.05.hex
+	$(RM) -f  $(SRC)/unifont.hex
 	$(RM) -f  $(SRC)/initrd.dat
 	$(RM) -f  $(BIN)/floppy.img
 	$(RM) -rf $(OBJ)
