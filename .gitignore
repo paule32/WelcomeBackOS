@@ -17,3 +17,8 @@ src/program.elf
 src/unifont8x16.hex
 bin/boot2.bin
 bin/boot1.bin
+src/WELCOME_README.md
+src/README_DIAGRAMS.md
+src/protectedmode.txt
+src/memorylayout.txt
+src/bootflow.txt

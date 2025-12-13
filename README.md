@@ -13,6 +13,110 @@ Dieses Projekt zeigt Schritt für Schritt, wie man:
 Damit können Entwickler ein vollständiges eigenes Betriebssystem booten – auf echten PCs, QEMU, VirtualBox usw.
 
 ---
+# 0. Diagramme
+
+
+==============================
+0.1 Boot Flow Diagram
+==============================
+
+    +----------------+
+    |     BIOS       |
+    | (real mode)    |
+    +--------+-------+
+             |
+             v
+    +--------+-------+
+    |    Stage 1     |
+    |  (0000:0000)   |
+    +--------+-------+
+             |
+             v
+    +--------+-------+
+    |    Stage 2     |
+    |  (0000:0500)   |
+    +--------+-------+
+             |
+             v
++------------+----------------+
+|  Load Kernel via INT 13h    |
+|  Enable A20, Setup GDT      |
+|  Enter Protected Mode       |
++------------+----------------+
+             |
+             v
+    +--------+-------+
+    |    Kernel      |
+    |  (PM: 0x10000) |
+    +----------------+
+
+
+================================
+0.2 Memory Layout Diagram
+================================
+
+Real Mode (1 MB Address Space)
+
+0000:0000  +---------------------------+
+           |       Stage 1             |
+           |  Loaded by BIOS (2048 B)  |
+           +---------------------------+
+0000:0500  |         Stage 2           |
+           |  Loaded by Stage 1        |
+           +---------------------------+
+0050:0000  |  Free real-mode region    |
+           +---------------------------+
+
+Protected Mode (32-bit linear memory)
+
+0x00010000 +---------------------------+
+           |        Kernel .text       |
+           |  Entry: KernelStart       |
+           +---------------------------+
+0x00020000 |        Kernel .rodata     |
+           +---------------------------+
+0x00030000 |        Kernel .data       |
+           +---------------------------+
+0x00040000 |        Kernel .bss        |
+           +---------------------------+
+           |    Heap, Paging, etc.     |
+           +---------------------------+
+
+
+=========================================
+0.3 Protected Mode Transition Diagram
+=========================================
+
+Real Mode
+   |
+   |  Enable A20
+   v
++--------------------+
+|   Load GDT         |
++--------------------+
+   |
+   | mov eax, cr0
+   | or  eax, 1      ; PE bit
+   | mov cr0, eax
+   v
++--------------------+
+|  PE active (PM)    |
++--------------------+
+   |
+   | Far jump to selector:offset
+   | jmp 0x08:pm_entry
+   v
++---------------------------+
+|  pm_entry (32-bit code)   |
++---------------------------+
+   |
+   | Jump to kernel entry
+   v
++---------------------------+
+|   KernelStart @ 0x10000   |
++---------------------------+
+
+---
 
 # 📦 1. Voraussetzungen / Downloads / Installation
 
