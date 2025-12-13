@@ -12,26 +12,27 @@ bits 16
 ; boot sector info block
 
 ; --- BIOS Parameter Block (BPB) ---
-OperatingSystemName: db "ComeBack"      ;  8 byte
+OperatingSystemName: db "MSDOS5.0"          ; OEM
+
 BytesPerSec:         dw 512
-SecPerClus:          db 1
+SecPerClus:          db 4
 ReservedSec:         dw 1
 NumFATs:             db 2
-RootEntries:         dw 224
-TotSec:              dw 2880
-MediaType:           db 0xF0
-FATSize:             dw 9
-SecPerTrack:         dw 18
-NumHeads:            dw 2
+RootEntries:         dw 512
+TotSec:              dw 0
+MediaType:           db 0xF8
+FATSize:             dw 128
+SecPerTrack:         dw 32
+NumHeads:            dw 64
 HiddenSec:           dd 0
-TotSec32:            dd 0
+TotSec32:            dd 32768
 
 ; --- Extended BPB (DOS 4.0+) ---
-DriveNum:            db 0
+DriveNum:            db 0x80
 Reserved:            db 0
 BootSig:             db 0x29
 VolumeSerialNum:     dd 0x12345678
-VolumeLabel:         db "PAULE32    "
-FileSys:             db "FAT12   "     ;  8 byte
+VolumeLabel:         db "NO NAME    "
+FileSys:             db "FAT16   "     ;  8 byte
 
 %endif

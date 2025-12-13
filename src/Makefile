@@ -5,8 +5,9 @@
 # -----------------------------------------------------------------------------
 CROSS    ?= 
 
+AS       := ../bin/nasm
+ECHO     := @echo
 EXPORT   := export
-AS       := nasm
 GZIP     := gzip
 RM       := rm
 MKDIR    := mkdir
@@ -27,6 +28,7 @@ CFLAGS   := -m32 -O1 -ffreestanding -fno-stack-protector -fno-builtin   \
             -mno-ms-bitfields -Wno-unused-variable                      \
             -Wno-unused-value -Wno-unused-parameter -Wno-sign-compare   \
             -I../src/include
+
 CPPFLAGS := -std=c++20
 
 LDFLAGS  := -nostdlib -T ../src/kernel.ld -Map ../bin/kernel.map
@@ -95,16 +97,16 @@ OBJS := $(OBJ)/ckernel.o            \
         $(OBJ)/program_1.o
 
 all: config\
-     $(OBJ)/data.o $(BIN)/BOOT2.SYS $(BIN)/floppy.img
+     $(OBJ)/data.o $(BIN)/bootcd.iso
 
 # -----------------------------------------------------------------------------
 # loader to load the system from DOS console ...
 # -----------------------------------------------------------------------------
-$(BIN)/BOOT1.SYS: $(SRC)/boot1.asm
+$(BIN)/boot1.bin: $(SRC)/boot1.asm
 	$(AS) -f bin $< -o $@
 
-$(BIN)/BOOT2.SYS: $(SRC)/boot2.asm
-	$(AS) -f bin $(SRC)/boot2.asm -o $(BIN)/BOOT2.SYS
+$(BIN)/boot2.bin: $(SRC)/boot2.asm
+	$(AS) -f bin  $(SRC)/boot2.asm -o $(BIN)/boot2.bin
 
 # -----------------------------------------------------------------------------
 # compile all *.c files to *.o bject files ...
@@ -146,8 +148,11 @@ $(BIN)/INITRD.EXE: $(OBJ)/make_initrd.o
 	$(GCC) -m32 -mconsole -O2 -Wall -Wextra -o $@ $<
 	$(STRIP) $@
 
-$(BIN)/KERNEL.SYS: $(OBJ)/kernel.o
-	$(OBJCOPY) -O binary $(OBJ)/kernel.o $(SRC)/content/KERNEL.SYS
+$(BIN)/kernel.bin: $(OBJ)/kernel.o
+	$(OBJCOPY) -O binary $(OBJ)/kernel.o $(BIN)/kernel.bin
+
+$(BIN)/bootcd.iso: $(BIN)/boot1.bin $(BIN)/boot2.bin $(BIN)/kernel.bin
+	./create_iso.sh
 
 $(BIN)/floppy.img: $(BIN)/BOOT1.SYS $(BIN)/BOOT2.SYS $(BIN)/KERNEL.SYS
 	dd if=/dev/zero of=$(BIN)/floppy.img bs=1024 count=1440
@@ -190,10 +195,11 @@ config: $(SRC)/unifont.hex
 # -----------------------------------------------------------------------------
 clean:
 	$(RM) -f  $(OBJ)/*.o $(OBJ)/*.coff
-	$(RM) -f  $(BIN)/*.BIN $(BIN)/*.COM $(BIN)/*.SYS $(BIN)/kernel.map
-	$(RM) -f  $(SRC)/content/*.SYS
+	$(RM) -f  $(BIN)/*.BIN $(BIN)/*.COM $(BIN)/*.sys $(BIN)/kernel.map
+	$(RM) -f  $(SRC)/content/*.SYS $(SRC)/content/*.bin
 	$(RM) -f  $(SRC)/unifont_all-15.1.05.hex
+	$(RM) -f  $(BIN)/bootcd.iso
 	$(RM) -f  $(SRC)/unifont.hex
 	$(RM) -f  $(SRC)/initrd.dat
-	$(RM) -f  $(BIN)/floppy.img
+	$(RM) -f  $(BIN)/hdd.img
 	$(RM) -rf $(OBJ)

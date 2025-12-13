@@ -1,158 +1,228 @@
-; ---------------------------------------------------------------------------
-; \file loader.asm – A simple freestanding C-Kernel
-; \note  (c) 2025 by Jens Kallup - paule32
-;        all rights reserved.
-; ---------------------------------------------------------------------------
-; loader.asm – Minimaler 16-Bit-DOS-Loader, der KERNEL.BIN lädt
-; Build: nasm -f bin loader.asm -o LOADER.COM
-; ---------------------------------------------------------------------------
-Bits 16
-org 0x500
-jmp entry_point             ; go to entry point
+;---------------------------------------------------------
+; Konstanten – mit Werten aus xorriso ausfüllen
+;---------------------------------------------------------
+KERNEL_LBA      equ 38
+KERNEL_SECTORS  equ 23
 
-;*******************************************************
-;	Includes and Defines
-;*******************************************************
-%include "gdt.inc"			; GDT definition
-%include "A20.inc"			; A20 gate enabling
-%include "Fat12.inc"		; FAT12 driver
-%include "GetMemoryMap.inc" ; INT 0x15, eax = 0xE820 
+; boot2.asm – Minimaler Stage2
 
-%define IMAGE_PMODE_BASE 0x40000 ; where the kernel is to be loaded to in protected mode
-%define IMAGE_RMODE_BASE 0x3000  ; where the kernel is to be loaded to in real mode
-ImageName     db "KERNEL  SYS"
-ImageSize     dd 0
-
-;*******************************************************
-;	Data Section
-;*******************************************************
-msgLoading db 13, 10, "jump to OS Kernel...", 0
-msgFailure db 13, 10, "missing KERNEL.SYS"  , 13, 0
-msgNoVBE   db 13, 10, "no VBE gfx support." , 13, 0
-
-no_vbe:
-    mov si, msgNoVBE
-    call    print_string
-    .loop:
-    jmp .loop
-    
-entry_point:
-    cli	                 ; clear interrupts
-    xor ax, ax           ; null segments
-    mov ds, ax
-    mov es, ax
-    mov ss, ax
-    mov sp, 0xFFFF       ; stack begins at 0xffff (downwards)
-    sti	                 ; enable interrupts
-    
-;    push es
-    xor  ax, ax
-    mov  ds, ax          ; DS = 0
-    mov  ax, 0x9000
-    mov  es, ax          ; ES = 0x9000
-    mov  di, 0x0000      ; ES:DI = 9000:0000 -> phys 0x00090000
-                         ; see stack: 0x9FC00 in protected mode !
-                         
-	mov  ax, 0x4F01      ; get VBE mode info
-    mov  cx, 0x114       ; 800x600x16bpp mode
-
-	int  0x10
-;	pop  es
-    
-    cmp  ax, 0x004F      ; test for error
-    jne  no_vbe
-;jmp A20
-;    push es
-    mov  ax, 0x4f02
-    mov  bx, 0x4114       ; enable LFB
-    int  0x10
-;    pop  es
-    
-A20:	
-   call EnableA20
-
-;*******************************************************
-;   Determine physical memory INT 0x15, eax = 0xE820                     
-;   input: es:di -> destination buffer         
-;*******************************************************
-Get_Memory_Map:
-    xor eax, eax
-    mov ds, ax
-    mov di, 0x1000
-    call get_memory_by_int15_e820
-    xor ax, ax
-    mov es, ax ; important to null es!
-
-Install_GDT:
-    call InstallGDT
-    sti	
-	
-Load_Root:
-    call LoadRoot
-    mov ebx, 0
-    mov ebp, IMAGE_RMODE_BASE
-    mov esi, ImageName
-    call LoadFile
-    mov DWORD [ImageSize], ecx
-    cmp ax, 0
-    je EnterProtectedMode
-    mov si, msgFailure
-    call print_string
-    xor ah, ah
-
-;*******************************************************
-;   Switch from Real Mode (RM) to Protected Mode (PM)              
-;*******************************************************
-EnterProtectedMode:
-    ; switch off floppy disk motor
-    mov dx,0x3F2      
-    mov al,0x0C
-    out dx,al     	
-
-    ; switch to PM
-    cli
-    mov eax, cr0                          ; set bit 0 in cr0 --> enter PM
-    or eax, 1
-    mov cr0, eax
-    jmp DWORD CODE_DESC:ProtectedMode     ; far jump to fix CS. Remember that the code selector is 0x8!
-
-[Bits 32]
-ProtectedMode:
-    mov ax, DATA_DESC	                  ; set data segments to data selector (0x10)
-    mov ds, ax
-    mov ss, ax
-    mov es, ax
-    mov esp, 0x9FC00     ; ATTENTION: don't use it for VBE struct (0x9000) !!!
-
-CopyImage:
-    mov eax, DWORD [ImageSize]
-    movzx ebx, WORD  [BytesPerSec]
-    mul ebx
-    mov ebx, 4
-    div ebx
-    cld
-    mov esi, IMAGE_RMODE_BASE
-    mov edi, IMAGE_PMODE_BASE
-    mov ecx, eax
-    rep movsd                             ; copy image to its protected mode address
-
-;*******************************************************
-;   Execute Kernel
-;*******************************************************
-EXECUTE:
-;    jmp DWORD CODE_DESC:IMAGE_PMODE_BASE
-    jmp [IMAGE_PMODE_BASE]
-
-;*******************************************************
-;   calls, e.g. print_string
-;*******************************************************
 BITS 16
+ORG 0x0500          ; Stage1 springt nach 0000:0500
+
+start_boot2:
+    cli
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    mov sp, 0x8000
+    sti
+
+    mov [boot_drive], dl
+
+    mov si, msgB2Start
+    call print_string
+
+    ; -------------------------------------------------
+    ; Kernel per LBA nach 0x1000:0000 laden
+    ; -------------------------------------------------
+    mov word  [dap_sectors ], KERNEL_SECTORS   ; aus xorriso
+    mov word  [dap_offset  ], 0x0000          ; Offset 0
+    mov word  [dap_segment ], 0x1000          ; Segment 0x1000 -> phys 0x10000
+    mov dword [dap_lba_low ], KERNEL_LBA
+    mov dword [dap_lba_high], 0
+
+    mov si, disk_address_packet
+    mov dl, [boot_drive]
+    mov ah, 0x42
+    int 0x13
+    jc load_error
+
+    mov si, msgB2OK
+    call print_string
+
+    ; -------------------------------------------------
+    ; A20 aktivieren
+    ; -------------------------------------------------
+    call enable_a20
+    mov si, msgA20OK
+    call print_string
+
+    ; -------------------------------------------------
+    ; GDT laden, Protected Mode aktivieren
+    ; -------------------------------------------------
+    cli
+    lgdt [gdt_descriptor]
+    
+    mov eax, cr0
+    or  eax, 1             ; PE-Bit setzen
+    mov cr0, eax
+
+    ; Far Jump in 32-Bit-Code (pm_entry)
+    jmp 0x08:pm_entry      ; 0x08 = Code-Segment-Selector
+    
+    
+    ; -------------------------------------------------
+    ; In den Kernel springen
+    ; -------------------------------------------------
+    ;mov dl, [boot_drive]      ; Laufwerk an Kernel weiterreichen (falls gebraucht)
+    ;jmp 0x1000:0000           ; CS:IP = 1000:0000
+
+load_error:
+    mov si, msgB2Fail
+    call print_string
+
+    ; Debug: Fehlercode ausgeben
+    mov al, ah             ; AH = BIOS Error Code
+    call print_hex8        ; z.B. " AH=0E"
+
+.halt:
+    cli
+    hlt
+    jmp .halt
+
+;---------------------------------------------------------
+; Versuch 1: BIOS-Funktion INT 15h, AX=2401h
+;---------------------------------------------------------
+enable_a20:
+    mov ax, 0x2401
+    int 0x15
+    jc .via_kbd           ; wenn Fehler: Keyboard-Controller-Methode
+
+    ret
+
+.via_kbd:
+    ; Sehr vereinfachte KBC-Methode (reicht fuer QEMU / Bochs)
+.wait_input:
+    in al, 0x64
+    test al, 2
+    jnz .wait_input
+
+    mov al, 0xD1
+    out 0x64, al
+
+.wait_input2:
+    in al, 0x64
+    test al, 2
+    jnz .wait_input2
+
+    mov al, 0xDF         ; A20 einschalten
+    out 0x60, al
+
+    ret
+
+;---------------------------------------------------------
+; print_string: DS:SI -> 0-terminierte Zeichenkette
+;---------------------------------------------------------
 print_string:
-   lodsb          ; grab a byte from SI
-   or al, al      ; logical or AL by itself
-   jz .done       ; if the result is zero, get out
-   mov ah, 0x0E
-   int 0x10       ; otherwise, print out the character!
-   jmp print_string
-.done:
-   ret
+    lodsb
+    cmp al, 0
+    je .ps_done
+    mov ah, 0x0E
+    mov bh, 0
+    mov bl, 0x07
+    int 0x10
+    jmp print_string
+.ps_done:
+    ret
+
+;---------------------------------------------------------
+; print_hex8: AL -> „0xHH“ ausgeben
+;---------------------------------------------------------
+print_hex8:
+    push ax
+    push bx
+    push cx
+    push dx
+
+    mov si, msgAH         ; " AH="
+    call print_string
+
+    mov ah, al            ; AL = Wert, AH = Kopie
+    shr al, 4             ; high nibble
+    call print_hex_nibble
+
+    mov al, ah            ; low nibble
+    and al, 0x0F
+    call print_hex_nibble
+    
+    mov al, 13
+    mov ah, 0x0E
+    int 0x10
+    mov al, 10
+    mov ah, 0x0E
+    int 0x10
+
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+
+; AL = 0..15 -> '0'..'9','A'..'F'
+print_hex_nibble:
+    cmp al, 10
+    jb digit
+    add al, 'A' - 10
+    jmp _out
+digit:
+    add al, '0'
+_out:
+    mov ah, 0x0E
+    mov bh, 0
+    mov bl, 0x07
+    int 0x10
+    ret
+
+BITS 32
+pm_entry:
+    ; Segmente im Protected Mode setzen
+    mov ax, 0x10          ; Data-Segment-Selector
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov fs, ax
+    mov gs, ax
+
+    mov esp, 0x009FC000   ; irgendein 32-Bit-Stack im oberen Bereich
+
+    ; Jetzt zum Kernel-Einstieg springen (0x00010000)
+    jmp 0x00010000        ; KernelStart wurde auf 0x00010000 gelinkt
+
+;---------------------------------------------------------
+; Daten
+;---------------------------------------------------------
+BITS 16
+boot_drive      db 0
+
+msgB2Start      db 13,10,"[Stage2] BOOT2 gestartet, Kernel wird geladen ...",13,10,0
+msgB2OK         db "[Stage2] Kernel geladen, springe nach 1000:0000",13,10,0
+msgA20OK        db "[Stage2] A20 aktiviert, Protected Mode wird gestartet ...",13,10,0
+msgB2Fail       db "[Stage2] FEHLER beim Laden des Kernels",13,10,0
+
+msgAH           db " AH=",0
+
+; einfache 3-Entry-GDT: null, code, data
+gdt_start:
+gdt_null:   dq 0
+gdt_code:   dq 0x00CF9A000000FFFF   ; base=0, limit=4GB, Code, RX
+gdt_data:   dq 0x00CF92000000FFFF   ; base=0, limit=4GB, Data, RW
+gdt_end:
+
+gdt_descriptor:
+    dw gdt_end - gdt_start - 1
+    dd gdt_start
+
+;---------------------------------------------------------
+; Disk Address Packet
+;---------------------------------------------------------
+disk_address_packet:
+dap_size        db 0x10
+dap_reserved    db 0
+dap_sectors     dw 0
+dap_offset      dw 0
+dap_segment     dw 0
+dap_lba_low     dd 0
+dap_lba_high    dd 0

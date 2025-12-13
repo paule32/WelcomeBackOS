@@ -1,36 +1,26 @@
-;---------------------------------------------------------
-; Test-LBA
-;---------------------------------------------------------
-TEST_LBA       equ 0       ; kleiner LBA im ISO (188 Sektoren hast du ja)
-
-;---------------------------------------------------------
-; Diese beiden muessen wir *patchen*
-;---------------------------------------------------------
-BOOT2_LBA      equ 61
-BOOT2_SECTORS  equ 1
-
 BITS 16
 ORG 0x7C00
 
 start:
-    jmp near entry
-    nop
-entry:
     cli
-    mov ax, 0x0000   ; Segment auf 0x0000
+    xor ax, ax
     mov ds, ax
     mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    mov ax, 0x7C00
     mov ss, ax
-    mov sp, 0x8000
+    xor sp, sp
     sti
-    
+
     ; Boot-Laufwerk aus DL merken
     mov [boot_drive], dl
 
     ; --- Schritt 1: EDD (INT 13h Extensions) testen ---
     mov si, msgHello
     call print_string
-    
+
     mov si, msgCheckEDD
     call print_string
 
@@ -39,33 +29,33 @@ entry:
     mov dl, [boot_drive]
     int 0x13
 
-    jc  no_edd             ; CF=1 -> keine Extensions
+    jc .no_edd             ; CF=1 -> keine Extensions
     cmp bx, 0xAA55
-    jne no_edd            ; Magic falsch -> keine Extensions
+    jne .no_edd            ; Magic falsch -> keine Extensions
 
     ; Extensions vorhanden, AH enthält Versionsinfo
     mov si, msgEDDYes
     call print_string
-    jmp try_lba
+    jmp .try_lba
 
-no_edd:
+.no_edd:
     mov si, msgEDDNo
     call print_string
-    jmp $                ; ohne EDD bringt AH=42 eh nix
+    jmp .halt              ; ohne EDD bringt AH=42 eh nix
 
-try_lba:
+.try_lba:
     ; --- Schritt 2: LBA-Read testen (AH=42h) ---
-    mov word  [dap_sectors ], 1          ; 1 Sektor
-    mov word  [dap_offset  ], 0x0600     ; Offset
-    mov word  [dap_segment ], 0x0000     ; Segment
-    mov dword [dap_lba_low ], TEST_LBA
+    mov word [dap_sectors], 1          ; 1 Sektor
+    mov word [dap_offset],  0x0500     ; Offset
+    mov word [dap_segment], 0x0000     ; Segment
+    mov dword [dap_lba_low],  TEST_LBA
     mov dword [dap_lba_high], 0
 
     mov si, disk_address_packet
     mov dl, [boot_drive]
     mov ah, 0x42
     int 0x13
-    jnc lba_ok
+    jnc .lba_ok
 
     ; CF=1 -> Fehler, AH = Statuscode
     mov si, msgLBABad
@@ -74,60 +64,37 @@ try_lba:
     mov al, ah            ; Fehlercode in AL
     call print_hex8       ; "AH=xx" anzeigen
 
-    jmp $
+    jmp .halt
 
-lba_ok:
+.lba_ok:
     mov si, msgLBAOk
     call print_string
-    
-    ;---------------------------------------------------------
-    mov si, msgLoad2
-    call print_string
 
-    ; -------------------------------------------------
-    ; Boot2 per LBA laden
-    ; -------------------------------------------------
-    mov word  [dap_sectors ], BOOT2_SECTORS
-    mov word  [dap_offset  ], 0x0500
-    mov word  [dap_segment ], 0x0000
-    mov dword [dap_lba_low ], BOOT2_LBA
-    mov dword [dap_lba_high], 0
-
-    mov si, disk_address_packet
-    mov dl, [boot_drive]
-    mov ah, 0x42
-    int 0x13
-    jc load_error
-
-    mov si, msgOK
-    call print_string
-    
-    ; -------------------------------------------------
-    ; zu BOOT2 springen → CS:IP = 0000:0500
-    ; -------------------------------------------------
-    jmp 0x0000:0x0500
-
-load_error:
-    mov si, msgErr
-    call print_string
-    jmp $
+.halt:
+    cli
+    hlt
+    jmp .halt
 
 ;---------------------------------------------------------
 ; print_string: DS:SI -> 0-terminierte Zeichenkette
 ;---------------------------------------------------------
 print_string:
+    mov cx, 0
+.ps_next:
     lodsb
     cmp al, 0
     je .ps_done
-    cmp dx, 1
+    cmp cx, 80
     je .ps_done
     mov ah, 0x0E
     mov bh, 0
     mov bl, 0x07
     int 0x10
-    jmp print_string
+    inc cx
+    jmp .ps_next
 .ps_done:
     ret
+
 ;---------------------------------------------------------
 ; print_hex8: AL -> „0xHH“ ausgeben
 ;---------------------------------------------------------
@@ -147,7 +114,7 @@ print_hex8:
     mov al, ah            ; low nibble
     and al, 0x0F
     call print_hex_nibble
-    
+
     mov al, 13
     mov ah, 0x0E
     int 0x10
@@ -164,12 +131,12 @@ print_hex8:
 ; AL = 0..15 -> '0'..'9','A'..'F'
 print_hex_nibble:
     cmp al, 10
-    jb digit
+    jb .digit
     add al, 'A' - 10
-    jmp _out
-digit:
+    jmp .out
+.digit:
     add al, '0'
-_out:
+.out:
     mov ah, 0x0E
     mov bh, 0
     mov bl, 0x07
@@ -181,7 +148,7 @@ _out:
 ;---------------------------------------------------------
 boot_drive      db 0
 
-msgHello        db "Stage1: CD boot debug",13,10,0
+msgHello        db 13,10,"Stage1: CD boot debug",13,10,0
 msgCheckEDD     db "Checking INT13h extensions ...",13,10,0
 msgEDDYes       db "EDD present.",13,10,0
 msgEDDNo        db "EDD NOT present.",13,10,0
@@ -190,21 +157,22 @@ msgLBABad       db "LBA read FAILED,",0
 msgLBAOk        db "LBA read OK.",13,10,0
 msgAH           db " AH=",0
 
-msgLoad2        db "Loading BOOT2.SYS ...",13,10,0
-msgOK           db "BOOT2 loaded",13,10,0
-msgErr          db "ERROR loading BOOT2",13,10,0
-
 ;---------------------------------------------------------
 ; Disk Address Packet (16 Byte)
 ;---------------------------------------------------------
 disk_address_packet:
 dap_size      db 0x10      ; Groesse des Pakets
-dap_reserved  db 0
+dap_reserved  db 0x00
 dap_sectors   dw 0         ; Sektoren
 dap_offset    dw 0         ; Offset
 dap_segment   dw 0         ; Segment
 dap_lba_low   dd 0         ; Start-LBA low
 dap_lba_high  dd 0         ; Start-LBA high
+
+;---------------------------------------------------------
+; Test-LBA
+;---------------------------------------------------------
+TEST_LBA       equ 0       ; kleiner LBA im ISO (188 Sektoren hast du ja)
 
 ; Bootsignature
 times 510-($-$$) db 0

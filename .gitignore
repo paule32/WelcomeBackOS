@@ -15,3 +15,5 @@ src/content/program.elf
 *.dat
 src/program.elf
 src/unifont8x16.hex
+bin/boot2.bin
+bin/boot1.bin

@@ -10,7 +10,7 @@
 ENTRY(KernelStart)
 SECTIONS
 { 
-    . = 0x000400000;
+    . = 0x00010000;
     .text : {
         LONG(_kmain);
         __code_start = .;
