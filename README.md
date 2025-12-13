@@ -14,12 +14,8 @@ Damit können Entwickler ein vollständiges eigenes Betriebssystem booten – au
 
 ---
 # 0. Diagramme
-
-
-==============================
-0.1 Boot Flow Diagram
-==============================
-
+<pre>
+0.1 Boot Flow Diagram<br>
     +----------------+
     |     BIOS       |
     | (real mode)    |
@@ -49,12 +45,9 @@ Damit können Entwickler ein vollständiges eigenes Betriebssystem booten – au
     |    Kernel      |
     |  (PM: 0x10000) |
     +----------------+
-
-
-================================
+</pre>
 0.2 Memory Layout Diagram
-================================
-
+<pre>
 Real Mode (1 MB Address Space)
 
 0000:0000  +---------------------------+
@@ -81,12 +74,9 @@ Protected Mode (32-bit linear memory)
            +---------------------------+
            |    Heap, Paging, etc.     |
            +---------------------------+
-
-
-=========================================
+</pre>
 0.3 Protected Mode Transition Diagram
-=========================================
-
+<pre>
 Real Mode
    |
    |  Enable A20
@@ -115,7 +105,7 @@ Real Mode
 +---------------------------+
 |   KernelStart @ 0x10000   |
 +---------------------------+
-
+</pre>
 ---
 
 # 📦 1. Voraussetzungen / Downloads / Installation
