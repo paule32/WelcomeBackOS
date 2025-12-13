@@ -7,37 +7,29 @@
 // ---------------------------------------------------------------------------
 */
 /*OUTPUT_FORMAT("binary")*/
-ENTRY(KernelStart)
+ENTRY(_kmain)
 SECTIONS
 { 
     . = 0x00010000;
     .text : {
         LONG(_kmain);
         __code_start = .;
-        *(EXCLUDE_FILE(
-            ../obj/shared_pages.o
-            ../obj/data.o
-            )
-            .text .text.*
-        )
-        
-        ../obj/shared_pages.o(.text)
-        ../obj/data.o(.text)
+        *(.text)
     }
     
-    . = ALIGN(0x1000);
+    /*. = ALIGN(0x1000);*/
     .rodata : {
         __rodata_start = .;
         *(.rodata) *(.rdata)
     }
     
-    . = ALIGN(0x1000);
+    /*. = ALIGN(0x1000);*/
     .data : {
         __data_start = .;
         *(.data)
     }
     
-    . = ALIGN(0x1000);
+    /*. = ALIGN(0x1000);*/
     .bss (NOLOAD) : {
         __bss_start = .;
         *(.bss) *(COMMON)

@@ -22,3 +22,8 @@ src/README_DIAGRAMS.md
 src/protectedmode.txt
 src/memorylayout.txt
 src/bootflow.txt
+src/content/boot1.bin
+src/content/boot1.bin
+src/content/boot2.bin
+src/content/kernel.bin
+bin/bootcd.iso

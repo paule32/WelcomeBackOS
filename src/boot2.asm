@@ -2,7 +2,7 @@
 ; Konstanten – mit Werten aus xorriso ausfüllen
 ;---------------------------------------------------------
 KERNEL_LBA      equ 38
-KERNEL_SECTORS  equ 23
+KERNEL_SECTORS  equ 5
 
 ; boot2.asm – Minimaler Stage2
 
@@ -11,13 +11,16 @@ ORG 0x0500          ; Stage1 springt nach 0000:0500
 
 start_boot2:
     cli
-    xor ax, ax
+    
+    ; Code- und Datensegmente angleichen
+    mov ax, cs
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
     mov ss, ax
-    mov sp, 0x8000
+    mov sp, 0x9000      ; irgendein Stack im ersten MB
+    
     sti
 
     mov [boot_drive], dl
@@ -34,6 +37,11 @@ start_boot2:
     mov dword [dap_lba_low ], KERNEL_LBA
     mov dword [dap_lba_high], 0
 
+    ; Kernel nach physisch 0x00010000 laden
+    mov ax, 0x1000
+    mov es, ax          ; ES:BX = 1000:0000 → phys 0x10000
+    mov bx, 0x0000
+    
     mov si, disk_address_packet
     mov dl, [boot_drive]
     mov ah, 0x42
@@ -186,7 +194,7 @@ pm_entry:
     mov fs, ax
     mov gs, ax
 
-    mov esp, 0x009FC000   ; irgendein 32-Bit-Stack im oberen Bereich
+    mov esp, 0x00180000   ; irgendein 32-Bit-Stack im oberen Bereich
 
     ; Jetzt zum Kernel-Einstieg springen (0x00010000)
     jmp 0x00010000        ; KernelStart wurde auf 0x00010000 gelinkt

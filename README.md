@@ -2,6 +2,8 @@
 (c) 2025 Jens Kallup – paule32  
 Alle Rechte vorbehalten.
 
+## Current System Status: 2025-12-14
+
 Dieses Projekt zeigt Schritt für Schritt, wie man:
 
 - einen **El-Torito CD-Bootloader** (Stage1 & Stage2) schreibt  
@@ -21,26 +23,26 @@ Damit können Entwickler ein vollständiges eigenes Betriebssystem booten – au
     | (real mode)    |
     +--------+-------+
              |
-             v
+             V
     +--------+-------+
     |    Stage 1     |
     |  (0000:0000)   |
     +--------+-------+
              |
-             v
+             V
     +--------+-------+
     |    Stage 2     |
     |  (0000:0500)   |
     +--------+-------+
              |
-             v
+             V
 +------------+----------------+
 |  Load Kernel via INT 13h    |
 |  Enable A20, Setup GDT      |
 |  Enter Protected Mode       |
 +------------+----------------+
              |
-             v
+             V
     +--------+-------+
     |    Kernel      |
     |  (PM: 0x10000) |
@@ -80,7 +82,7 @@ Protected Mode (32-bit linear memory)
 Real Mode
    |
    |  Enable A20
-   v
+   V
 +--------------------+
 |   Load GDT         |
 +--------------------+
@@ -88,27 +90,27 @@ Real Mode
    | mov eax, cr0
    | or  eax, 1      ; PE bit
    | mov cr0, eax
-   v
+   V
 +--------------------+
 |  PE active (PM)    |
 +--------------------+
    |
    | Far jump to selector:offset
    | jmp 0x08:pm_entry
-   v
+   V
 +---------------------------+
 |  pm_entry (32-bit code)   |
 +---------------------------+
    |
    | Jump to kernel entry
-   v
+   V
 +---------------------------+
 |   KernelStart @ 0x10000   |
 +---------------------------+
 </pre>
 ---
 
-# 📦 1. Voraussetzungen / Downloads / Installation
+# 1. Voraussetzungen / Downloads / Installation
 
 ## 1.1 NASM herunterladen und installieren
 NASM ist der Assembler für Stage1 & Stage2.
@@ -146,7 +148,7 @@ pacman -S xorriso
 
 ---
 
-# 🚀 2. Bootprozess-Überblick
+# 2. Bootprozess-Überblick
 
 ```
 BIOS → Stage1 → Stage2 → Protected Mode → 32-Bit Kernel
@@ -158,7 +160,7 @@ Kernel: läuft im 32-Bit Modus
 
 ---
 
-# 🔢 3. LBA & Sektor-Bestimmung
+# 3. LBA & Sektor-Bestimmung
 
 Nach ISO-Erstellung:
 
@@ -177,17 +179,17 @@ File data lba: 0 , 38 , 23 , ... , '/kernel.bin'
 
 ---
 
-# 🧠 4. Speicherlayout & ORG
+# 4. Speicherlayout & ORG
 
-| Komponente | BIOS-Adresse | ORG | Kommentar |
-|-----------|--------------|--------|-----------|
-| Stage1 | 0000:0000 | 0x0000 | El Torito lädt hier |
-| Stage2 | 0000:0500 | 0x0500 | Stage1 lädt Stage2 hierhin |
-| Kernel | phys 0x10000 | 0x0000 | Stage2 lädt Kernel → PM Jump |
+| Komponente | BIOS-Adresse | ORG    | Kommentar                    |
+|------------|--------------|--------|------------------------------|
+| Stage1     | 0000:0000    | 0x0000 | El Torito lädt hier          |
+| Stage2     | 0000:0500    | 0x0500 | Stage1 lädt Stage2 hierhin   |
+| Kernel     | phys 0x10000 | 0x0000 | Stage2 lädt Kernel → PM Jump |
 
 ---
 
-# 🛠 5. Protected Mode Schritte
+# 5. Protected Mode Schritte
 
 Stage2:
 
@@ -200,13 +202,13 @@ Stage2:
 
 ---
 
-# ⚙ 6. Makefile & Buildsystem
+# 6. Makefile & Buildsystem
 
 Dieses Projekt verwendet ein umfangreiches Makefile (siehe Repository).
 
 ---
 
-# 💽 7. ISO-Erstellung
+# 7. ISO-Erstellung
 
 Script `create_iso.sh`:
 
@@ -218,7 +220,7 @@ xorriso -as mkisofs -o bootcd.iso     -b boot1.bin     -no-emul-boot     -boot-l
 
 ---
 
-# 🎉 8. Ergebnis
+# 8. Ergebnis
 
 Ein vollständiger Bootprozess:
 
@@ -229,6 +231,85 @@ Ein vollständiger Bootprozess:
 
 ---
 
-# 📚 9. Lizenz
+## Current System Status: 2025-12-15
+
+WelcomeBackOS now includes all foundational components of a modern 32-bit operating system.  
+The following subsystems are fully implemented and functional:
+
+---
+
+## Bootloader (Stage1 + Stage2)
+
+- Stage1 loads Stage2 via LBA from CD/ISO.  
+- Stage2 enables A20, loads the kernel to physical address **0x0010 0000**, sets up a minimal GDT, and switches to **Protected Mode**.  
+- Control is transferred safely to the 32-bit kernel.
+
+---
+
+## Kernel Core
+
+- 32-bit Global Descriptor Table (GDT)  
+- Fully operational Paging initialization  
+- Identity-mapped kernel region  
+- Stable VGA text output  
+- Clean kernel execution loop using `hlt`
+
+---
+
+## Memory Management
+
+### Implemented:
+1. **Page Frame Allocator**  
+   Bitmap-based management of physical memory pages.
+
+2. **Kernel Heap (KHeap)**  
+   With pointer-safe alignment using `uintptr_t`.
+
+3. **Paging**  
+   Page Directory + Page Tables with identity mapping of the kernel region.
+
+This provides a stable memory foundation for higher-level kernels subsystems, such as tasking, usermode, and ELF loading.
+
+---
+
+## Interrupt System (IDT + ISRs)
+
+- Complete **IDT with 256 entries**  
+- Exception handlers (0–31) implemented  
+- Unified `regs_t` frame passed to C handler  
+- All Exceptions display debugging output  
+- All Interrupt Stubs implemented in clean, structured 32-bit Assembly
+
+---
+
+## Syscall Framework (`int 0x80`)
+
+- IDT entry 0x80 with **DPL=3**, accessible from usermode  
+- Syscall dispatcher implemented  
+- First syscall operational (VGA output test)  
+- Kernel successfully handles software interrupts via a unified interface
+
+This is the groundwork for a full system call layer and later usermode programs.
+
+---
+
+## Next Development Step: Hardware Interrupts (Option A)
+
+The next milestone is implementing **hardware interrupts**, specifically:
+
+### ✔ PIC Remapping (to 0x20–0x2F)  
+### ✔ IRQ Handler API  
+### ✔ Timer Interrupt (IRQ0)  
+### ✔ Keyboard Interrupt (IRQ1)
+
+These enable:
+
+- Preemptive Kernel Scheduling  
+- Task Switching  
+- Usermode transitions  
+- A real multitasking operating system
+
+---
+# 9. Lizenz
 
 (c) 2025 Jens Kallup – paule32.

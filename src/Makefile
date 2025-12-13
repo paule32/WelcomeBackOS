@@ -45,56 +45,23 @@ BIN  := ../bin
 # source files for the C-kernel ...
 # -----------------------------------------------------------------------------
 SRCC := $(SRC)/ckernel.c            \
-        $(SRC)/descriptor_table.c   \
-        $(SRC)/flpydisk.c           \
-        $(SRC)/fs.c                 \
-        $(SRC)/gdt.c                \
-        $(SRC)/idt.c                \
-        $(SRC)/initrd.c             \
-        $(SRC)/irq.c                \
-        $(SRC)/isrs.c               \
-        $(SRC)/keyboard.c           \
-        $(SRC)/kheap.c              \
-        $(SRC)/math.c               \
-        $(SRC)/ordered_array.c      \
         $(SRC)/paging.c             \
-        $(SRC)/shared_pages.c       \
+        $(SRC)/idt.c                \
+        $(SRC)/isrc.c               \
         $(SRC)/syscall.c            \
-        $(SRC)/task.c               \
-        $(SRC)/timer.c              \
-        $(SRC)/util.c               \
-        $(SRC)/video.c              \
-        $(SRC)/program_1.cc
+        $(SRC)/kheap.c
 
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the C-kernel ...
 # -----------------------------------------------------------------------------
 OBJS := $(OBJ)/ckernel.o            \
-        $(OBJ)/data.o               \
-        $(OBJ)/descriptor_table.o   \
-        $(OBJ)/flpydisk.o           \
-        $(OBJ)/flush.o              \
-        $(OBJ)/fs.o                 \
-        $(OBJ)/gdt.o                \
-        $(OBJ)/idt.o                \
-        $(OBJ)/initrd.o             \
-        $(OBJ)/irq.o                \
-        $(OBJ)/isr.o                \
-        $(OBJ)/isrs.o               \
-        $(OBJ)/keyboard.o           \
-        $(OBJ)/kheap.o              \
-        $(OBJ)/math.o               \
-        $(OBJ)/ordered_array.o      \
         $(OBJ)/paging.o             \
-        $(OBJ)/process.o            \
-        $(OBJ)/shared_pages.o       \
+        $(OBJ)/flush.o              \
+        $(OBJ)/idt.o                \
+        $(OBJ)/isr.o                \
+        $(OBJ)/isrc.o               \
         $(OBJ)/syscall.o            \
-        $(OBJ)/task.o               \
-        $(OBJ)/timer.o              \
-        $(OBJ)/util.o               \
-        $(OBJ)/video.o              \
-        $(OBJ)/video_fb.o           \
-        $(OBJ)/program_1.o
+        $(OBJ)/kheap.o
 
 all: config\
      $(OBJ)/data.o $(BIN)/bootcd.iso
@@ -103,7 +70,7 @@ all: config\
 # loader to load the system from DOS console ...
 # -----------------------------------------------------------------------------
 $(BIN)/boot1.bin: $(SRC)/boot1.asm
-	$(AS) -f bin $< -o $@
+	$(AS) -f bin  $(SRC)/boot1.asm -o $(BIN)/boot1.bin
 
 $(BIN)/boot2.bin: $(SRC)/boot2.asm
 	$(AS) -f bin  $(SRC)/boot2.asm -o $(BIN)/boot2.bin
@@ -127,7 +94,7 @@ $(OBJ)/%.o: $(SRC)/%.asm
 # link C-kernel to finaly output binary image ...
 # -----------------------------------------------------------------------------
 $(OBJ)/kernel.o: $(OBJS) $(SRC)/kernel.ld
-	$(LD) $(LDFLAGS) -o $(OBJ)/kernel.o $(OBJS)
+	$(LD) $(LDFLAGS) -o  $(OBJ)/kernel.o $(OBJS)
 
 # -----------------------------------------------------------------------------
 $(OBJ)/data.o: $(SRC)/initrd.dat $(SRC)/data.asm
@@ -196,7 +163,7 @@ config: $(SRC)/unifont.hex
 clean:
 	$(RM) -f  $(OBJ)/*.o $(OBJ)/*.coff
 	$(RM) -f  $(BIN)/*.BIN $(BIN)/*.COM $(BIN)/*.sys $(BIN)/kernel.map
-	$(RM) -f  $(SRC)/content/*.SYS $(SRC)/content/*.bin
+	$(RM) -f  $(SRC)/content/*.sys $(SRC)/content/*.bin
 	$(RM) -f  $(SRC)/unifont_all-15.1.05.hex
 	$(RM) -f  $(BIN)/bootcd.iso
 	$(RM) -f  $(SRC)/unifont.hex

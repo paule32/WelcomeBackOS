@@ -3,6 +3,72 @@
 // \note  (c) 2025 by Jens Kallup - paule32
 //        all rights reserved.
 // ---------------------------------------------------------------------------
+# include "stdint.h"
+# include "paging.h"
+# include "kheap.h"
+# include "idt.h"
+# include "isr.h"
+# include "syscall.h"
+
+extern void* krealloc(void* ptr, uint32_t new_size);
+
+int kmain()
+{
+    volatile char *vga = (volatile char*)0xB8000;
+    vga[2] = 'M';
+    vga[3] = 0x0F;
+    
+    paging_init();
+    kheap_init();
+    
+    // alles unterhalb (Kernel + 1MiB Heap) als belegt markieren
+    uint32_t reserved = (uint32_t)(&_end) + 0x00100000;
+    page_init(reserved);
+    idt_init();
+    isr_init();
+    syscall_init();
+    
+    vga[4] = 'P';
+    vga[5] = 0x0F;
+    
+    char* p = (char*)kmalloc(32);
+    if (p) {
+        p[0] = 'O';
+        p[1] = 'K';
+        p[2] = 0;
+        vga[6] = p[0]; vga[7] = 0x1F;
+        vga[8] = p[1]; vga[9] = 0x1F;
+    }   else {
+        vga[ 6] = 'E'; vga[ 7] = 0x21;
+        vga[ 8] = 'R'; vga[ 9] = 0x21;
+        vga[10] = 'R'; vga[11] = 0x21;
+    }
+    
+    p = (char*)krealloc(p, 128);
+    if (p) {
+        // Realloc ok
+        vga[12] = 'O'; vga[13] = 0x21;
+        vga[14] = 'L'; vga[15] = 0x21;
+    }   else {
+        // Realloc failed
+        vga[12] = 'X'; vga[13] = 0x02;
+    }
+    
+    asm volatile("sti");  // Interrupts freigeben
+    
+    // Test: Syscall direkt aus Kernel ( später: aus Usermode )
+    asm volatile("mov $1, %eax");   // SYSCALL_PUTCHAR
+    asm volatile("mov $'@', %ebx");
+    asm volatile("int $0x80");
+    
+    
+    for (;;) {
+        asm volatile("hlt");
+    }
+    return 0;
+}
+
+#if 0
 #include "os.h"
 #include "kheap.h"
 #include "task.h"
@@ -53,7 +119,7 @@ int kmain()
     // --------------------------------------
     // mother of all is the graphics card ...
     // --------------------------------------
-    vbe_init_pm();
+    //vbe_init_pm();
     init();
     
     k_clear_screen();
@@ -234,3 +300,4 @@ int kmain()
     user_program_1();
     return 0;
 }
+#endif

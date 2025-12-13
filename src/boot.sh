@@ -6,4 +6,5 @@
 
 #/mingw64/bin/qemu-system-i386.exe -hda ../bin/hdd.img -m 256 -boot c
 #/mingw64/bin/qemu-system-i386.exe -drive file=../bin/hdd.img,format=raw -m 256
-/mingw64/bin/qemu-system-i386.exe -m 512M -boot d -cdrom ../bin/bootcd.iso
+
+/mingw64/bin/qemu-system-i386.exe -m 256 -boot d -cdrom ../bin/bootcd.iso

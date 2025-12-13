@@ -2,6 +2,7 @@
 
 objcopy -O binary ../obj/kernel.o ../bin/kernel.bin
 ls -l ../bin
+
 ../bin/nasm -f bin ../src/boot1.asm -o ../bin/boot1.bin
 ../bin/nasm -f bin ../src/boot2.asm -o ../bin/boot2.bin
 
@@ -27,4 +28,3 @@ xorriso -as mkisofs -o ../../bin/bootcd.iso \
     .
 cd ..
 xorriso -indev ../bin/bootcd.iso -find / -exec report_lba --
-/mingw64/bin/qemu-system-i386.exe -m 256 -boot d -cdrom ../bin/bootcd.iso

@@ -1,6 +1,46 @@
-#include "syscall.h"
-#include "task.h"
+# include "stdint.h"
+# include "syscall.h"
+# include "idt.h"
+# include "isr.h"
 
+static volatile char* const VGA = (volatile char*)0xB8000;
+
+static void vga_putc(char c)
+{
+    static int pos = 160; // zweite Zeile (je 2 Byte pro Zeichen)
+    if (pos >= 80 * 2 * 10) pos = 160; // primitive "Zeilenbegrenzung"
+
+    VGA[pos]     = c;
+    VGA[pos + 1] = 0x07;
+    pos += 2;
+}
+
+void syscall_init(void)
+{
+    // Hier wäre später Platz für eine Syscall-Tabelle etc.
+    // aktuell nur Platzhalter, eigentliche IDT-Eintragung erfolgt bereits in idt_init()
+}
+
+void syscall_dispatch(regs_t* r)
+{
+    // Konvention: EAX = Syscall ID, EBX, ECX, EDX = Parameter
+    uint32_t num = r->eax;
+
+    switch (num) {
+        case SYSCALL_PUTCHAR:
+            vga_putc((char)r->ebx);   // Beispiel: EBX = Zeichen
+            break;
+
+        default:
+            // unbekannter Syscall
+            vga_putc('?');
+            break;
+    }
+}
+
+
+
+#if 0
 // some functions declared extern in os.h
 // rest of functions must be declared here:
 extern void f4();
@@ -50,3 +90,4 @@ void syscall_handler(struct regs* r)
     " : "=a" (ret) : "r" (r->edi), "r" (r->esi), "r" (r->edx), "r" (r->ecx), "r" (r->ebx), "r" (addr));
     r->eax = ret;
 }
+#endif

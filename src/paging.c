@@ -1,391 +1,129 @@
-#include "paging.h"
-#include "kheap.h"
+// paging.c
+// (c) 2025 by Jens Kallup - paule32
 
-ULONG ULONG_MAX = 0xFFFFFFFF;
-page_directory_t* kernel_directory  = 0;
-page_directory_t* current_directory = 0;
+# include "stdint.h"
 
-//ULONG placement_address = 0x200000;
-ULONG placement_address;
-extern heap_t* kheap;
+# define PAGE_SIZE       4096
+# define PAGE_ENTRIES    1024
 
-// A bitset of frames - used or free
-ULONG*  frames; // pointer to the bitset (functions: set/clear/test)
+# define NUM_MAPPED_MB   16
+# define NUM_PAGES       ((NUM_MAPPED_MB * 1024 * 1024) / PAGE_SIZE)
+# define NUM_TABLES      ((NUM_PAGES + PAGE_ENTRIES - 1) / PAGE_ENTRIES)
 
+# define PAGE_PRESENT    0x001
+# define PAGE_RW         0x002
 
-ULONG k_malloc(ULONG size, unsigned char align, ULONG* phys)
+// Symbole aus kernel.ld
+extern uint8_t _end;
+
+// 4 KiB aligned
+static uint32_t page_directory[PAGE_ENTRIES]                __attribute__((aligned(4096)));
+static uint32_t page_tables   [PAGE_ENTRIES][PAGE_ENTRIES]  __attribute__((aligned(4096)));
+
+# define MANAGED_MEMORY_BYTES (16 * 1024 * 1024)   // 16 MiB
+# define MAX_PAGES            (MANAGED_MEMORY_BYTES / PAGE_SIZE)
+# define BITMAP_SIZE_BYTES    (MAX_PAGES / 8)
+
+static uint8_t page_bitmap[BITMAP_SIZE_BYTES];
+
+// Bitmap helpers
+static inline void set_bit(uint32_t idx) {
+    page_bitmap[idx >> 3] |=  (1u << (idx & 7));
+}
+
+static inline void clear_bit(uint32_t idx) {
+    page_bitmap[idx >> 3] &= ~(1u << (idx & 7));
+}
+
+static inline uint8_t test_bit(uint32_t idx) {
+    return (page_bitmap[idx >> 3] >> (idx & 7)) & 1u;
+}
+
+// reserved_up_to: alle Frames unterhalb dieser Adresse gelten als belegt
+void page_init(uint32_t reserved_up_to)
 {
-    if( kheap!=0 )
-    {
-        ULONG addr = (ULONG) alloc(size, align, kheap);
-        if (phys != 0)
-        {
-            page_t* page = get_page(addr, 0, kernel_directory);
-            *phys = page->frame_addr * PAGESIZE + (addr&0xFFF);
-        }
-
-        ///
-        #ifdef _DIAGNOSIS_
-        settextcolor(3,0);
-        printformat("%x ",addr);
-        settextcolor(15,0);
-        #endif
-        ///
-
-        return addr;
+    // alles erstmal als frei markieren
+    for (uint32_t i = 0; i < BITMAP_SIZE_BYTES; ++i) {
+        page_bitmap[i] = 0x00;
     }
-    else
-    {
-        if( !(placement_address == (placement_address & 0xFFFFF000) ) )
-        {
-            placement_address &= 0xFFFFF000;
-            placement_address += PAGESIZE;
-        }
 
-        if( phys )
-        {
-            *phys = placement_address;
-        }
-        ULONG temp = placement_address;
-        placement_address += size;     // new placement_address is increased
+    // alle Frames unterhalb 'reserved_up_to' als belegt markieren
+    uint32_t reserved_pages =
+        (reserved_up_to + PAGE_SIZE - 1) / PAGE_SIZE;  // aufrunden
 
-        ///
-        #ifdef _DIAGNOSIS_
-        settextcolor(9,0);
-        printformat("%x ",temp);
-        settextcolor(15,0);
-        #endif
-        ///
-
-        return temp;                   // old placement_address is returned
+    if (reserved_pages > MAX_PAGES) {
+        reserved_pages = MAX_PAGES;
     }
+
+    for (uint32_t i = 0; i < reserved_pages; ++i) {
+        set_bit(i);
+    }
+
+    // Frames oberhalb reserved_up_to bleiben frei (bit = 0)
 }
 
-/************* bitset variables and functions **************/
-ULONG ind, offs;
-
-static void get_Index_and_Offset(ULONG frame_addr)
+void* page_alloc(void)
 {
-    ULONG frame    = frame_addr/PAGESIZE;
-    ind    = frame/32;
-    offs   = frame%32;
+    for (uint32_t i = 0; i < MAX_PAGES; ++i) {
+        if (!test_bit(i)) {
+            // freie Seite gefunden
+            set_bit(i);
+            // Identity-Mapping: virtuelle == physische Adresse
+            uint32_t addr = i * PAGE_SIZE;
+            return (void*)addr;
+        }
+    }
+
+    return NULL; // kein freier Frame
 }
 
-static void set_frame(ULONG frame_addr)
+void page_free(void* addr)
 {
-    get_Index_and_Offset(frame_addr);
-    frames[ind] |= (1<<offs);
+    if (!addr) return;
+
+    uint32_t a = (uint32_t)addr;
+    if (a >= MANAGED_MEMORY_BYTES) {
+        // Adresse ausserhalb unseres Verwaltungsbereichs
+        return;
+    }
+
+    uint32_t page_idx = (uint32_t)(a / PAGE_SIZE);
+    clear_bit(page_idx);
 }
 
-static void clear_frame(ULONG frame_addr)
+void paging_init(void)
 {
-    get_Index_and_Offset(frame_addr);
-    frames[ind] &= ~(1<<offs);
-}
+    // 1. Alles erstmal "nicht present"
+    for (uint32_t i = 0; i < PAGE_ENTRIES; ++i) {
+        page_directory[i] = 0x00000002;   // RW, aber not present
+    }
 
-/*
-static ULONG test_frame(ULONG frame_addr)
-{
-    get_Index_and_Offset(frame_addr);
-    return( frames[ind] & (1<<offs) );
-}
-*/
-/***********************************************************/
-
-static ULONG first_frame() // find the first free frame in frames bitset
-{
-    ULONG index, offset;
-    for(index=0; index<( (pODA->Memory_Size/PAGESIZE)/32 ); ++index)
-    {
-        if(frames[index] != ULONG_MAX)
-        {
-            for(offset=0; offset<32; ++offset)
-            {
-                if( !(frames[index] & 1<<offset) ) // bit set to zero?
-                    return (index*32 + offset);
+    // 2. Page Tables für 0..16 MiB
+    uint32_t phys = 0;
+    for (uint32_t t = 0; t < NUM_TABLES; ++t) {
+        for (uint32_t i = 0; i < PAGE_ENTRIES; ++i) {
+            if (phys < NUM_MAPPED_MB * 1024 * 1024) {
+                page_tables[t][i] = phys | PAGE_PRESENT | PAGE_RW;
+                phys += PAGE_SIZE;
+            } else {
+                page_tables[t][i] = 0x00000002; // RW, not present
             }
         }
+        page_directory[t] = ((uint32_t)page_tables[t]) | PAGE_PRESENT | PAGE_RW;
     }
-    return ULONG_MAX; // no free page frames
-}
+    
+    // 3. CR3 = physische Adresse des Page Directory
+    asm volatile("mov %0, %%cr3" :: "r"(page_directory));
 
-void alloc_frame(page_t* page, int is_kernel, int is_writeable) // allocate a frame
-{
-    if( !(page->frame_addr) )
-    {
-        ULONG index = first_frame(); // search first free page frame
-        if( index == ULONG_MAX )
-            printformat("message from alloc_frame: no free frames!!! ");
+    // 4. Paging-Bit in CR0 setzen
+    uint32_t cr0;
+    asm volatile("mov %%cr0, %0" : "=r"(cr0));
+    cr0 |= 0x80000000;
+    asm volatile("mov %0, %%cr0" :: "r"(cr0));
 
-        set_frame(index*PAGESIZE);
-
-        page->present    = 1;
-        page->rw         = ( is_writeable == 1 ) ? 1 : 0;
-        page->user       = ( is_kernel    == 1 ) ? 0 : 1;
-        page->frame_addr = index;
-    }
-}
-
-void free_frame(page_t* page) // deallocate a frame
-{
-    if( page->frame_addr )
-    {
-        clear_frame(page->frame_addr);
-        page->frame_addr = 0;
-    }
-}
-
-void paging_install()
-{
-    // setup bitset
-    ///
-    #ifdef _DIAGNOSIS_
-    settextcolor(2,0);
-    printformat("bitset: ");
-    settextcolor(15,0);
-    #endif
-    ///
-
-    frames = (ULONG*) k_malloc( (pODA->Memory_Size/PAGESIZE) /32, 0, 0 );
-    k_memset( frames, 0, (pODA->Memory_Size/PAGESIZE) /32 );
-
-    // make a kernel page directory
-    ///
-    #ifdef _DIAGNOSIS_
-    settextcolor(2,0);
-    printformat("PD: ");
-    settextcolor(15,0);
-    #endif
-    ///
-
-    kernel_directory = (page_directory_t*) k_malloc( sizeof(page_directory_t), 1, 0 );
-    k_memset(kernel_directory, 0, sizeof(page_directory_t));
-    kernel_directory->physicalAddr = (ULONG)kernel_directory->tablesPhysical;
-
-    ULONG i=0;
-    // Map some pages in the kernel heap area.
-    for( i=KHEAP_START; i<KHEAP_START+KHEAP_INITIAL_SIZE; i+=PAGESIZE )
-        get_page(i, 1, kernel_directory);
-
-    // map (phys addr <---> virt addr) from 0x0 to the end of used memory
-    // Allocate at least 0x2000 extra, that the kernel heap, tasks, and kernel stacks can be initialized properly
-    i=0;
-    while( i < placement_address + 0x6000 ) //important to add more!
-    {
-        if( ((i>=0xb8000) && (i<=0xbf000)) || ((i>=0x17000) && (i<0x18000)) )
-        {
-            alloc_frame( get_page(i, 1, kernel_directory), US, RW); // user and read-write
-        }
-        else
-        {
-            alloc_frame( get_page(i, 1, kernel_directory), SV, RO); // supervisor and read-only
-        }
-        i += PAGESIZE;
-    }
-
-    //Allocate user space
-    ULONG user_space_start = 0x400000;
-    ULONG user_space_end   = 0x600000;
-    i=user_space_start;
-    while( i <= user_space_end )
-    {
-        alloc_frame( get_page(i, 1, kernel_directory), US, RW); // user and read-write
-        i += PAGESIZE;
-    }
-
-    // Now allocate those pages we mapped earlier.
-    for( i=KHEAP_START; i<KHEAP_START+KHEAP_INITIAL_SIZE; i+=PAGESIZE )
-         alloc_frame( get_page(i, 1, kernel_directory), SV, RW); // supervisor and read/write
-
-    current_directory = clone_directory(kernel_directory);
-
-    // cr3: PDBR (Page Directory Base Register)
-    asm volatile("mov %0, %%cr3":: "r"(kernel_directory->physicalAddr)); //set page directory base pointer
-
-    // read cr0, set paging bit, write cr0 back
-    ULONG cr0;
-    asm volatile("mov %%cr0, %0": "=r"(cr0)); // read cr0
-    cr0 |= 0x80000000; // set the paging bit in CR0 to enable paging
-    asm volatile("mov %0, %%cr0":: "r"(cr0)); // write cr0
-}
-
-page_t* get_page(ULONG address, unsigned char make, page_directory_t* dir)
-{
-    address /= PAGESIZE;                // address ==> index.
-    ULONG table_index = address / 1024; // ==> page table containing this address
-
-    if(dir->tables[table_index])       // table already assigned
-    {
-        return &dir->tables[table_index]->pages[address%1024];
-    }
-    else if(make)
-    {
-        ULONG phys;
-        ///
-        #ifdef _DIAGNOSIS_
-        settextcolor(2,0);
-        printformat("gp_make: ");
-        settextcolor(15,0);
-        #endif
-        ///
-
-        dir->tables[table_index] = (page_table_t*) k_malloc( sizeof(page_table_t), 1, &phys );
-        k_memset(dir->tables[table_index], 0, PAGESIZE);
-        dir->tablesPhysical[table_index] = phys | 0x7; // 111b meaning: PRESENT=1, RW=1, USER=1
-        return &dir->tables[table_index]->pages[address%1024];
-    }
-    else
-        return 0;
-}
-
-static page_table_t *clone_table(page_table_t* src, ULONG* physAddr)
-{
-    // Make a new page table, which is page aligned.
-    ///
-    #ifdef _DIAGNOSIS_
-    settextcolor(2,0);
-    printformat("clone_PT: ");
-    settextcolor(15,0);
-    #endif
-    ///
-
-    page_table_t *table = (page_table_t*)k_malloc(sizeof(page_table_t),1,physAddr);
-    // Ensure that the new table is blank.
-    k_memset(table, 0, sizeof(page_directory_t));
-
-    // For every entry in the table...
-    int i;
-    for(i=0; i<1024; ++i)
-    {
-        // If the source entry has a frame associated with it...
-        if (!src->pages[i].frame_addr)
-            continue;
-        // Get a new frame.
-        alloc_frame(&table->pages[i], 0, 0);
-        // Clone the flags from source to destination.
-        if (src->pages[i].present) table->pages[i].present = 1;
-        if (src->pages[i].rw)      table->pages[i].rw = 1;
-        if (src->pages[i].user)    table->pages[i].user = 1;
-        if (src->pages[i].accessed)table->pages[i].accessed = 1;
-        if (src->pages[i].dirty)   table->pages[i].dirty = 1;
-
-        // Physically copy the data across. This function is in process.s.
-        copy_page_physical(src->pages[i].frame_addr*0x1000, table->pages[i].frame_addr*0x1000);
-    }
-    return table;
-}
-
-page_directory_t *clone_directory(page_directory_t *src)
-{
-    ULONG phys;
-    // Make a new page directory and obtain its physical address.
-    ///
-    #ifdef _DIAGNOSIS_
-    settextcolor(2,0);
-    printformat("clone_PD: ");
-    settextcolor(15,0);
-    #endif
-    ///
-
-    page_directory_t *dir = (page_directory_t*) k_malloc( sizeof(page_directory_t),1,&phys );
-    // Ensure that it is blank.
-    k_memset( dir, 0, sizeof(page_directory_t) );
-
-    // Get the offset of tablesPhysical from the start of the page_directory_t structure.
-    ULONG offset = (ULONG)dir->tablesPhysical - (ULONG)dir;
-
-    // Then the physical address of dir->tablesPhysical is:
-    dir->physicalAddr = phys + offset;
-
-    // Go through each page table. If the page table is in the kernel directory, do not make a new copy.
-    int i;
-    for(i=0; i<1024; ++i)
-    {
-        if (!src->tables[i])
-            continue;
-
-        if (kernel_directory->tables[i] == src->tables[i])
-        {
-            // It's in the kernel, so just use the same pointer.
-            dir->tables[i] = src->tables[i];
-            dir->tablesPhysical[i] = src->tablesPhysical[i];
-        }
-        else
-        {
-            // Copy the table.
-            ULONG phys;
-            dir->tables[i] = clone_table(src->tables[i], &phys);
-            dir->tablesPhysical[i] = phys | 0x07;
-        }
-    }
-    return dir;
-}
-
-void analyze_frames_bitset(ULONG sec)
-{
-    ULONG index, offset, counter1=0, counter2=0;
-    for(index=0; index<( (pODA->Memory_Size/PAGESIZE) /32); ++index)
-    {
-        settextcolor(15,0);
-        printformat("\n%x  ",index*32*0x1000);
-        ++counter1;
-        for(offset=0; offset<32; ++offset)
-        {
-            if( !(frames[index] & 1<<offset) )
-            {
-                settextcolor(4,0);
-                putch('0');
-            }
-            else
-            {
-                settextcolor(2,0);
-                putch('1');
-                ++counter2;
-            }
-        }
-        if(counter1==24)
-        {
-            counter1=0;
-            if(counter2)
-                sleepSeconds(sec);
-            counter2=0;
-        }
-    }
-}
-
-ULONG show_physical_address(ULONG virtual_address)
-{
-    page_t* page = get_page(virtual_address, 0, kernel_directory);
-    return( (page->frame_addr)*PAGESIZE + (virtual_address&0xFFF) );
-}
-
-void analyze_physical_addresses()
-{
-   int i,j,k=0, k_old;
-    for(i=0; i<( (pODA->Memory_Size/PAGESIZE) / 0x18000 + 1 ); ++i)
-    {
-        for(j=i*0x18000; j<i*0x18000+0x18000; j+=0x1000)
-        {
-            if(show_physical_address(j)==0)
-            {
-                settextcolor(4,0);
-                k_old=k; k=1;
-            }
-            else
-            {
-                if(show_physical_address(j)-j)
-                {
-                    settextcolor(3,0);
-                    k_old=k; k=2;
-                }
-                else
-                {
-                    settextcolor(2,0);
-                    k_old=k; k=3;
-                }
-            }
-            if(k!=k_old)
-                printformat("%x %x\n", j, show_physical_address(j));
-        }
-    }
+    // kleine Pipeline-Flush
+    asm volatile("jmp .+2");
+    
+    // Ab hier ist Paging aktiv, aber mit Identity-Mapping,
+    // d.h. deine Adressen unter 4 MiB bleiben gleich.
 }
