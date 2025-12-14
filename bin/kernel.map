@@ -30,232 +30,255 @@ Linker script and memory map
                 0x00000140                        __dll_characteristics__ = 0x140
                 0x00010000                        . = 0x10000
 
-.text           0x00010000     0x2000
-                0x00010000        0x4 LONG 0x10004 _kmain
+.text           0x00010000     0x2c00
+                0x00010000        0x4 LONG 0x10097 _kmain
                 0x00010004                        __code_start = .
  *(.text)
- .text          0x00010004      0x124 ../obj/ckernel.o
-                0x00010004                kmain
-                0x000100a7                test_task
- .text          0x00010128      0x168 ../obj/paging.o
-                0x00010128                page_init
-                0x0001018f                page_alloc
-                0x000101d5                page_free
-                0x00010200                paging_init
- .text          0x00010290       0x2d ../obj/flush.o
-                0x00010290                gdt_flush
-                0x000102ad                idt_flush
-                0x000102b5                tss_flush
- *fill*         0x000102bd        0x3 
- .text          0x000102c0      0x540 ../obj/idt.o
-                0x000102c0                idt_set_gate
-                0x000102fe                idt_init
- .text          0x00010800      0x12e ../obj/isr.o
-                0x00010800                isr0
-                0x0001080a                isr1
-                0x00010814                isr2
-                0x0001081e                isr3
-                0x00010828                isr4
-                0x00010832                isr5
-                0x0001083c                isr6
-                0x00010846                isr7
-                0x00010850                isr8
-                0x00010858                isr9
-                0x00010862                isr10
-                0x0001086a                isr11
-                0x00010872                isr12
-                0x0001087a                isr13
-                0x00010882                isr14
-                0x00010887                isr15
-                0x0001088e                isr16
-                0x00010895                isr17
-                0x0001089c                isr18
-                0x000108a3                isr19
-                0x000108aa                isr20
-                0x000108b1                isr21
-                0x000108b8                isr22
-                0x000108bf                isr23
-                0x000108c6                isr24
-                0x000108cd                isr25
-                0x000108d4                isr26
-                0x000108db                isr27
-                0x000108e2                isr28
-                0x000108e9                isr29
-                0x000108f0                isr30
-                0x000108f5                isr31
-                0x000108fc                isr128
- *fill*         0x0001092e        0x2 
- .text          0x00010930       0xd4 ../obj/irqc.o
-                0x00010930                irq_remap
-                0x0001096f                irq_handler
-                0x000109ae                irq_init
- *fill*         0x00010a04        0xc 
- .text          0x00010a10       0x36 ../obj/irq.o
-                0x00010a10                irq0
-                0x00010a17                irq1
- *fill*         0x00010a46        0x2 
- .text          0x00010a48       0x54 ../obj/isrc.o
-                0x00010a48                isr_init
-                0x00010a49                isr_handler
- .text          0x00010a9c      0x1c0 ../obj/gdt.o
-                0x00010a9c                gdt_init
-                0x00010c50                tss_set_kernel_stack
- .text          0x00010c5c       0x54 ../obj/syscall.o
-                0x00010c8f                syscall_init
-                0x00010c90                syscall_dispatch
- .text          0x00010cb0       0x30 ../obj/timer.o
-                0x00010cb0                timer_tick
- .text          0x00010ce0       0x1d ../obj/usermode.o
-                0x00010ce0                enter_usermode
- *fill*         0x00010cfd        0x3 
- .text          0x00010d00       0x24 ../obj/usermodec.o
-                0x00010d00                start_shell_from_initrd
-                0x00010d01                user_mode_main
- .text          0x00010d24      0x1ec ../obj/task.o
-                0x00010d59                tasking_is_enabled
-                0x00010d5f                tasking_init
-                0x00010dac                task_create
-                0x00010e3c                schedule
- .text          0x00010f10      0x5a4 ../obj/iso9660.o
-                0x00010f10                cd_read_sectors
-                0x00010f11                iso_init
-                0x00010f25                iso_mount
-                0x00010ff0                iso_find_file
-                0x000112f4                file_open
-                0x00011346                file_read
-                0x00011444                file_getch
-                0x00011477                file_seek
-                0x0001149d                file_close
- .text          0x000114b4      0x484 ../obj/video.o
-                0x000114b4                settextcolor
-                0x000114cc                move_cursor_right
-                0x000114ee                move_cursor_left
-                0x00011521                update_cursor
-                0x00011562                k_clear_screen
-                0x000115a5                move_cursor_home
-                0x000115b2                move_cursor_end
-                0x000115bf                set_cursor
-                0x000115d7                scroll
-                0x0001164b                putch
-                0x0001176e                puts
-                0x00011797                kprintf
-                0x000117da                printformat
-                0x00011901                save_cursor
-                0x0001191c                restore_cursor
- .text          0x00011938      0x2ec ../obj/util.o
-                0x00011938                fetchESP
-                0x0001193b                fetchEBP
-                0x0001193e                fetchSS
-                0x00011941                fetchCS
-                0x00011944                fetchDS
-                0x00011947                panic_assert
-                0x000119b9                k_memshow
-                0x000119ee                reboot
-                0x00011a1d                kitoa
-                0x00011abe                ki2hex
-                0x00011b17                float2string
- .text          0x00011c24      0x290 ../obj/kheap.o
-                0x00011c4a                kmemcpy
-                0x00011c76                kmemset
-                0x00011c98                kmemsetw
-                0x00011cbc                kstrlen
-                0x00011cda                kstrncmp
-                0x00011d28                kstrcmp
-                0x00011d5a                kstrcat
-                0x00011d93                kheap_init
-                0x00011db2                kmalloc
-                0x00011df7                kfree
-                0x00011e39                krealloc
+ .text          0x00010004      0x1c4 ../obj/ckernel.o
+                0x00010004                check_ahci
+                0x00010097                kmain
+                0x00010147                test_task
+ .text          0x000101c8      0x168 ../obj/paging.o
+                0x000101c8                page_init
+                0x0001022f                page_alloc
+                0x00010275                page_free
+                0x000102a0                paging_init
+ .text          0x00010330       0x2d ../obj/flush.o
+                0x00010330                gdt_flush
+                0x0001034d                idt_flush
+                0x00010355                tss_flush
+ *fill*         0x0001035d        0x3 
+ .text          0x00010360      0x540 ../obj/idt.o
+                0x00010360                idt_set_gate
+                0x0001039e                idt_init
+ .text          0x000108a0      0x12e ../obj/isr.o
+                0x000108a0                isr0
+                0x000108aa                isr1
+                0x000108b4                isr2
+                0x000108be                isr3
+                0x000108c8                isr4
+                0x000108d2                isr5
+                0x000108dc                isr6
+                0x000108e6                isr7
+                0x000108f0                isr8
+                0x000108f8                isr9
+                0x00010902                isr10
+                0x0001090a                isr11
+                0x00010912                isr12
+                0x0001091a                isr13
+                0x00010922                isr14
+                0x00010927                isr15
+                0x0001092e                isr16
+                0x00010935                isr17
+                0x0001093c                isr18
+                0x00010943                isr19
+                0x0001094a                isr20
+                0x00010951                isr21
+                0x00010958                isr22
+                0x0001095f                isr23
+                0x00010966                isr24
+                0x0001096d                isr25
+                0x00010974                isr26
+                0x0001097b                isr27
+                0x00010982                isr28
+                0x00010989                isr29
+                0x00010990                isr30
+                0x00010995                isr31
+                0x0001099c                isr128
+ *fill*         0x000109ce        0x2 
+ .text          0x000109d0       0xd4 ../obj/irqc.o
+                0x000109d0                irq_remap
+                0x00010a0f                irq_handler
+                0x00010a4e                irq_init
+ *fill*         0x00010aa4        0xc 
+ .text          0x00010ab0       0x36 ../obj/irq.o
+                0x00010ab0                irq0
+                0x00010ab7                irq1
+ *fill*         0x00010ae6        0x2 
+ .text          0x00010ae8       0x54 ../obj/isrc.o
+                0x00010ae8                isr_init
+                0x00010ae9                isr_handler
+ .text          0x00010b3c      0x1c0 ../obj/gdt.o
+                0x00010b3c                gdt_init
+                0x00010cf0                tss_set_kernel_stack
+ .text          0x00010cfc       0x54 ../obj/syscall.o
+                0x00010d2f                syscall_init
+                0x00010d30                syscall_dispatch
+ .text          0x00010d50       0x30 ../obj/timer.o
+                0x00010d50                timer_tick
+ .text          0x00010d80       0x1d ../obj/usermode.o
+                0x00010d80                enter_usermode
+ *fill*         0x00010d9d        0x3 
+ .text          0x00010da0       0x24 ../obj/usermodec.o
+                0x00010da0                start_shell_from_initrd
+                0x00010da1                user_mode_main
+ .text          0x00010dc4      0x1ec ../obj/task.o
+                0x00010df9                tasking_is_enabled
+                0x00010dff                tasking_init
+                0x00010e4c                task_create
+                0x00010edc                schedule
+ .text          0x00010fb0      0x5a4 ../obj/iso9660.o
+                0x00010fb0                iso_init
+                0x00010fc4                iso_mount
+                0x0001108f                iso_find_file
+                0x00011393                file_open
+                0x000113e5                file_read
+                0x000114e3                file_getch
+                0x00011516                file_seek
+                0x0001153c                file_close
+ .text          0x00011554      0x484 ../obj/video.o
+                0x00011554                settextcolor
+                0x0001156c                move_cursor_right
+                0x0001158e                move_cursor_left
+                0x000115c1                update_cursor
+                0x00011602                k_clear_screen
+                0x00011645                move_cursor_home
+                0x00011652                move_cursor_end
+                0x0001165f                set_cursor
+                0x00011677                scroll
+                0x000116eb                putch
+                0x0001180e                puts
+                0x00011837                kprintf
+                0x0001187a                printformat
+                0x000119a1                save_cursor
+                0x000119bc                restore_cursor
+ .text          0x000119d8      0x2ec ../obj/util.o
+                0x000119d8                fetchESP
+                0x000119db                fetchEBP
+                0x000119de                fetchSS
+                0x000119e1                fetchCS
+                0x000119e4                fetchDS
+                0x000119e7                panic_assert
+                0x00011a59                k_memshow
+                0x00011a8e                reboot
+                0x00011abd                kitoa
+                0x00011b5e                ki2hex
+                0x00011bb7                float2string
+ .text          0x00011cc4      0x5e8 ../obj/atapi.o
+                0x00011ee6                atapi_read_sector
+                0x0001202a                atapi_read_sectors
+                0x00012074                check_atapi
+                0x000121a0                cd_test_iso9660
+ .text          0x000122ac      0x5cc ../obj/ahci.o
+                0x000122ac                ahci_find_controller
+                0x0001238b                ahci_port_init
+                0x00012421                ahci_probe_ports
+                0x00012511                sata_read_sectors
+                0x00012732                sata_test_iso9660
+                0x00012826                ahci_init
+ .text          0x00012878      0x290 ../obj/kheap.o
+                0x0001289e                kmemcpy
+                0x000128ca                kmemset
+                0x000128ec                kmemsetw
+                0x00012910                kstrlen
+                0x0001292e                kstrncmp
+                0x0001297c                kstrcmp
+                0x000129ae                kstrcat
+                0x000129e7                kheap_init
+                0x00012a06                kmalloc
+                0x00012a4b                kfree
+                0x00012a8d                krealloc
 
-.rodata         0x00011eb4      0x200
-                0x00011eb4                        __rodata_start = .
+.rodata         0x00012b08      0xa00
+                0x00012b08                        __rodata_start = .
  *(.rodata)
  *(.rdata)
- .rdata         0x00011eb4       0x3c ../obj/ckernel.o
- .rdata         0x00011ef0       0x1c ../obj/usermodec.o
- .rdata         0x00011f0c       0x84 ../obj/video.o
- .rdata         0x00011f90       0x44 ../obj/util.o
+ .rdata         0x00012b08       0x98 ../obj/ckernel.o
+ .rdata         0x00012ba0       0x1c ../obj/usermodec.o
+ .rdata         0x00012bbc       0x84 ../obj/video.o
+ .rdata         0x00012c40       0x44 ../obj/util.o
+ .rdata         0x00012c84      0x418 ../obj/atapi.o
+ .rdata         0x0001309c      0x284 ../obj/ahci.o
 
-.rdata          0x00012000      0x400
- .rdata$zzz     0x00012000       0x2c ../obj/ckernel.o
- .rdata$zzz     0x0001202c       0x2c ../obj/paging.o
- .rdata$zzz     0x00012058       0x2c ../obj/idt.o
- .rdata$zzz     0x00012084       0x2c ../obj/irqc.o
- .rdata$zzz     0x000120b0       0x2c ../obj/isrc.o
- .rdata$zzz     0x000120dc       0x2c ../obj/gdt.o
- .rdata$zzz     0x00012108       0x2c ../obj/syscall.o
- .rdata$zzz     0x00012134       0x2c ../obj/timer.o
- .rdata$zzz     0x00012160       0x2c ../obj/usermodec.o
- .rdata$zzz     0x0001218c       0x2c ../obj/task.o
- .rdata$zzz     0x000121b8       0x2c ../obj/iso9660.o
- .rdata$zzz     0x000121e4       0x2c ../obj/video.o
- .rdata$zzz     0x00012210       0x2c ../obj/util.o
- .rdata$zzz     0x0001223c       0x2c ../obj/kheap.o
+.rdata          0x00014000      0x400
+ .rdata$zzz     0x00014000       0x2c ../obj/ckernel.o
+ .rdata$zzz     0x0001402c       0x2c ../obj/paging.o
+ .rdata$zzz     0x00014058       0x2c ../obj/idt.o
+ .rdata$zzz     0x00014084       0x2c ../obj/irqc.o
+ .rdata$zzz     0x000140b0       0x2c ../obj/isrc.o
+ .rdata$zzz     0x000140dc       0x2c ../obj/gdt.o
+ .rdata$zzz     0x00014108       0x2c ../obj/syscall.o
+ .rdata$zzz     0x00014134       0x2c ../obj/timer.o
+ .rdata$zzz     0x00014160       0x2c ../obj/usermodec.o
+ .rdata$zzz     0x0001418c       0x2c ../obj/task.o
+ .rdata$zzz     0x000141b8       0x2c ../obj/iso9660.o
+ .rdata$zzz     0x000141e4       0x2c ../obj/video.o
+ .rdata$zzz     0x00014210       0x2c ../obj/util.o
+ .rdata$zzz     0x0001423c       0x2c ../obj/atapi.o
+ .rdata$zzz     0x00014268       0x2c ../obj/ahci.o
+ .rdata$zzz     0x00014294       0x2c ../obj/kheap.o
 
-.eh_frame       0x00013000      0xc00
- .eh_frame      0x00013000       0x50 ../obj/ckernel.o
- .eh_frame      0x00013050       0xb8 ../obj/paging.o
- .eh_frame      0x00013108       0x58 ../obj/idt.o
- .eh_frame      0x00013160       0x68 ../obj/irqc.o
- .eh_frame      0x000131c8       0x44 ../obj/isrc.o
- .eh_frame      0x0001320c       0x48 ../obj/gdt.o
- .eh_frame      0x00013254       0x54 ../obj/syscall.o
- .eh_frame      0x000132a8       0x2c ../obj/timer.o
- .eh_frame      0x000132d4       0x44 ../obj/usermodec.o
- .eh_frame      0x00013318       0xb4 ../obj/task.o
- .eh_frame      0x000133cc      0x14c ../obj/iso9660.o
- .eh_frame      0x00013518      0x1c0 ../obj/video.o
- .eh_frame      0x000136d8      0x19c ../obj/util.o
- .eh_frame      0x00013874      0x194 ../obj/kheap.o
+.eh_frame       0x00015000      0xe00
+ .eh_frame      0x00015000       0x78 ../obj/ckernel.o
+ .eh_frame      0x00015078       0xb8 ../obj/paging.o
+ .eh_frame      0x00015130       0x58 ../obj/idt.o
+ .eh_frame      0x00015188       0x68 ../obj/irqc.o
+ .eh_frame      0x000151f0       0x44 ../obj/isrc.o
+ .eh_frame      0x00015234       0x48 ../obj/gdt.o
+ .eh_frame      0x0001527c       0x54 ../obj/syscall.o
+ .eh_frame      0x000152d0       0x2c ../obj/timer.o
+ .eh_frame      0x000152fc       0x44 ../obj/usermodec.o
+ .eh_frame      0x00015340       0xb4 ../obj/task.o
+ .eh_frame      0x000153f4      0x138 ../obj/iso9660.o
+ .eh_frame      0x0001552c      0x1c0 ../obj/video.o
+ .eh_frame      0x000156ec      0x19c ../obj/util.o
+ .eh_frame      0x00015888      0x18c ../obj/atapi.o
+ .eh_frame      0x00015a14      0x134 ../obj/ahci.o
+ .eh_frame      0x00015b48      0x194 ../obj/kheap.o
 
-.data           0x00013a08      0x200
-                0x00013a08                        __data_start = .
+.data           0x00015cdc      0x200
+                0x00015cdc                        __data_start = .
  *(.data)
- .data          0x00013a08        0x0 ../obj/ckernel.o
- .data          0x00013a08        0x0 ../obj/paging.o
- .data          0x00013a08        0x0 ../obj/idt.o
- .data          0x00013a08        0x0 ../obj/irqc.o
- .data          0x00013a08        0x0 ../obj/isrc.o
- .data          0x00013a08        0x0 ../obj/gdt.o
- .data          0x00013a08        0x4 ../obj/syscall.o
- .data          0x00013a0c        0x0 ../obj/timer.o
- .data          0x00013a0c        0x4 ../obj/usermodec.o
-                0x00013a0c                user_stack_top
- .data          0x00013a10        0x0 ../obj/task.o
- .data          0x00013a10        0x4 ../obj/iso9660.o
- .data          0x00013a14        0x8 ../obj/video.o
-                0x00013a14                tui_vidmem
-                0x00013a18                attrib
- .data          0x00013a1c        0x4 ../obj/util.o
-                0x00013a1c                INT_MAX
- .data          0x00013a20        0x0 ../obj/kheap.o
+ .data          0x00015cdc        0x0 ../obj/ckernel.o
+ .data          0x00015cdc        0x0 ../obj/paging.o
+ .data          0x00015cdc        0x0 ../obj/idt.o
+ .data          0x00015cdc        0x0 ../obj/irqc.o
+ .data          0x00015cdc        0x0 ../obj/isrc.o
+ .data          0x00015cdc        0x0 ../obj/gdt.o
+ .data          0x00015cdc        0x4 ../obj/syscall.o
+ .data          0x00015ce0        0x0 ../obj/timer.o
+ .data          0x00015ce0        0x4 ../obj/usermodec.o
+                0x00015ce0                user_stack_top
+ .data          0x00015ce4        0x0 ../obj/task.o
+ .data          0x00015ce4        0x4 ../obj/iso9660.o
+ .data          0x00015ce8        0x8 ../obj/video.o
+                0x00015ce8                tui_vidmem
+                0x00015cec                attrib
+ .data          0x00015cf0        0x4 ../obj/util.o
+                0x00015cf0                INT_MAX
+ .data          0x00015cf4        0x8 ../obj/atapi.o
+ .data          0x00015cfc        0x0 ../obj/ahci.o
+ .data          0x00015cfc        0x0 ../obj/kheap.o
 
-.bss            0x00014000   0x403928
-                0x00014000                        __bss_start = .
+.bss            0x00016000   0x404404
+                0x00016000                        __bss_start = .
  *(.bss)
- .bss           0x00014000        0x0 ../obj/ckernel.o
- .bss           0x00014000   0x402000 ../obj/paging.o
- .bss           0x00416000      0x820 ../obj/idt.o
- .bss           0x00416820        0x0 ../obj/irqc.o
- .bss           0x00416820        0x0 ../obj/isrc.o
- .bss           0x00416820       0xc0 ../obj/gdt.o
- .bss           0x004168e0        0x0 ../obj/syscall.o
- .bss           0x004168e0        0x4 ../obj/timer.o
- *fill*         0x004168e4       0x1c 
- .bss           0x00416900     0x1000 ../obj/usermodec.o
-                0x00416900                user_stack
- .bss           0x00417900       0x10 ../obj/task.o
- .bss           0x00417910       0x10 ../obj/iso9660.o
- .bss           0x00417920        0x4 ../obj/video.o
-                0x00417920                saved_csr_y
-                0x00417921                saved_csr_x
-                0x00417922                csr_y
-                0x00417923                csr_x
- .bss           0x00417924        0x0 ../obj/util.o
- .bss           0x00417924        0x4 ../obj/kheap.o
+ .bss           0x00016000        0x0 ../obj/ckernel.o
+ .bss           0x00016000   0x402000 ../obj/paging.o
+ .bss           0x00418000      0x820 ../obj/idt.o
+ .bss           0x00418820        0x0 ../obj/irqc.o
+ .bss           0x00418820        0x0 ../obj/isrc.o
+ .bss           0x00418820       0xc0 ../obj/gdt.o
+ .bss           0x004188e0        0x0 ../obj/syscall.o
+ .bss           0x004188e0        0x4 ../obj/timer.o
+ *fill*         0x004188e4       0x1c 
+ .bss           0x00418900     0x1000 ../obj/usermodec.o
+                0x00418900                user_stack
+ .bss           0x00419900       0x10 ../obj/task.o
+ .bss           0x00419910       0x10 ../obj/iso9660.o
+ .bss           0x00419920        0x4 ../obj/video.o
+                0x00419920                saved_csr_y
+                0x00419921                saved_csr_x
+                0x00419922                csr_y
+                0x00419923                csr_x
+ .bss           0x00419924        0x0 ../obj/util.o
+ .bss           0x00419924        0xc ../obj/atapi.o
+ *fill*         0x00419930      0x2d0 
+ .bss           0x00419c00      0x800 ../obj/ahci.o
+ .bss           0x0041a400        0x4 ../obj/kheap.o
  *(COMMON)
-                0x00417928                        __bss_end = .
-                0x00417928                        __end = .
+                0x0041a404                        __bss_end = .
+                0x0041a404                        __end = .
 
 /DISCARD/
  *(.reloc)
@@ -276,6 +299,8 @@ LOAD ../obj/task.o
 LOAD ../obj/iso9660.o
 LOAD ../obj/video.o
 LOAD ../obj/util.o
+LOAD ../obj/atapi.o
+LOAD ../obj/ahci.o
 LOAD ../obj/kheap.o
 OUTPUT(../obj/kernel.o pei-i386)
 LOAD dll stuff

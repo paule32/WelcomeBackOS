@@ -69,10 +69,12 @@ static uint32_t iso_root_lba    = 0;
 static uint32_t iso_root_size   = 0;
 static int      iso_is_mounted  = 0;
 
+/*
 void cd_read_sectors(uint32_t lba, uint32_t count, void* buffer)
 {
 
 }
+*/
 
 static uint32_t align_up(uint32_t value, uint32_t align)
 {

@@ -13,17 +13,41 @@
 # include "syscall.h"
 # include "usermode.h"
 # include "iso9660.h"
+# include "proto.h"
 
 extern void* krealloc(void* ptr, uint32_t new_size);
 extern void gdt_init(void);
 extern void irq_init(void);
 
-extern void cd_read_sectors(uint32_t lba, uint32_t count, void* buffer);
+extern void atapi_read_sectors(uint32_t lba, uint32_t count, void* buffer);
+extern int  sata_read_sectors(uint32_t lba, uint32_t count, void *buffer);
+
 extern void printformat(char*, ...);
 extern void enter_usermode(void);
 
 void test_task(void);
 
+int check_ahci(void)
+{
+    if (ahci_init() != 0) {
+        printformat("AHCI init failed\n");
+        return -1;
+    }
+    if (ahci_probe_ports() != 0) {
+        printformat("AHCI probe failed\n");
+        return -1;
+    }
+
+    uint8_t buf[512];
+    if (sata_read_sectors(0, 1, buf) != 0) {
+        printformat("sata_read_sectors failed\n");
+        return -1;
+    }
+
+    printformat("Erstes Byte von LBA 0: 0x%x\n", buf[0]);
+    return 0;
+}
+        
 int kmain()
 {
     volatile char *vga = (volatile char*)0xB8000;
@@ -51,7 +75,18 @@ int kmain()
     syscall_init();
     tasking_init();
     
-    iso_init(cd_read_sectors);
+    if (check_atapi() == 0) {
+        //cd_test_iso9660();
+    }   else {
+        settextcolor(14,0);
+        if (check_ahci() != 0) {
+            while (1) {
+                __asm__ volatile("hlt");
+            }
+        }
+    }
+    
+    iso_init(atapi_read_sectors);
     if (iso_mount() != 0) {
         printformat("ISO mount Error.");
     }   else {
@@ -61,9 +96,9 @@ int kmain()
     __asm__ volatile("sti");
     
     // Testmarker, bevor wir springen:
-    volatile char* VGA = (volatile char*)0xB8000;
+    /*volatile char* VGA = (volatile char*)0xB8000;
     VGA[0] = 'K'; VGA[1] = 0x0F;
-    VGA[2] = 'U'; VGA[3] = 0x0F;
+    VGA[2] = 'U'; VGA[3] = 0x0F;*/
     
     enter_usermode();
     

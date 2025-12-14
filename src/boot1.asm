@@ -6,7 +6,7 @@ TEST_LBA       equ 0       ; kleiner LBA im ISO (188 Sektoren hast du ja)
 ;---------------------------------------------------------
 ; Diese beiden muessen wir *patchen*
 ;---------------------------------------------------------
-BOOT2_LBA      equ 46
+BOOT2_LBA      equ 50
 BOOT2_SECTORS  equ 1
 
 BITS 16

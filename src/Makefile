@@ -57,6 +57,8 @@ SRCC := $(SRC)/ckernel.c        \
         $(SRC)/iso9660.c        \
         $(SRC)/video.c          \
         $(SRC)/util.c           \
+        $(SRC)/atapi.c          \
+        $(SRC)/ahci.c           \
         $(SRC)/kheap.c
 
 # -----------------------------------------------------------------------------
@@ -79,6 +81,8 @@ OBJS := $(OBJ)/ckernel.o        \
         $(OBJ)/iso9660.o        \
         $(OBJ)/video.o          \
         $(OBJ)/util.o           \
+        $(OBJ)/atapi.o          \
+        $(OBJ)/ahci.o           \
         $(OBJ)/kheap.o
 
 all: config\

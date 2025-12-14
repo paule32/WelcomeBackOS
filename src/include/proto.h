@@ -12,6 +12,34 @@ inline void outportb(UINT port, UINT val) {
     __asm__ volatile ("outb %b0,%w1" : : "a"(val), "d"(port));
 }
 
+static inline uint8_t inb(uint16_t port) {
+    uint8_t val;
+    __asm__ __volatile__ ("inb %1, %0" : "=a"(val) : "dN"(port));
+    return val;
+}
+
+static inline void outb(uint16_t port, uint8_t val) {
+    __asm__ __volatile__ ("outb %0, %1" :: "a"(val), "dN"(port));
+}
+
+static inline uint16_t inw(uint16_t port) {
+    uint16_t val;
+    __asm__ __volatile__ ("inw %1, %0" : "=a"(val) : "dN"(port));
+    return val;
+}
+static inline uint32_t inl(uint32_t port) {
+    uint32_t val;
+    __asm__ __volatile__ ("inl %1, %0" : "=a"(val) : "dN"(port));
+    return val;
+}
+
+static inline void outw(uint16_t port, uint16_t val) {
+    __asm__ __volatile__ ("outw %0, %1" :: "a"(val), "dN"(port));
+}
+static inline void outl(uint16_t port, uint32_t val) {
+    __asm__ __volatile__ ("outl %0, %1" :: "a"(val), "dN"(port));
+}
+
 // video.c
 #ifdef __cplusplus
 extern "C" {
@@ -55,3 +83,13 @@ extern void ki2hex(UINT val, char* dest, int len);
 #ifdef __cplusplus
 };
 #endif
+
+extern int check_atapi (void);
+extern int check_ahci  (void);
+
+extern int ahci_init   (void);
+extern int ahci_probe_ports(void);
+
+extern int sata_read_sectors(uint32_t lba, uint32_t count, void *buffer);
+
+extern int cd_test_iso9660(void);
