@@ -44,23 +44,35 @@ BIN  := ../bin
 # -----------------------------------------------------------------------------
 # source files for the C-kernel ...
 # -----------------------------------------------------------------------------
-SRCC := $(SRC)/ckernel.c            \
-        $(SRC)/paging.c             \
-        $(SRC)/idt.c                \
-        $(SRC)/isrc.c               \
-        $(SRC)/syscall.c            \
+SRCC := $(SRC)/ckernel.c        \
+        $(SRC)/paging.c         \
+        $(SRC)/idt.c            \
+        $(SRC)/irqc.c           \
+        $(SRC)/isrc.c           \
+        $(SRC)/gdt.c            \
+        $(SRC)/syscall.c        \
+        $(SRC)/timer.c          \
+        $(SRC)/usermodec.c      \
+        $(SRC)/task.c           \
         $(SRC)/kheap.c
 
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the C-kernel ...
 # -----------------------------------------------------------------------------
-OBJS := $(OBJ)/ckernel.o            \
-        $(OBJ)/paging.o             \
-        $(OBJ)/flush.o              \
-        $(OBJ)/idt.o                \
-        $(OBJ)/isr.o                \
-        $(OBJ)/isrc.o               \
-        $(OBJ)/syscall.o            \
+OBJS := $(OBJ)/ckernel.o        \
+        $(OBJ)/paging.o         \
+        $(OBJ)/flush.o          \
+        $(OBJ)/idt.o            \
+        $(OBJ)/isr.o            \
+        $(OBJ)/irqc.o           \
+        $(OBJ)/irq.o            \
+        $(OBJ)/isrc.o           \
+        $(OBJ)/gdt.o            \
+        $(OBJ)/syscall.o        \
+        $(OBJ)/timer.o          \
+        $(OBJ)/usermode.o       \
+        $(OBJ)/usermodec.o      \
+        $(OBJ)/task.o           \
         $(OBJ)/kheap.o
 
 all: config\

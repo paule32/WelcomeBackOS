@@ -1,34 +1,27 @@
+// Simple preemptive kernel tasking using IRQ0
+// (c) 2025 by Jens Kallup - paule32
+
 #ifndef TASK_H
 #define TASK_H
 
-#include "os.h"
-#include "paging.h"
-#include "descriptor_tables.h"
+#include "stdint.h"
+#include "isr.h"
 
-#define KERNEL_STACK_SIZE 2048       // Use a 2kb kernel stack.
-
-extern ULONG initial_esp;
-
-typedef struct task
-{
-    int id;                           // Process ID.
-    ULONG esp, ebp;                   // Stack and base pointers.
-    ULONG eip;                        // Instruction pointer.
-    ULONG ss;
-    page_directory_t* page_directory; // Page directory.
-    ULONG kernel_stack;               // Kernel stack location.
-    struct task* next;                // The next task in a linked list.
+typedef struct task {
+    regs_t regs;           // saved CPU state
+    struct task* next;     // next task in round-robin list
 } task_t;
 
-void tasking_install();
-ULONG task_switch(ULONG esp);
-int fork();
-int getpid();
-task_t* create_task (void* entry, unsigned char privilege);
-void switch_context();
+// Initialisiert das Tasking-System (muss im Kernel aufgerufen werden)
+extern void tasking_init(void);
 
-void task_log(task_t* t);
-void TSS_log(tss_entry_t* tss);
-void log_task_list();
+// Erzeugt einen neuen Kernel-Task, der bei 'entry' beginnt
+extern void task_create(void (*entry)(void));
+
+// Wird vom IRQ-Handler (Timer) aufgerufen, um Task zu wechseln
+extern void schedule(regs_t* r);
+
+// Wird vom IRQ-Code benutzt, um festzustellen, ob Tasking aktiv ist
+extern int tasking_is_enabled(void);
 
 #endif

@@ -4,6 +4,144 @@ Alle Rechte vorbehalten.
 
 ## Current System Status: 2025-12-14
 
+## 1️ Bootprozess: Stage 1 & Stage 2 erfolgreich implementiert
+### Stage 1
+- Real-Mode Bootsektor
+- INT 13h Extensions (EDD) Tests
+- LBA-Read Tests
+- Laden von Stage2
+- BIOS Debug-Ausgabe
+
+### Stage 2
+- Läuft bei 0x0000:0500
+- Setzen der Segmente
+- Laden des Kernels via LBA
+- A20 aktiv
+- GDT aufgebaut
+- Protected Mode aktiviert
+- Kernelstart bei 0x00010000
+
+## 2️ Kernel
+- Makefile für 32-Bit Cross-Compilation
+- kernel.ld erzeugt Flat Binary
+- VGA-Ausgabe funktioniert
+- PM32 stabil
+
+## 3️ Paging
+- Identity Mapping der unteren 4 MiB
+- Page Directory + Page Tables
+- CR3/CR0 korrekt gesetzt
+
+## 4️ Heap
+- Grundstruktur implementiert
+- Alignment-Fixes
+- Vorbereitung auf malloc/free
+
+## 5️ GDT & TSS
+- GDT vollständig
+- TSS korrekt initialisiert
+- ltr erfolgreich
+
+## 6️ Interrupts
+- IDT voll aufgebaut
+- Exceptions, IRQs
+- PIC remapped
+- Syscalls vorbereitet
+
+## 7️ Usermode
+- enter_usermode funktioniert bis ASM
+- Direkter Funktionsaufruf klappt
+- Ring 3 via iret in Arbeit
+
+## 8️ ISO Boot
+- Boot ohne boot-info-table
+- ISO bootet korrekt
+- LBA geprüft
+
+---
+
+## Current System Status: 2025-12-13
+
+WelcomeBackOS now includes all foundational components of a modern 32-bit operating system.  
+The following subsystems are fully implemented and functional:
+
+---
+
+## Bootloader (Stage1 + Stage2)
+
+- Stage1 loads Stage2 via LBA from CD/ISO.  
+- Stage2 enables A20, loads the kernel to physical address **0x0010 0000**, sets up a minimal GDT, and switches to **Protected Mode**.  
+- Control is transferred safely to the 32-bit kernel.
+
+---
+
+## Kernel Core
+
+- 32-bit Global Descriptor Table (GDT)  
+- Fully operational Paging initialization  
+- Identity-mapped kernel region  
+- Stable VGA text output  
+- Clean kernel execution loop using `hlt`
+
+---
+
+## Memory Management
+
+### Implemented:
+1. **Page Frame Allocator**  
+   Bitmap-based management of physical memory pages.
+
+2. **Kernel Heap (KHeap)**  
+   With pointer-safe alignment using `uintptr_t`.
+
+3. **Paging**  
+   Page Directory + Page Tables with identity mapping of the kernel region.
+
+This provides a stable memory foundation for higher-level kernels subsystems, such as tasking, usermode, and ELF loading.
+
+---
+
+## Interrupt System (IDT + ISRs)
+
+- Complete **IDT with 256 entries**  
+- Exception handlers (0–31) implemented  
+- Unified `regs_t` frame passed to C handler  
+- All Exceptions display debugging output  
+- All Interrupt Stubs implemented in clean, structured 32-bit Assembly
+
+---
+
+## Syscall Framework (`int 0x80`)
+
+- IDT entry 0x80 with **DPL=3**, accessible from usermode  
+- Syscall dispatcher implemented  
+- First syscall operational (VGA output test)  
+- Kernel successfully handles software interrupts via a unified interface
+
+This is the groundwork for a full system call layer and later usermode programs.
+
+---
+
+## Next Development Step: Hardware Interrupts (Option A)
+
+The next milestone is implementing **hardware interrupts**, specifically:
+
+### ✔ PIC Remapping (to 0x20–0x2F)  
+### ✔ IRQ Handler API  
+### ✔ Timer Interrupt (IRQ0)  
+### ✔ Keyboard Interrupt (IRQ1)
+
+These enable:
+
+- Preemptive Kernel Scheduling  
+- Task Switching  
+- Usermode transitions  
+- A real multitasking operating system
+
+---
+
+## Current System Status: 2025-12-13
+
 Dieses Projekt zeigt Schritt für Schritt, wie man:
 
 - einen **El-Torito CD-Bootloader** (Stage1 & Stage2) schreibt  
@@ -231,85 +369,6 @@ Ein vollständiger Bootprozess:
 
 ---
 
-## Current System Status: 2025-12-15
-
-WelcomeBackOS now includes all foundational components of a modern 32-bit operating system.  
-The following subsystems are fully implemented and functional:
-
----
-
-## Bootloader (Stage1 + Stage2)
-
-- Stage1 loads Stage2 via LBA from CD/ISO.  
-- Stage2 enables A20, loads the kernel to physical address **0x0010 0000**, sets up a minimal GDT, and switches to **Protected Mode**.  
-- Control is transferred safely to the 32-bit kernel.
-
----
-
-## Kernel Core
-
-- 32-bit Global Descriptor Table (GDT)  
-- Fully operational Paging initialization  
-- Identity-mapped kernel region  
-- Stable VGA text output  
-- Clean kernel execution loop using `hlt`
-
----
-
-## Memory Management
-
-### Implemented:
-1. **Page Frame Allocator**  
-   Bitmap-based management of physical memory pages.
-
-2. **Kernel Heap (KHeap)**  
-   With pointer-safe alignment using `uintptr_t`.
-
-3. **Paging**  
-   Page Directory + Page Tables with identity mapping of the kernel region.
-
-This provides a stable memory foundation for higher-level kernels subsystems, such as tasking, usermode, and ELF loading.
-
----
-
-## Interrupt System (IDT + ISRs)
-
-- Complete **IDT with 256 entries**  
-- Exception handlers (0–31) implemented  
-- Unified `regs_t` frame passed to C handler  
-- All Exceptions display debugging output  
-- All Interrupt Stubs implemented in clean, structured 32-bit Assembly
-
----
-
-## Syscall Framework (`int 0x80`)
-
-- IDT entry 0x80 with **DPL=3**, accessible from usermode  
-- Syscall dispatcher implemented  
-- First syscall operational (VGA output test)  
-- Kernel successfully handles software interrupts via a unified interface
-
-This is the groundwork for a full system call layer and later usermode programs.
-
----
-
-## Next Development Step: Hardware Interrupts (Option A)
-
-The next milestone is implementing **hardware interrupts**, specifically:
-
-### ✔ PIC Remapping (to 0x20–0x2F)  
-### ✔ IRQ Handler API  
-### ✔ Timer Interrupt (IRQ0)  
-### ✔ Keyboard Interrupt (IRQ1)
-
-These enable:
-
-- Preemptive Kernel Scheduling  
-- Task Switching  
-- Usermode transitions  
-- A real multitasking operating system
-
----
 # 9. Lizenz
 
 (c) 2025 Jens Kallup – paule32.

@@ -30,117 +30,167 @@ Linker script and memory map
                 0x00000140                        __dll_characteristics__ = 0x140
                 0x00010000                        . = 0x10000
 
-.text           0x00010000      0xc00
+.text           0x00010000     0x1200
                 0x00010000        0x4 LONG 0x10004 _kmain
                 0x00010004                        __code_start = .
  *(.text)
- .text          0x00010004       0xfc ../obj/ckernel.o
+ .text          0x00010004       0xf4 ../obj/ckernel.o
                 0x00010004                kmain
- .text          0x00010100      0x168 ../obj/paging.o
-                0x00010100                page_init
-                0x00010167                page_alloc
-                0x000101ad                page_free
-                0x000101d8                paging_init
- *fill*         0x00010268        0x8 
- .text          0x00010270       0x2d ../obj/flush.o
-                0x00010270                gdt_flush
-                0x0001028d                idt_flush
-                0x00010295                tss_flush
- *fill*         0x0001029d        0x3 
- .text          0x000102a0      0x540 ../obj/idt.o
-                0x000102a0                idt_set_gate
-                0x000102de                idt_init
- .text          0x000107e0      0x12e ../obj/isr.o
-                0x000107e0                isr0
-                0x000107ea                isr1
-                0x000107f4                isr2
-                0x000107fe                isr3
-                0x00010808                isr4
-                0x00010812                isr5
-                0x0001081c                isr6
-                0x00010826                isr7
-                0x00010830                isr8
-                0x00010838                isr9
-                0x00010842                isr10
-                0x0001084a                isr11
-                0x00010852                isr12
-                0x0001085a                isr13
-                0x00010862                isr14
-                0x00010867                isr15
-                0x0001086e                isr16
-                0x00010875                isr17
-                0x0001087c                isr18
-                0x00010883                isr19
-                0x0001088a                isr20
-                0x00010891                isr21
-                0x00010898                isr22
-                0x0001089f                isr23
-                0x000108a6                isr24
-                0x000108ad                isr25
-                0x000108b4                isr26
-                0x000108bb                isr27
-                0x000108c2                isr28
-                0x000108c9                isr29
-                0x000108d0                isr30
-                0x000108d5                isr31
-                0x000108dc                isr128
- *fill*         0x0001090e        0x2 
- .text          0x00010910       0x54 ../obj/isrc.o
-                0x00010910                isr_init
-                0x00010911                isr_handler
- .text          0x00010964       0x54 ../obj/syscall.o
-                0x00010997                syscall_init
-                0x00010998                syscall_dispatch
- .text          0x000109b8      0x174 ../obj/kheap.o
-                0x000109de                kmemcpy
-                0x00010a0a                kheap_init
-                0x00010a29                kmalloc
-                0x00010a6e                kfree
-                0x00010ab0                krealloc
+                0x00010078                test_task
+ .text          0x000100f8      0x168 ../obj/paging.o
+                0x000100f8                page_init
+                0x0001015f                page_alloc
+                0x000101a5                page_free
+                0x000101d0                paging_init
+ .text          0x00010260       0x2d ../obj/flush.o
+                0x00010260                gdt_flush
+                0x0001027d                idt_flush
+                0x00010285                tss_flush
+ *fill*         0x0001028d        0x3 
+ .text          0x00010290      0x540 ../obj/idt.o
+                0x00010290                idt_set_gate
+                0x000102ce                idt_init
+ .text          0x000107d0      0x12e ../obj/isr.o
+                0x000107d0                isr0
+                0x000107da                isr1
+                0x000107e4                isr2
+                0x000107ee                isr3
+                0x000107f8                isr4
+                0x00010802                isr5
+                0x0001080c                isr6
+                0x00010816                isr7
+                0x00010820                isr8
+                0x00010828                isr9
+                0x00010832                isr10
+                0x0001083a                isr11
+                0x00010842                isr12
+                0x0001084a                isr13
+                0x00010852                isr14
+                0x00010857                isr15
+                0x0001085e                isr16
+                0x00010865                isr17
+                0x0001086c                isr18
+                0x00010873                isr19
+                0x0001087a                isr20
+                0x00010881                isr21
+                0x00010888                isr22
+                0x0001088f                isr23
+                0x00010896                isr24
+                0x0001089d                isr25
+                0x000108a4                isr26
+                0x000108ab                isr27
+                0x000108b2                isr28
+                0x000108b9                isr29
+                0x000108c0                isr30
+                0x000108c5                isr31
+                0x000108cc                isr128
+ *fill*         0x000108fe        0x2 
+ .text          0x00010900       0xd4 ../obj/irqc.o
+                0x00010900                irq_remap
+                0x0001093f                irq_handler
+                0x0001097e                irq_init
+ *fill*         0x000109d4        0xc 
+ .text          0x000109e0       0x36 ../obj/irq.o
+                0x000109e0                irq0
+                0x000109e7                irq1
+ *fill*         0x00010a16        0x2 
+ .text          0x00010a18       0x54 ../obj/isrc.o
+                0x00010a18                isr_init
+                0x00010a19                isr_handler
+ .text          0x00010a6c      0x1c0 ../obj/gdt.o
+                0x00010a6c                gdt_init
+                0x00010c20                tss_set_kernel_stack
+ .text          0x00010c2c       0x54 ../obj/syscall.o
+                0x00010c5f                syscall_init
+                0x00010c60                syscall_dispatch
+ .text          0x00010c80       0x30 ../obj/timer.o
+                0x00010c80                timer_tick
+ .text          0x00010cb0       0x1d ../obj/usermode.o
+                0x00010cb0                enter_usermode
+ *fill*         0x00010ccd        0x3 
+ .text          0x00010cd0       0x24 ../obj/usermodec.o
+                0x00010cd0                user_mode_main
+ .text          0x00010cf4      0x1ec ../obj/task.o
+                0x00010d29                tasking_is_enabled
+                0x00010d2f                tasking_init
+                0x00010d7c                task_create
+                0x00010e0c                schedule
+ .text          0x00010ee0      0x194 ../obj/kheap.o
+                0x00010f06                kmemcpy
+                0x00010f32                kmemset
+                0x00010f54                kheap_init
+                0x00010f73                kmalloc
+                0x00010fb8                kfree
+                0x00010ffa                krealloc
 
-.rdata          0x00011000      0x200
- .rdata$zzz     0x00011000       0x2c ../obj/ckernel.o
- .rdata$zzz     0x0001102c       0x2c ../obj/paging.o
- .rdata$zzz     0x00011058       0x2c ../obj/idt.o
- .rdata$zzz     0x00011084       0x2c ../obj/isrc.o
- .rdata$zzz     0x000110b0       0x2c ../obj/syscall.o
- .rdata$zzz     0x000110dc       0x2c ../obj/kheap.o
-
-.eh_frame       0x00012000      0x400
- .eh_frame      0x00012000       0x2c ../obj/ckernel.o
- .eh_frame      0x0001202c       0xb8 ../obj/paging.o
- .eh_frame      0x000120e4       0x58 ../obj/idt.o
- .eh_frame      0x0001213c       0x44 ../obj/isrc.o
- .eh_frame      0x00012180       0x54 ../obj/syscall.o
- .eh_frame      0x000121d4       0xe4 ../obj/kheap.o
-
-.rodata         0x000122b8        0x0
-                0x000122b8                        __rodata_start = .
+.rodata         0x00011074      0x200
+                0x00011074                        __rodata_start = .
  *(.rodata)
  *(.rdata)
+ .rdata         0x00011074       0x14 ../obj/ckernel.o
+ .rdata         0x00011088       0x1c ../obj/usermodec.o
 
-.data           0x000122b8      0x200
-                0x000122b8                        __data_start = .
+.rdata          0x00012000      0x200
+ .rdata$zzz     0x00012000       0x2c ../obj/ckernel.o
+ .rdata$zzz     0x0001202c       0x2c ../obj/paging.o
+ .rdata$zzz     0x00012058       0x2c ../obj/idt.o
+ .rdata$zzz     0x00012084       0x2c ../obj/irqc.o
+ .rdata$zzz     0x000120b0       0x2c ../obj/isrc.o
+ .rdata$zzz     0x000120dc       0x2c ../obj/gdt.o
+ .rdata$zzz     0x00012108       0x2c ../obj/syscall.o
+ .rdata$zzz     0x00012134       0x2c ../obj/timer.o
+ .rdata$zzz     0x00012160       0x2c ../obj/usermodec.o
+ .rdata$zzz     0x0001218c       0x2c ../obj/task.o
+ .rdata$zzz     0x000121b8       0x2c ../obj/kheap.o
+
+.eh_frame       0x00013000      0x600
+ .eh_frame      0x00013000       0x50 ../obj/ckernel.o
+ .eh_frame      0x00013050       0xb8 ../obj/paging.o
+ .eh_frame      0x00013108       0x58 ../obj/idt.o
+ .eh_frame      0x00013160       0x68 ../obj/irqc.o
+ .eh_frame      0x000131c8       0x44 ../obj/isrc.o
+ .eh_frame      0x0001320c       0x48 ../obj/gdt.o
+ .eh_frame      0x00013254       0x54 ../obj/syscall.o
+ .eh_frame      0x000132a8       0x2c ../obj/timer.o
+ .eh_frame      0x000132d4       0x30 ../obj/usermodec.o
+ .eh_frame      0x00013304       0xb4 ../obj/task.o
+ .eh_frame      0x000133b8      0x100 ../obj/kheap.o
+
+.data           0x000134b8      0x200
+                0x000134b8                        __data_start = .
  *(.data)
- .data          0x000122b8        0x0 ../obj/ckernel.o
- .data          0x000122b8        0x0 ../obj/paging.o
- .data          0x000122b8        0x0 ../obj/idt.o
- .data          0x000122b8        0x0 ../obj/isrc.o
- .data          0x000122b8        0x4 ../obj/syscall.o
- .data          0x000122bc        0x0 ../obj/kheap.o
+ .data          0x000134b8        0x0 ../obj/ckernel.o
+ .data          0x000134b8        0x0 ../obj/paging.o
+ .data          0x000134b8        0x0 ../obj/idt.o
+ .data          0x000134b8        0x0 ../obj/irqc.o
+ .data          0x000134b8        0x0 ../obj/isrc.o
+ .data          0x000134b8        0x0 ../obj/gdt.o
+ .data          0x000134b8        0x4 ../obj/syscall.o
+ .data          0x000134bc        0x0 ../obj/timer.o
+ .data          0x000134bc        0x4 ../obj/usermodec.o
+                0x000134bc                user_stack_top
+ .data          0x000134c0        0x0 ../obj/task.o
+ .data          0x000134c0        0x0 ../obj/kheap.o
 
-.bss            0x00013000   0x402824
-                0x00013000                        __bss_start = .
+.bss            0x00014000   0x403914
+                0x00014000                        __bss_start = .
  *(.bss)
- .bss           0x00013000        0x0 ../obj/ckernel.o
- .bss           0x00013000   0x402000 ../obj/paging.o
- .bss           0x00415000      0x820 ../obj/idt.o
- .bss           0x00415820        0x0 ../obj/isrc.o
- .bss           0x00415820        0x0 ../obj/syscall.o
- .bss           0x00415820        0x4 ../obj/kheap.o
+ .bss           0x00014000        0x0 ../obj/ckernel.o
+ .bss           0x00014000   0x402000 ../obj/paging.o
+ .bss           0x00416000      0x820 ../obj/idt.o
+ .bss           0x00416820        0x0 ../obj/irqc.o
+ .bss           0x00416820        0x0 ../obj/isrc.o
+ .bss           0x00416820       0xc0 ../obj/gdt.o
+ .bss           0x004168e0        0x0 ../obj/syscall.o
+ .bss           0x004168e0        0x4 ../obj/timer.o
+ *fill*         0x004168e4       0x1c 
+ .bss           0x00416900     0x1000 ../obj/usermodec.o
+                0x00416900                user_stack
+ .bss           0x00417900       0x10 ../obj/task.o
+ .bss           0x00417910        0x4 ../obj/kheap.o
  *(COMMON)
-                0x00415824                        __bss_end = .
-                0x00415824                        __end = .
+                0x00417914                        __bss_end = .
+                0x00417914                        __end = .
 
 /DISCARD/
  *(.reloc)
@@ -149,8 +199,15 @@ LOAD ../obj/paging.o
 LOAD ../obj/flush.o
 LOAD ../obj/idt.o
 LOAD ../obj/isr.o
+LOAD ../obj/irqc.o
+LOAD ../obj/irq.o
 LOAD ../obj/isrc.o
+LOAD ../obj/gdt.o
 LOAD ../obj/syscall.o
+LOAD ../obj/timer.o
+LOAD ../obj/usermode.o
+LOAD ../obj/usermodec.o
+LOAD ../obj/task.o
 LOAD ../obj/kheap.o
 OUTPUT(../obj/kernel.o pei-i386)
 LOAD dll stuff

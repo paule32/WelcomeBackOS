@@ -6,11 +6,20 @@
 # include "stdint.h"
 # include "paging.h"
 # include "kheap.h"
+# include "gdt.h"
 # include "idt.h"
 # include "isr.h"
+# include "task.h"
 # include "syscall.h"
+# include "usermode.h"
 
 extern void* krealloc(void* ptr, uint32_t new_size);
+extern void gdt_init(void);
+extern void irq_init(void);
+//extern void idt_flush(void);
+extern void enter_usermode(void);
+
+void test_task(void);
 
 int kmain()
 {
@@ -24,9 +33,34 @@ int kmain()
     // alles unterhalb (Kernel + 1MiB Heap) als belegt markieren
     uint32_t reserved = (uint32_t)(&_end) + 0x00100000;
     page_init(reserved);
+
+    gdt_init();
+    
+    // Kernel-Stack für TSS setzen: nimm z.B. current esp
+    uint32_t kstack;
+    __asm__ volatile("mov %%esp, %0" : "=r"(kstack));
+    tss_set_kernel_stack(kstack);
+    
     idt_init();
     isr_init();
+    irq_init();
+    
     syscall_init();
+    tasking_init();
+    
+    __asm__ volatile("sti");
+    
+    // Testmarker, bevor wir springen:
+    volatile char* VGA = (volatile char*)0xB8000;
+    VGA[0] = 'K'; VGA[1] = 0x0F;
+    VGA[2] = 'U'; VGA[3] = 0x0F;
+    
+    enter_usermode();
+    
+#if 0
+    task_create(test_task);
+    
+    asm volatile("sti");
     
     vga[4] = 'P';
     vga[5] = 0x0F;
@@ -54,18 +88,45 @@ int kmain()
         vga[12] = 'X'; vga[13] = 0x02;
     }
     
-    asm volatile("sti");  // Interrupts freigeben
-    
     // Test: Syscall direkt aus Kernel ( später: aus Usermode )
     asm volatile("mov $1, %eax");   // SYSCALL_PUTCHAR
     asm volatile("mov $'@', %ebx");
     asm volatile("int $0x80");
+#endif
     
-    
+    // Hierher kommt man normalerweise nicht mehr zurück
     for (;;) {
         asm volatile("hlt");
     }
     return 0;
+}
+
+
+static volatile char* const VGA = (volatile char*)0xB8000;
+
+static void putc_xy(int x, int y, char c, uint8_t color)
+{
+    int pos = y * 80 + x;
+    VGA[pos * 2]     = c;
+    VGA[pos * 2 + 1] = color;
+}
+
+void test_task(void)
+{
+    const char* msg = "Task2 running...";
+    int x = 0;
+    int y = 3;
+    int idx = 0;
+
+    while (1) {
+        putc_xy(x + (idx % 20), y, msg[idx % 16], 0x0E);
+        idx++;
+
+        // kleine Delay-Schleife, damit sich was tut
+        for (volatile uint32_t i = 0; i < 1000000; ++i) {
+            // busy-wait
+        }
+    }
 }
 
 #if 0
