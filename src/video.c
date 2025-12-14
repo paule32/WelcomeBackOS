@@ -1,6 +1,10 @@
-#include "os.h"
-#include "my_stdarg.h"
-#include "vbe.h"
+# include "proto.h"
+# include "my_stdarg.h"
+# include "vbe.h"
+
+inline void sti() {	asm volatile ( "sti" ); }	// Enable interrupts
+inline void cli() { asm volatile ( "cli" ); }	// Disable interrupts
+inline void nop() { asm volatile ( "nop" ); }	// Do nothing
 
 unsigned char  csr_x  = 0;
 unsigned char  csr_y  = 0;
@@ -9,7 +13,6 @@ unsigned char  saved_csr_y  = 0;
 unsigned char  attrib = 0x0F;
 
 USHORT* tui_vidmem = (USHORT*) 0xb8000;
-USHORT* gui_vidmem = (USHORT*) 0xb8000;
 
 /*
 uint16_t detect_bios_area_hardware(void)
@@ -24,27 +27,9 @@ enum video_type get_bios_area_video_type(void)
 }
 */
 
-extern void putpixel16(void) asm("putpixel16");
-
-void putpixel(UINT x, UINT y, USHORT color) {
-    __asm__ __volatile__(
-        "movl %0, %%ecx     \n\t"   // x -> ecx
-        "movl %1, %%ebx     \n\t"   // y -> ebx
-        "movw %2, %%dx      \n\t"   // color -> dx (16 bit)
-        "call _putpixel16   \n\t"
-        : /* return: nothing */
-        : "r"(x), "r"(y), "r"(color)
-        : "ecx", "ebx", "dx"
-    );
-}
-
-void start_gui(void) {
-    for(;;);
-}
-
 void k_clear_screen()
 {
-    k_memsetw (tui_vidmem, 0x20 | (attrib << 8), 80 * 25);
+    kmemsetw(tui_vidmem, 0x20 | (attrib << 8), 80 * 25);
     csr_x = 0; csr_y = 0; update_cursor();
 }
 
@@ -167,13 +152,13 @@ void scroll()
     if(csr_y >= 25)
     {
         temp = csr_y - 25 + 1;
-        k_memcpy (tui_vidmem, tui_vidmem + temp * 80, (25 - temp) * 80 * 2);
-        k_memsetw (tui_vidmem + (25 - temp) * 80, blank, 80);
+        kmemcpy (tui_vidmem, tui_vidmem + temp * 80, (25 - temp) * 80 * 2);
+        kmemsetw (tui_vidmem + (25 - temp) * 80, blank, 80);
         csr_y = 25 - 1;
     }
 }
 
-void k_printf(char* message, UINT line, unsigned char attribute)
+void kprintf(char* message, UINT line, unsigned char attribute)
 {
     // Top 4 bytes: background, bottom 4 bytes: foreground color
     settextcolor(attribute & 0x0F, attribute >> 4);
@@ -202,19 +187,19 @@ void printformat (char *args, ...)
 			{
 			case 'u':
 				u = va_arg (ap, UINT);
-				k_itoa(u, buffer);
+				kitoa(u, buffer);
 				puts(buffer);
 				break;
 			case 'd':
 			case 'i':
 				d = va_arg (ap, int);
-				k_itoa(d, buffer);
+				kitoa(d, buffer);
 				puts(buffer);
 				break;
 			case 'X':
 			case 'x':
 				d = va_arg (ap, int);
-				k_i2hex(d, buffer,8);
+				ki2hex(d, buffer,8);
 				puts(buffer);
 				break;
 			case 's':

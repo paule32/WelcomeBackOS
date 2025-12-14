@@ -1,6 +1,8 @@
 #ifndef __VBE_H__
 #define __VBE_H__
 
+# include "stdint.h"
+
 extern volatile UCHAR* lfb_base;
 extern USHORT          lfb_pitch;
 extern USHORT          lfb_xres;

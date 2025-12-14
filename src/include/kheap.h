@@ -10,4 +10,8 @@ extern void  kfree     (void*);
 extern void* kmemcpy   (void*,const void*,uint32_t);
 extern void* kmemset   (void*,int        ,uint32_t);
 
+extern size_t kstrlen  (const char*);
+extern char*  kstrcat  (      char*,const char*);
+extern int    kstrncmp (const char*,const char*,uint32_t);
+extern int    kstrcmp  (const char*,const char*);
 #endif

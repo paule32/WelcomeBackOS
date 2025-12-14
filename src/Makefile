@@ -54,6 +54,9 @@ SRCC := $(SRC)/ckernel.c        \
         $(SRC)/timer.c          \
         $(SRC)/usermodec.c      \
         $(SRC)/task.c           \
+        $(SRC)/iso9660.c        \
+        $(SRC)/video.c          \
+        $(SRC)/util.c           \
         $(SRC)/kheap.c
 
 # -----------------------------------------------------------------------------
@@ -73,6 +76,9 @@ OBJS := $(OBJ)/ckernel.o        \
         $(OBJ)/usermode.o       \
         $(OBJ)/usermodec.o      \
         $(OBJ)/task.o           \
+        $(OBJ)/iso9660.o        \
+        $(OBJ)/video.o          \
+        $(OBJ)/util.o           \
         $(OBJ)/kheap.o
 
 all: config\

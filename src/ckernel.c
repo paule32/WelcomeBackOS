@@ -12,11 +12,14 @@
 # include "task.h"
 # include "syscall.h"
 # include "usermode.h"
+# include "iso9660.h"
 
 extern void* krealloc(void* ptr, uint32_t new_size);
 extern void gdt_init(void);
 extern void irq_init(void);
-//extern void idt_flush(void);
+
+extern void cd_read_sectors(uint32_t lba, uint32_t count, void* buffer);
+extern void printformat(char*, ...);
 extern void enter_usermode(void);
 
 void test_task(void);
@@ -47,6 +50,13 @@ int kmain()
     
     syscall_init();
     tasking_init();
+    
+    iso_init(cd_read_sectors);
+    if (iso_mount() != 0) {
+        printformat("ISO mount Error.");
+    }   else {
+        printformat("ISO mount successfully.");
+    }
     
     __asm__ volatile("sti");
     

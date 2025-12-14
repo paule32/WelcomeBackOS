@@ -2,7 +2,7 @@
 ; Konstanten – mit Werten aus xorriso ausfüllen
 ;---------------------------------------------------------
 KERNEL_LBA      equ 38
-KERNEL_SECTORS  equ 7
+KERNEL_SECTORS  equ 8
 
 ; boot2.asm – Minimaler Stage2
 

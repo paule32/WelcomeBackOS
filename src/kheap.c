@@ -48,6 +48,63 @@ void* kmemset(void* dst, int value, uint32_t n)
     return dst;
 }
 
+USHORT* kmemsetw(USHORT* dest, USHORT val, size_t count)
+{
+    USHORT* temp = (USHORT*) dest;
+    for( ; count != 0; count--) *temp++ = val;
+    return dest;
+}
+
+size_t kstrlen(const char* str)
+{
+    size_t retval;
+
+    for(retval = 0; *str != '\0'; ++str)
+    ++retval;
+
+    return retval;
+}
+
+int kstrncmp(const char* a, const char* b, uint32_t n)
+{
+    for (uint32_t i = 0; i < n; ++i) {
+        if (a[i] != b[i]) return (int)((unsigned char)a[i] - (unsigned char)b[i]);
+        if (a[i] == 0) return 0;
+    }
+    return 0;
+}
+
+int kstrcmp(const char* a, const char* b)
+{
+    while (*a && *b && *a == *b) {
+        ++a; ++b;
+    }
+    return (int)((unsigned char)*a - (unsigned char)*b);
+}
+
+char* kstrcat(char* dest, const char* src)
+{
+    char *d = dest;
+
+    // ans Ende von dest
+    while (*d != '\0') {
+        d++;
+    }
+
+    // src Zeichen für Zeichen kopieren
+    const char *s = src;
+    while (*s != '\0') {
+        *d = *s;
+        d++;
+        s++;
+    }
+
+    // Nullterminator setzen
+    *d = '\0';
+
+    return dest;
+}
+
 void kheap_init(void)
 {
     // Start of heap directly after the kernel
