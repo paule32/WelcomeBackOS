@@ -2,13 +2,17 @@
 
 # include "stdint.h"
 
-inline UINT inportb(UINT port) {
+static inline void sti() { asm volatile ( "sti" ); }    // Enable interrupts
+static inline void cli() { asm volatile ( "cli" ); }    // Disable interrupts
+static inline void nop() { asm volatile ( "nop" ); }    // Do nothing
+
+static inline UINT inportb(UINT port) {
 	UINT ret_val;
 	__asm__ volatile ("inb %w1,%b0"	: "=a"(ret_val)	: "d"(port));
 	return ret_val;
 }
 
-inline void outportb(UINT port, UINT val) {
+static inline void outportb(UINT port, UINT val) {
     __asm__ volatile ("outb %b0,%w1" : : "a"(val), "d"(port));
 }
 
@@ -84,12 +88,15 @@ extern void ki2hex(UINT val, char* dest, int len);
 };
 #endif
 
+extern void *mmio_map(uint32_t phys, uint32_t size);
+
 extern int check_atapi (void);
 extern int check_ahci  (void);
 
 extern int ahci_init   (void);
 extern int ahci_probe_ports(void);
 
-extern int sata_read_sectors(uint32_t lba, uint32_t count, void *buffer);
+extern int atapi_read_sectors(uint32_t lba, uint32_t count, void *buffer);
+extern int  sata_read_sectors(uint32_t lba, uint32_t count, void *buffer);
 
 extern int cd_test_iso9660(void);

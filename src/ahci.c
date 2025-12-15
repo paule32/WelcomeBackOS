@@ -1,5 +1,6 @@
 # include "stdint.h"
 # include "proto.h"
+# include "iso9660.h"
 
 #define HBA_PxCMD_ST   (1  <<  0)
 #define HBA_PxCMD_FRE  (1  <<  4)
@@ -144,7 +145,7 @@ static inline uint32_t pci_config_read32(
 
 int ahci_find_controller(void)
 {
-    for (uint8_t bus = 0; bus < 256; ++bus) {
+    for (int bus = 0; bus < 256; ++bus) {
         for (uint8_t slot = 0; slot < 32; ++slot) {
             uint32_t vendor_device = pci_config_read32(bus, slot, 0, 0x00);
             if (vendor_device == 0xFFFFFFFF)
@@ -156,12 +157,12 @@ int ahci_find_controller(void)
             uint8_t prog_if  = (class_regs >> 8)  & 0xFF;
 
             if (class == 0x01 && subclass == 0x06 && prog_if == 0x01) {
-                printformat("AHCI-Controller gefunden: bus=%u slot=%u\n", bus, slot);
+                printformat("AHCI-Controller gefunden: bus=0x%x slot=0x%x\n", bus, slot);
 
                 uint32_t bar5 = pci_config_read32(bus, slot, 0, 0x24);
                 g_ahci.abar = bar5 & ~0x0F; // untere Bits sind Flags
 
-                printformat("ABAR (BAR5) = 0x%08X\n", g_ahci.abar);
+                printformat("ABAR (BAR5) = 0x%x\n", g_ahci.abar);
                 return 0;
             }
         }
@@ -233,7 +234,7 @@ static int satapi_read(hba_port_t *p, uint32_t lba, uint32_t count, void *buffer
     for (int i = 0; i < 64; ++i)
     cmd_tbl->cfis[i] = 0;
 
-    uint8_t *cfis = cmd_tbl->cfis;
+    volatile uint8_t *cfis = cmd_tbl->cfis;
     
     cfis[0] = 0x27;      // FIS Type = Register H2D
     cfis[1] = 1 << 7;    // C = 1 (Command)
@@ -242,7 +243,7 @@ static int satapi_read(hba_port_t *p, uint32_t lba, uint32_t count, void *buffer
     cfis[7]  = 0;        // device = 0 (Master, LBA=0bits)
     
     // ATAPI-Kommando: READ(12)
-    uint8_t *acmd = cmd_tbl->acmd;
+    volatile uint8_t *acmd = cmd_tbl->acmd;
     for (int i = 0; i < 16; ++i) acmd[i] = 0;
 
     acmd[0] = 0xA8;      // READ(12)
@@ -372,12 +373,40 @@ int ahci_init(void)
 {
     if (ahci_find_controller() != 0)
     return -1;
-
-    g_hba = (hba_mem_t *)(uintptr_t)g_ahci.abar;
+// A
+    //printformat("ABAR phys: 0x%x\n", g_ahci.abar);
+    
+    g_hba = (hba_mem_t *)mmio_map(g_ahci.abar, 4096); // mind. 4KB
+//  g_hba = (hba_mem_t *)(uintptr_t)g_ahci.abar;
+    
+    //printformat("g_hba Pointer (virt): 0x%x\n", (uint32_t)g_hba);
     printformat("AHCI-Version: 0x%x, Ports Implemented: 0x%x\n",
             g_hba->vs, g_hba->pi);
-
+// B
     // HBA einschalten (GHC.AE = 1)
     g_hba->ghc |= (1U << 31);
+    return 0;
+}
+
+int check_ahci(void)
+{
+    if (ahci_init() != 0) {
+        printformat("AHCI init failed\n");
+        return -1;
+    }
+    if (ahci_probe_ports() != 0) {
+        printformat("AHCI probe failed\n");
+        return -1;
+    }
+
+    uint8_t buf[512];
+    if (sata_read_sectors(34, 1, buf) != 0) {
+        printformat("sata_read_sectors failed\n");
+        return -1;
+    }
+
+    printformat("Erstes Byte von LBA 0: 0x%x\n", buf[0]);
+    iso_init((void*)sata_read_sectors);
+    
     return 0;
 }

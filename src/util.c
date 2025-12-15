@@ -1,10 +1,6 @@
-#include "proto.h"
+# include "proto.h"
 
 int INT_MAX = 2147483647;
-
-inline void sti() {	asm volatile ( "sti" ); }	// Enable interrupts
-inline void cli() { asm volatile ( "cli" ); }	// Disable interrupts
-inline void nop() { asm volatile ( "nop" ); }	// Do nothing
 
 ULONG fetchESP()
 {

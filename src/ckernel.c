@@ -19,7 +19,7 @@ extern void* krealloc(void* ptr, uint32_t new_size);
 extern void gdt_init(void);
 extern void irq_init(void);
 
-extern void atapi_read_sectors(uint32_t lba, uint32_t count, void* buffer);
+extern int atapi_read_sectors(uint32_t lba, uint32_t count, void *buffer);
 extern int  sata_read_sectors(uint32_t lba, uint32_t count, void *buffer);
 
 extern void printformat(char*, ...);
@@ -27,32 +27,12 @@ extern void enter_usermode(void);
 
 void test_task(void);
 
-int check_ahci(void)
-{
-    if (ahci_init() != 0) {
-        printformat("AHCI init failed\n");
-        return -1;
-    }
-    if (ahci_probe_ports() != 0) {
-        printformat("AHCI probe failed\n");
-        return -1;
-    }
-
-    uint8_t buf[512];
-    if (sata_read_sectors(0, 1, buf) != 0) {
-        printformat("sata_read_sectors failed\n");
-        return -1;
-    }
-
-    printformat("Erstes Byte von LBA 0: 0x%x\n", buf[0]);
-    return 0;
-}
-        
 int kmain()
 {
+    /*
     volatile char *vga = (volatile char*)0xB8000;
     vga[2] = 'M';
-    vga[3] = 0x0F;
+    vga[3] = 0x0F;*/
     
     paging_init();
     kheap_init();
@@ -75,18 +55,18 @@ int kmain()
     syscall_init();
     tasking_init();
     
-    if (check_atapi() == 0) {
-        //cd_test_iso9660();
-    }   else {
-        settextcolor(14,0);
-        if (check_ahci() != 0) {
-            while (1) {
-                __asm__ volatile("hlt");
-            }
-        }
-    }
+    settextcolor(14,0);
     
-    iso_init(atapi_read_sectors);
+    if (check_atapi() == 0) {
+        // ATAPI (IDE) gefunden
+        printformat("OK ATAPI\n");
+    }   else {
+        printformat("NO ATAPI\n");
+        check_ahci();
+    }
+        
+    printformat("next stage\n");
+
     if (iso_mount() != 0) {
         printformat("ISO mount Error.");
     }   else {
@@ -107,8 +87,8 @@ int kmain()
     
     asm volatile("sti");
     
-    vga[4] = 'P';
-    vga[5] = 0x0F;
+    //vga[4] = 'P';
+    //vga[5] = 0x0F;
     
     char* p = (char*)kmalloc(32);
     if (p) {
@@ -147,11 +127,11 @@ int kmain()
 }
 
 
-static volatile char* const VGA = (volatile char*)0xB8000;
-
 static void putc_xy(int x, int y, char c, uint8_t color)
 {
+    static volatile char* const VGA = (volatile char*)0xB8000;
     int pos = y * 80 + x;
+    
     VGA[pos * 2]     = c;
     VGA[pos * 2 + 1] = color;
 }

@@ -2,10 +2,6 @@
 # include "my_stdarg.h"
 # include "vbe.h"
 
-inline void sti() {	asm volatile ( "sti" ); }	// Enable interrupts
-inline void cli() { asm volatile ( "cli" ); }	// Disable interrupts
-inline void nop() { asm volatile ( "nop" ); }	// Do nothing
-
 unsigned char  csr_x  = 0;
 unsigned char  csr_y  = 0;
 unsigned char  saved_csr_x  = 0;

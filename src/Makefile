@@ -59,6 +59,7 @@ SRCC := $(SRC)/ckernel.c        \
         $(SRC)/util.c           \
         $(SRC)/atapi.c          \
         $(SRC)/ahci.c           \
+        $(SRC)/shell.c          \
         $(SRC)/kheap.c
 
 # -----------------------------------------------------------------------------
@@ -83,6 +84,7 @@ OBJS := $(OBJ)/ckernel.o        \
         $(OBJ)/util.o           \
         $(OBJ)/atapi.o          \
         $(OBJ)/ahci.o           \
+        $(OBJ)/shell.o          \
         $(OBJ)/kheap.o
 
 all: config\

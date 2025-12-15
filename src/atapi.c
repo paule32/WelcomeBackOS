@@ -215,6 +215,7 @@ static int cd_detect_any(void)
     return -1;
 }
 
+/*
 static int atapi_identify(void) {
     if (!g_cd.present) return -1;
 
@@ -245,7 +246,7 @@ static int atapi_identify(void) {
     printformat("IDENTIFY PACKET: ok (erste Woerter: 0x%x 0x%x)\n",
             buffer[0], buffer[1]);
     return 0;
-}
+}*/
 
 static void atapi_build_read12(uint8_t *packet, uint32_t lba, uint32_t count)
 {
@@ -324,22 +325,16 @@ int atapi_read_sectors(uint32_t lba, uint32_t count, void *buffer) {
     return 0;
 }
 
-int check_atapi(void)
-{
-    settextcolor(14,0);
+int check_atapi(void) {
     printformat("cd_init: suche ATAPI-Laufwerk...\n");
 
     if (cd_detect_any() != 0) {
+        printformat("cd_init: kein ATAPI-CDROM gefunden\n");
         return -1;
-    }
-    
-    if (atapi_identify() != 0) {
-        printformat("Warnung: IDENTIFY PACKET fehlgeschlagen, versuche trotzdem Reads\n");
     }
 
     printformat("cd_init: ATAPI-CD auf base=0x%X drive_sel=0x%X\n",
             g_cd.chan->base, g_cd.drive_sel);
-    printformat("cd_init: fertig\n");
     return 0;
 }
 

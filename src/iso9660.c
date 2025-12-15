@@ -1,14 +1,16 @@
 // iso9660.c - Simple ISO9660 reader for WelcomeBackOS
 // (c) 2025 by Jens Kallup - paule32
 
-#include "iso9660.h"
-#include "kheap.h"   // für kmalloc/kfree
-#include "stdint.h"
+# include "iso9660.h"
+# include "kheap.h"   // für kmalloc/kfree
+# include "stdint.h"
+# include "proto.h"
+
+extern void enter_shell(void);
 
 // ----------------------------------------
 // interne Helper
 // ----------------------------------------
-
 #pragma pack(push, 1)
 
 // Primary Volume Descriptor (nur relevante Teile)
@@ -69,13 +71,6 @@ static uint32_t iso_root_lba    = 0;
 static uint32_t iso_root_size   = 0;
 static int      iso_is_mounted  = 0;
 
-/*
-void cd_read_sectors(uint32_t lba, uint32_t count, void* buffer)
-{
-
-}
-*/
-
 static uint32_t align_up(uint32_t value, uint32_t align)
 {
     uint32_t mask = align - 1;
@@ -97,12 +92,19 @@ void iso_init(iso_read_sectors_t reader)
 {
     iso_read_sectors = reader;
     iso_is_mounted = 0;
+    
+    if (iso_mount() != 0) {
+        printformat("ISO mount Error.\n");
+    }   else {
+        printformat("ISO mount successfully.\n");
+        enter_shell();
+    }
 }
 
 int iso_mount(void)
 {
     if (!iso_read_sectors)
-        return -1;
+    return -1;
 
     // PVD liegt bei LBA 16
     uint8_t* buf = (uint8_t*)kmalloc(2048);
@@ -357,8 +359,10 @@ int file_seek(FILE* file, uint32_t new_pos)
 {
     if (!file) return -1;
     ISO_FILE* f = (ISO_FILE*)file;
+    
     if (new_pos > f->size) return -1;
     f->pos = new_pos;
+    
     return 0;
 }
 
