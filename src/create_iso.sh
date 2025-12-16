@@ -1,5 +1,5 @@
 #!/bin/bash
-
+echo "-------------------------"
 objcopy -O binary ../obj/kernel.o ../bin/kernel.bin
 ls -l ../bin
 
@@ -19,6 +19,8 @@ dd if=../bin/hdd.img bs=1 skip=510 count=2 2>/dev/null | od -An -t x1 | \
 cp ../bin/boot1.bin  content/boot1.bin
 cp ../bin/boot2.bin  content/boot2.bin
 cp ../bin/kernel.bin content/kernel.bin
+
+cp ../bin/shell.exe  content/shell.exe
 
 cd content
 xorriso -as mkisofs -o ../../bin/bootcd.iso \

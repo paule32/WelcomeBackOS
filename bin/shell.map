@@ -1,0 +1,54 @@
+
+Discarded input sections
+
+ .reloc         0x00000000        0x0 dll stuff
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+                0x00400000                        __image_base__ = 0x400000
+                0x00000000                        __dll__ = 0x0
+                0x00400000                        ___ImageBase = 0x400000
+                0x00001000                        __section_alignment__ = 0x1000
+                0x00000200                        __file_alignment__ = 0x200
+                0x00000004                        __major_os_version__ = 0x4
+                0x00000000                        __minor_os_version__ = 0x0
+                0x00000001                        __major_image_version__ = 0x1
+                0x00000000                        __minor_image_version__ = 0x0
+                0x00000004                        __major_subsystem_version__ = 0x4
+                0x00000000                        __minor_subsystem_version__ = 0x0
+                0x00000003                        __subsystem__ = 0x3
+                0x00200000                        __size_of_stack_reserve__ = 0x200000
+                0x00001000                        __size_of_stack_commit__ = 0x1000
+                0x00100000                        __size_of_heap_reserve__ = 0x100000
+                0x00001000                        __size_of_heap_commit__ = 0x1000
+                0x00000000                        __loader_flags__ = 0x0
+                0x00000140                        __dll_characteristics__ = 0x140
+                0x00000000                        . = 0x0
+
+.text           0x00000000      0x200
+ *(.text*)
+ .text          0x00000000       0x20 ../obj/shell.o
+                0x00000000                shell_main
+LOAD ../obj/shell.o
+OUTPUT(../obj/shell.bin pei-i386)
+LOAD dll stuff
+
+.rdata          0x00001000      0x200
+ .rdata$zzz     0x00001000       0x2c ../obj/shell.o
+
+.eh_frame       0x00002000      0x200
+ .eh_frame      0x00002000       0x2c ../obj/shell.o
+
+.data           0x00003000        0x0
+ .data          0x00003000        0x0 ../obj/shell.o
+
+.reloc          0x00003000        0x0
+ .reloc         0x00003000        0x0 dll stuff
+
+.bss            0x00003000        0x0
+ .bss           0x00003000        0x0 ../obj/shell.o

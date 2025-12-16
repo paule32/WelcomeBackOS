@@ -32,6 +32,8 @@ CFLAGS   := -m32 -O1 -ffreestanding -fno-stack-protector -fno-builtin   \
 CPPFLAGS := -std=c++20
 
 LDFLAGS  := -nostdlib -T ../src/kernel.ld -Map ../bin/kernel.map
+LDSHFLGS := -nostdlib -T ../src/shell.ld  -Map ../bin/shell.map
+
 ASMFLAGS := -f win32 -O2 -DDOS_MODE=32
 
 # -----------------------------------------------------------------------------
@@ -59,8 +61,13 @@ SRCC := $(SRC)/ckernel.c        \
         $(SRC)/util.c           \
         $(SRC)/atapi.c          \
         $(SRC)/ahci.c           \
-        $(SRC)/shell.c          \
+        $(SRC)/shell_loader.c   \
+        $(SRC)/pe.c             \
         $(SRC)/kheap.c
+# -----------------------------------------------------------------------------
+# source files for the C-kernel ...
+# -----------------------------------------------------------------------------
+SHSRCC := $(SRC)/shell.c
 
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the C-kernel ...
@@ -84,12 +91,88 @@ OBJS := $(OBJ)/ckernel.o        \
         $(OBJ)/util.o           \
         $(OBJ)/atapi.o          \
         $(OBJ)/ahci.o           \
-        $(OBJ)/shell.o          \
+        $(OBJ)/shell_loader.o   \
+        $(OBJ)/pe.o             \
         $(OBJ)/kheap.o
+# -----------------------------------------------------------------------------
+# *.o bject files for linkage stage of the shell ...
+# -----------------------------------------------------------------------------
+SHOBJS := $(OBJ)/shell.o
+
+LBA        := $(SRC)/lba.inc
+ISO        := $(BIN)/bootcd.iso
+ISO_FILES  := /boot2.bin /kernel.bin
 
 all: config\
      $(OBJ)/data.o $(BIN)/bootcd.iso
 
+# -----------------------------------------------------------------------------
+# Ziel-Datei mit den extrahierten Infos
+# -----------------------------------------------------------------------------
+define GEN-LBA
+	@echo "Create $(LBA) from $(ISO)..."
+	if [ -f   $(LBA) ]; then  \
+        rm    $(LBA); \
+        touch $(LBA); \
+    fi
+	@echo "create default $(LBA)..."
+	@echo ";---------------------------------------------------------" >> $(LBA)
+	@echo "; Diese beiden muessen wir *patchen*" >> $(LBA)
+	@echo ";---------------------------------------------------------" >> $(LBA)
+	@echo "TEST_LBA       equ 0" >> $(LBA)
+	@echo "" >> $(LBA)
+	@echo "BOOT2_LBA      equ 0" >> $(LBA)
+	@echo "BOOT2_SECTORS  equ 0" >> $(LBA)
+	@echo ";---------------------------------------------------------" >> $(LBA)
+	@echo "; Konstanten – mit Werten aus xorriso ausfüllen"            >> $(LBA)
+	@echo ";---------------------------------------------------------" >> $(LBA)
+	@echo "KERNEL_LBA      equ 0" >> $(LBA)
+	@echo "KERNEL_SECTORS  equ 0" >> $(LBA)
+	@echo "" >> $(LBA)
+	@echo "VBE_INFO_ADDR   equ 0x0A00" >> $(LBA)
+endef
+define MOD-LBA
+	@echo "Modify $(LBA) from $(ISO)..."
+	if [ -f   $(LBA) ]; then  \
+        rm    $(LBA); \
+        touch $(LBA); \
+    fi
+	@echo "; -----------------------------------------------------" >> $(LBA)
+	@echo "; DONT CHANGE THIS FILE - all modifieds will be lost.  " >> $(LBA)
+	@echo "; -----------------------------------------------------" >> $(LBA)
+	@echo "TEST_LBA       equ 0" >> $(LBA)
+	@>> $(LBA)
+	@for f in $(ISO_FILES); do \
+        echo "search $$f";     \
+        xorriso -indev $(ISO) -find / -exec report_lba -- \
+        | awk -v iso="$$f" '/^File data lba:/ { \
+            path = $$NF;       \
+            gsub(/^'\''|'\''$$/, "", path);  \
+            if (path == iso) {               \
+                name = path;                 \
+                sub(/^\/+/      , "", name); \
+                sub(/\.[^./]*$$/, "", name); \
+                name = toupper(name); \
+                print name "_LBA     equ ", $$6 "   ; start LBA ", name; \
+                print name "_SECTORS equ ", $$8 "   ; 2048 * "   , $$8 ; \
+                print "; -----------------------------------------------------"; \
+            }      \
+	    }'  >> $(LBA); \
+    done
+	@echo "VBE_INFO_ADDR   equ 0x0A00" >> $(LBA)
+	$(AS) -f bin $(SRC)/boot1.asm -o $(BIN)/boot1.bin
+	$(AS) -f bin $(SRC)/boot2.asm -o $(BIN)/boot2.bin
+	cp $(BIN)/boot1.bin content/boot1.bin
+	cp $(BIN)/boot2.bin content/boot2.bin
+	@cd content && \
+	xorriso -as mkisofs -o ../../bin/bootcd.iso \
+        -b boot1.bin        \
+        -no-emul-boot       \
+        -boot-load-size 4   \
+        . && \
+    cd ..
+	@echo "DONE"
+endef
 # -----------------------------------------------------------------------------
 # loader to load the system from DOS console ...
 # -----------------------------------------------------------------------------
@@ -133,8 +216,6 @@ $(SRC)/initrd.dat: $(BIN)/INITRD.EXE
     test2.txt   file2 \
     test3.txt   file3
 
-#    $(SRC)/content/program.elf shell
-
 $(BIN)/INITRD.EXE: $(OBJ)/make_initrd.o
 	$(GCC) -m32 -mconsole -O2 -Wall -Wextra -o $@ $<
 	$(STRIP) $@
@@ -142,25 +223,15 @@ $(BIN)/INITRD.EXE: $(OBJ)/make_initrd.o
 $(BIN)/kernel.bin: $(OBJ)/kernel.o
 	$(OBJCOPY) -O binary $(OBJ)/kernel.o $(BIN)/kernel.bin
 
-$(BIN)/bootcd.iso: $(BIN)/boot1.bin $(BIN)/boot2.bin $(BIN)/kernel.bin
-	./create_iso.sh
+$(OBJ)/shell.bin: $(SHOBJS) $(SRC)/shell.ld
+	$(LD) $(LDSHFLGS) -o    $(OBJ)/shell.bin $(SHOBJS)
 
-$(BIN)/floppy.img: $(BIN)/BOOT1.SYS $(BIN)/BOOT2.SYS $(BIN)/KERNEL.SYS
-	dd if=/dev/zero of=$(BIN)/floppy.img bs=1024 count=1440
-	mformat -t 80 -h 2 -s 18 -f 1440 \
-        -B ../bin/BOOT1.SYS \
-        -i ../bin/floppy.img ::
-	@dd if=$(BIN)/floppy.img bs=1 skip=510 count=2 2>/dev/null | \
-        od -An -t x1 | \
-        awk '{ if ($$1 == "55" && $$2 == "aa") { \
-            print "OK: Bootsignatur 55 aa found."; \
-            exit 0;  \
-	    }   else {   \
-            print "Error: Bootsignatur incorrect. (" $$1 " " $$2 ")"; \
-            exit 1;  \
-	    } }'
-	cp $(BIN)/BOOT2.SYS $(SRC)/content/BOOT2.SYS
-	mcopy -i $(BIN)/floppy.img $(SRC)/content/* ::/
+$(BIN)/shell.exe:  $(OBJ)/shell.bin
+	$(OBJCOPY) -O binary $(OBJ)/shell.bin $(BIN)/shell.exe
+
+$(BIN)/bootcd.iso: $(BIN)/boot1.bin $(BIN)/boot2.bin $(BIN)/kernel.bin $(BIN)/shell.exe
+	./create_iso.sh
+	$(MOD-LBA)
 
 # -----------------------------------------------------------------------------
 # prepare font ...
@@ -180,6 +251,7 @@ $(SRC)/unifont8x16.hex:
 config: $(SRC)/unifont.hex
 	$(MKDIR) -p $(BIN)
 	$(MKDIR) -p $(OBJ)
+	$(GEN-LBA)
 
 # -----------------------------------------------------------------------------
 # before you compile, you can clean the source tree from old crap ...
@@ -192,5 +264,5 @@ clean:
 	$(RM) -f  $(BIN)/bootcd.iso
 	$(RM) -f  $(SRC)/unifont.hex
 	$(RM) -f  $(SRC)/initrd.dat
-	$(RM) -f  $(BIN)/hdd.img
+	$(RM) -f  $(BIN)/hdd.img $(BIN)/shell.exe
 	$(RM) -rf $(OBJ)

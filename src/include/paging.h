@@ -5,7 +5,7 @@
 
 # define PAGE_SIZE 4096
 
-extern uint8_t _end;
+extern uint32_t __end;
 
 // reserved_up_to: alle phys. Adressen < reserved_up_to gelten als belegt (Kernel+Heap)
 // wir verwalten nur 0..16 MiB (kann später erweitert werden)

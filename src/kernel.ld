@@ -36,7 +36,7 @@ SECTIONS
         __bss_end = .;
     }
     
-    __end = .;
+    ___end = .;
     
     /* reject PE-relocations, we have a flat binary */
     /DISCARD/ : {

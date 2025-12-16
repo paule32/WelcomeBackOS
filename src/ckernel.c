@@ -16,7 +16,7 @@
 # include "proto.h"
 
 extern void* krealloc(void* ptr, uint32_t new_size);
-extern void gdt_init(void);
+extern void gdt_init(uint32_t);
 extern void irq_init(void);
 
 extern int atapi_read_sectors(uint32_t lba, uint32_t count, void *buffer);
@@ -26,6 +26,8 @@ extern void printformat(char*, ...);
 extern void enter_usermode(void);
 
 void test_task(void);
+
+uint32_t kernel_stack_top = 0x00180000;
 
 int kmain()
 {
@@ -38,23 +40,22 @@ int kmain()
     kheap_init();
     
     // alles unterhalb (Kernel + 1MiB Heap) als belegt markieren
-    uint32_t reserved = (uint32_t)(&_end) + 0x00100000;
+    uint32_t reserved = (uint32_t)(&__end) + 0x00100000;
     page_init(reserved);
-
-    gdt_init();
     
-    // Kernel-Stack für TSS setzen: nimm z.B. current esp
-    uint32_t kstack;
-    __asm__ volatile("mov %%esp, %0" : "=r"(kstack));
-    tss_set_kernel_stack(kstack);
-    
+    gdt_init(kernel_stack_top);
+    for (;;);
+    tss_set_kernel_stack(kernel_stack_top);
+    for(;;);
     idt_init();
+    for(;;);
     isr_init();
+    for(;;);
     irq_init();
-    
+    for(;;);
     syscall_init();
     tasking_init();
-    
+    for(;;);
     settextcolor(14,0);
     
     if (check_atapi() == 0) {

@@ -28,7 +28,7 @@
 static uint32_t next_mmio = MMIO_BASE;
 
 // Symbole aus kernel.ld
-extern uint8_t _end;
+extern uint32_t __end;
 
 // 4 KiB aligned
 static uint32_t page_directory[PAGE_ENTRIES]                __attribute__((aligned(4096)));

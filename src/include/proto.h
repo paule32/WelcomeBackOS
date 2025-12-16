@@ -2,6 +2,100 @@
 
 # include "stdint.h"
 
+#pragma pack(push, 1)
+
+typedef struct {
+    uint16_t e_magic;      // "MZ" = 0x5A4D
+    uint16_t e_cblp;
+    uint16_t e_cp;
+    uint16_t e_crlc;
+    uint16_t e_cparhdr;
+    uint16_t e_minalloc;
+    uint16_t e_maxalloc;
+    uint16_t e_ss;
+    uint16_t e_sp;
+    uint16_t e_csum;
+    uint16_t e_ip;
+    uint16_t e_cs;
+    uint16_t e_lfarlc;
+    uint16_t e_ovno;
+    uint16_t e_res[4];
+    uint16_t e_oemid;
+    uint16_t e_oeminfo;
+    uint16_t e_res2[10];
+    int32_t  e_lfanew;     // Offset zum PE-Header
+} dos_header_t;
+
+typedef struct {
+    uint32_t Signature;     // "PE\0\0" = 0x00004550
+} pe_signature_t;
+
+typedef struct {
+    uint16_t Machine;
+    uint16_t NumberOfSections;
+    uint32_t TimeDateStamp;
+    uint32_t PointerToSymbolTable;
+    uint32_t NumberOfSymbols;
+    uint16_t SizeOfOptionalHeader;
+    uint16_t Characteristics;
+} coff_header_t;
+
+typedef struct {
+    uint16_t Magic;                     // 0x10B = PE32
+    uint8_t  MajorLinkerVersion;
+    uint8_t  MinorLinkerVersion;
+    uint32_t SizeOfCode;
+    uint32_t SizeOfInitializedData;
+    uint32_t SizeOfUninitializedData;
+    uint32_t AddressOfEntryPoint;       // RVA
+    uint32_t BaseOfCode;                // RVA
+    uint32_t BaseOfData;                // RVA
+
+    uint32_t ImageBase;
+    uint32_t SectionAlignment;
+    uint32_t FileAlignment;
+    uint16_t MajorOperatingSystemVersion;
+    uint16_t MinorOperatingSystemVersion;
+    uint16_t MajorImageVersion;
+    uint16_t MinorImageVersion;
+    uint16_t MajorSubsystemVersion;
+    uint16_t MinorSubsystemVersion;
+    uint32_t Win32VersionValue;
+    uint32_t SizeOfImage;
+    uint32_t SizeOfHeaders;
+    uint32_t CheckSum;
+    uint16_t Subsystem;
+    uint16_t DllCharacteristics;
+    uint32_t SizeOfStackReserve;
+    uint32_t SizeOfStackCommit;
+    uint32_t SizeOfHeapReserve;
+    uint32_t SizeOfHeapCommit;
+    uint32_t LoaderFlags;
+    uint32_t NumberOfRvaAndSizes;
+    // Danach folgen DataDirectories – die ignorieren wir erstmal
+} optional_header_t;
+
+typedef struct {
+    char     Name[8];
+    uint32_t VirtualSize;
+    uint32_t VirtualAddress;      // RVA
+    uint32_t SizeOfRawData;
+    uint32_t PointerToRawData;
+    uint32_t PointerToRelocations;
+    uint32_t PointerToLinenumbers;
+    uint16_t NumberOfRelocations;
+    uint16_t NumberOfLinenumbers;
+    uint32_t Characteristics;
+} section_header_t;
+
+#pragma pack(pop)
+
+typedef struct {
+    uint32_t entry_point;   // absolute Adresse
+    uint32_t image_base;    // basisadresse
+    uint32_t image_size;
+} pe_image_t;
+
 static inline void sti() { asm volatile ( "sti" ); }    // Enable interrupts
 static inline void cli() { asm volatile ( "cli" ); }    // Disable interrupts
 static inline void nop() { asm volatile ( "nop" ); }    // Do nothing
@@ -100,3 +194,5 @@ extern int atapi_read_sectors(uint32_t lba, uint32_t count, void *buffer);
 extern int  sata_read_sectors(uint32_t lba, uint32_t count, void *buffer);
 
 extern int cd_test_iso9660(void);
+
+extern int pe_load_image(const uint8_t* file, uint32_t size, pe_image_t* out);

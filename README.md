@@ -323,7 +323,75 @@ File data lba: 0 , 38 , 23 , ... , '/kernel.bin'
 |------------|--------------|--------|------------------------------|
 | Stage1     | 0000:0000    | 0x0000 | El Torito lädt hier          |
 | Stage2     | 0000:0500    | 0x0500 | Stage1 lädt Stage2 hierhin   |
+| VESA-Video | 0000:0A00    | 0x0A00 | VESA Video Mode Info Table   |
 | Kernel     | phys 0x10000 | 0x0000 | Stage2 lädt Kernel → PM Jump |
+
+---
+
+Hier die Offsets des VESA VBE Mode Info Blocks
+INT 10h, AX=4F01h
+
+<pre>
+-------------------------------------------------------
+00h  uint16  ModeAttributes
+02h  uint8   WinAAttributes
+03h  uint8   WinBAttributes
+04h  uint16  WinGranularity          ; in KB
+06h  uint16  WinSize                 ; in KB
+08h  uint16  WinASegment
+0Ah  uint16  WinBSegment
+0Ch  uint32  WinFuncPtr              ; Real-Mode Callbacks
+10h  uint16  BytesPerScanLine
+
+; Direct Color (optional / abhängig vom Modus)
+-------------------------------------------------------
+12h  uint16  XResolution
+14h  uint16  YResolution
+16h  uint8   XCharSize
+17h  uint8   YCharSize
+18h  uint8   NumberOfPlanes
+19h  uint8   BitsPerPixel
+1Ah  uint8   NumberOfBanks
+1Bh  uint8   MemoryModel
+1Ch  uint8   BankSize
+1Dh  uint8   NumberOfImagePages
+1Eh  uint8   Reserved1
+
+; Color mask info (für Direct Color / True Color)
+-------------------------------------------------------
+1Fh  uint8   RedMaskSize
+20h  uint8   RedFieldPosition
+21h  uint8   GreenMaskSize
+22h  uint8   GreenFieldPosition
+23h  uint8   BlueMaskSize
+24h  uint8   BlueFieldPosition
+25h  uint8   RsvdMaskSize
+26h  uint8   RsvdFieldPosition
+27h  uint8   DirectColorModeInfo
+
+; Physische Linear Framebuffer-Adresse
+-------------------------------------------------------
+28h  uint32  PhysBasePtr             ; LFB-Adresse
+2Ch  uint32  OffScreenMemOffset      ; (optional)
+30h  uint16  OffScreenMemSize        ; in KB
+
+; VBE 3.0+ (optional, oft 0 wenn nicht unterstützt)
+-------------------------------------------------------
+32h  uint16  LinBytesPerScanLine
+34h  uint8   BnkNumberOfImagePages
+35h  uint8   LinNumberOfImagePages
+36h  uint8   LinRedMaskSize
+37h  uint8   LinRedFieldPosition
+38h  uint8   LinGreenMaskSize
+39h  uint8   LinGreenFieldPosition
+3Ah  uint8   LinBlueMaskSize
+3Bh  uint8   LinBlueFieldPosition
+3Ch  uint8   LinRsvdMaskSize
+3Dh  uint8   LinRsvdFieldPosition
+3Eh  uint32  MaxPixelClock           ; in Hz
+
+; 3Fh–FFh: reserviert für VBE, OEM, padding bis 256 Bytes
+</pre>
 
 ---
 

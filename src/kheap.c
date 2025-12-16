@@ -6,7 +6,7 @@
 # include "kheap.h"
 
 // Symbol from linker script: first free byte after kernel + bss
-extern uint8_t _end;
+extern uint8_t __end;
 
 // 1 MiB heap size (can be adjusted)
 #define KHEAP_SIZE   (0x00100000)   // 1 MiB
@@ -108,7 +108,7 @@ char* kstrcat(char* dest, const char* src)
 void kheap_init(void)
 {
     // Start of heap directly after the kernel
-    uint32_t start = (uint32_t)&_end;
+    uint32_t start = (uint32_t)&__end;
 
     // Align heap start to 8 bytes for sanity
     start = align_up((uint32_t)start, 8);

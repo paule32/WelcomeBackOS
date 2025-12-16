@@ -3,6 +3,10 @@
 # define TRUE  1
 # define FALSE 0
 
+typedef signed int     int32_t;
+typedef signed short   int16_t;
+typedef signed char     int8_t;
+
 typedef unsigned char  UCHAR;
 typedef unsigned int   UINT;
 typedef unsigned short USHORT;

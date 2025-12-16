@@ -1,10 +1,5 @@
-;---------------------------------------------------------
-; Konstanten – mit Werten aus xorriso ausfüllen
-;---------------------------------------------------------
-KERNEL_LBA      equ 38
-KERNEL_SECTORS  equ 12
-
 ; boot2.asm – Minimaler Stage2
+%include 'lba.inc'
 
 BITS 16
 ORG 0x0500          ; Stage1 springt nach 0000:0500
@@ -57,6 +52,9 @@ start_boot2:
     call enable_a20
     mov si, msgA20OK
     call print_string
+    
+    sti
+    call set_vesa_mode
 
     ; -------------------------------------------------
     ; GDT laden, Protected Mode aktivieren
@@ -184,6 +182,70 @@ _out:
     int 0x10
     ret
 
+; -------------------------------------------------
+; VESA Mode 0x114 mit LFB setzen und Infos sichern
+; -------------------------------------------------
+set_vesa_mode:
+    ; 1) Mode-Info holen
+    mov ax, 0x4F01              ; VBE Get Mode Info
+    mov cx, 0x114               ; Modus 0x114 (800x600x16)
+    mov di, vesa_mode_info
+    int 0x10
+    cmp ax, 0x004F
+    jne .vesa_fail
+
+    ; 2) Wichtige Daten aus dem Mode Info holen:
+    ; Offset im ModeInfo:
+    ;   0x10: BytesPerScanLine (word)
+    ;   0x12: XResolution  (word)
+    ;   0x14: YResolution  (word)
+    ;   0x19: BitsPerPixel (byte)
+    ;   0x28: PhysBasePtr  (dword)
+
+    ; Signatur 'VBEI'
+    mov eax, 'V' | ('B' << 8) | ('E' << 16) | ('I' << 24)
+    mov [VBE_INFO_ADDR], eax
+
+    ; Modus
+    mov ax, 0x114
+    mov [VBE_INFO_ADDR+4], ax
+
+    ; X-Auflösung
+    mov ax, [vesa_mode_info+0x12]
+    mov [VBE_INFO_ADDR+6], ax
+
+    ; Y-Auflösung
+    mov ax, [vesa_mode_info+0x14]
+    mov [VBE_INFO_ADDR+8], ax
+
+    ; BPP
+    mov al, [vesa_mode_info+0x19]
+    mov [VBE_INFO_ADDR+0x0A], al
+    
+    ; pitch
+    mov ax, [vesa_mode_info+0x10]
+    mov [VBE_INFO_ADDR+0x0B], ax
+
+    ; PhysBasePtr (32-bit)
+    mov eax, [vesa_mode_info+0x28]
+    mov [VBE_INFO_ADDR+0x0E], eax
+
+    ; 3) Mode setzen mit LFB (Bit 14 in BX)
+    mov ax, 0x4F02              ; VBE Set Mode
+    mov bx, 0x4114              ; 0x4000 | 0x114 -> LFB aktiv
+    int 0x10
+    cmp ax, 0x004F
+    jne .vesa_fail
+
+    ; optional: Debug: "VESA OK" ausgeben
+    ; ...
+    ret
+
+.vesa_fail:
+    ; hier fallback z.B. Textmodus lassen, Meldung zeigen
+    ; ...
+    ret
+
 BITS 32
 pm_entry:
     ; Segmente im Protected Mode setzen
@@ -234,3 +296,7 @@ dap_offset      dw 0
 dap_segment     dw 0
 dap_lba_low     dd 0
 dap_lba_high    dd 0
+
+; Puffer für VBE Mode Info (256 Byte reichen)
+vesa_mode_info:
+    times 256 db 0

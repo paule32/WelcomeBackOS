@@ -43,7 +43,7 @@ typedef struct {
     UCHAR   GreenFieldPosition;
     UCHAR   BlueMaskSize;
     UCHAR   BlueFieldPosition;
-    UCHAR   RsvdMaskSize;
+    UCHAR   RsvdMaskSize; 
     UCHAR   RsvdFieldPosition;
     UCHAR   DirectColorModeInfo;
 
@@ -55,14 +55,16 @@ typedef struct {
 #define VBE_MODE_INFO_PTR ((const VbeModeInfo*)0x00090000)
 
 /* globale Variablen für dein Video-System */
-volatile UCHAR*  lfb_base  = 0;
-USHORT  lfb_pitch = 0;
-USHORT  lfb_xres  = 0;
-USHORT  lfb_yres  = 0;
-UCHAR   lfb_bpp   = 0;
+volatile UCHAR* lfb_base  = 0;
+
+USHORT          lfb_pitch = 0;
+USHORT          lfb_pitch = 0;
+USHORT          lfb_xres  = 0;
+USHORT          lfb_yres  = 0;
+UCHAR           lfb_bpp   = 0;
 
 void vbe_read_modeinfo_early(void)
-{
+{    
     printformat((char*)"VBE: 0x%x\n", lfb_base);
     printformat((char*)"X=%d Y=%d BPP=%d\n",
                 lfb_xres,

@@ -3,26 +3,24 @@
 # include "gdt.h"
 
 // GDT-Eintrag
-struct gdt_entry {
+typedef struct {
     uint16_t limit_low;
     uint16_t base_low;
     uint8_t  base_middle;
     uint8_t  access;
     uint8_t  granularity;
     uint8_t  base_high;
-} __attribute__((packed));
+} __attribute__((packed)) gdt_entry_t;
 
-// GDT-Pointer für lgdt
-struct gdt_ptr {
+typedef struct {
     uint16_t limit;
     uint32_t base;
-} __attribute__((packed));
+} __attribute__((packed)) gdt_ptr_t;
 
-// TSS-Struktur (vereinfachte Variante)
-struct tss_entry_struct {
+typedef struct {
     uint32_t prev_tss;
-    uint32_t esp0;
-    uint32_t ss0;
+    uint32_t esp0;      // Kernel-Stack (oben)
+    uint32_t ss0;       // Segment für esp0
     uint32_t esp1;
     uint32_t ss1;
     uint32_t esp2;
@@ -30,68 +28,77 @@ struct tss_entry_struct {
     uint32_t cr3;
     uint32_t eip;
     uint32_t eflags;
-    uint32_t eax, ecx, edx, ebx;
-    uint32_t esp, ebp, esi, edi;
-    uint32_t es, cs, ss, ds, fs, gs;
-    uint32_t ldt;
+    uint32_t eax;
+    uint32_t ecx;
+    uint32_t edx;
+    uint32_t ebx;
+    uint32_t esp;
+    uint32_t ebp;
+    uint32_t esi;
+    uint32_t edi;
+    uint16_t es;
+    uint16_t cs;
+    uint16_t ss;
+    uint16_t ds;
+    uint16_t fs;
+    uint16_t gs;
+    uint16_t ldt;
     uint16_t trap;
     uint16_t iomap_base;
-} __attribute__((packed));
+} __attribute__((packed)) tss_entry_t;
 
-static struct gdt_entry gdt[6];
-static struct gdt_ptr   gp;
-static struct tss_entry_struct tss_entry;
+extern void _gdt_flush(uint32_t);
+extern void _tss_flush(void);
 
-extern void gdt_flush(uint32_t); // in ASM
-extern void tss_flush(void);     // in ASM
+#define GDT_ENTRIES 6
 
-static void gdt_set_gate(int num, uint32_t base, uint32_t limit,
-                         uint8_t access, uint8_t gran)
-{
-    gdt[num].base_low    = (base & 0xFFFF);
-    gdt[num].base_middle = (base >> 16) & 0xFF;
-    gdt[num].base_high   = (base >> 24) & 0xFF;
+gdt_entry_t gdt[GDT_ENTRIES];
+gdt_ptr_t   gp;
+tss_entry_t tss_entry;
 
-    gdt[num].limit_low   = (limit & 0xFFFF);
-    gdt[num].granularity = (limit >> 16) & 0x0F;
+static void gdt_set_gate(
+         int num,
+    uint32_t base,
+    uint32_t limit,
+     uint8_t access,
+     uint8_t gran) {
+    
+    gdt[num].limit_low  = (uint16_t)(limit & 0xFFFF);
+    gdt[num].base_low   = (uint16_t)(base & 0xFFFF);
+    gdt[num].base_middle= (uint8_t)((base >> 16) & 0xFF);
+    gdt[num].access     = access;
+    gdt[num].granularity= (uint8_t)(((limit >> 16) & 0x0F) | (gran & 0xF0));
+    gdt[num].base_high  = (uint8_t)((base >> 24) & 0xFF);
+}
 
-    gdt[num].granularity |= gran & 0xF0;
-    gdt[num].access      = access;
+void tss_set_kernel_stack(uint32_t stack_top) {
+    tss_entry.esp0 = stack_top;
 }
 
 static void write_tss(int num, uint16_t ss0, uint32_t esp0)
 {
     uint32_t base  = (uint32_t)&tss_entry;
-    uint32_t limit = sizeof(struct tss_entry_struct) - 1;
+    uint32_t limit = sizeof(tss_entry_t) - 1;
 
-    gdt_set_gate(num, base, limit, 0x89, 0x40);  // G=0, D/B=0 für TSS
-    // 0x89: Present, DPL=0, Typ=1001b (32-bit TSS)
+    // TSS-Descriptor: Typ 0x9 (32-bit TSS, verfügbar), Present, DPL=0
+    gdt_set_gate(num, base, limit, 0x89, 0x00);
 
-    // TSS leeren
-    for (uint32_t
-        *p = (uint32_t*)(&tss_entry);
-         p < (uint32_t*)(&tss_entry + 1);
-         ++p) {
-        *p = 0;
-    }
-
-    tss_entry.ss0 = 0x10; // ss0;
-    tss_entry.esp0 = esp0;
-    tss_entry.cs = 0x1b;  // usermode cs (0x1B) niedrige 16 Bit
-    tss_entry.ss = 0x23;  // usermode ss (0x23)
-    tss_entry.ds = 0x23;
-    tss_entry.es = 0x23;
-    tss_entry.fs = 0x23;
-    tss_entry.gs = 0x23;
+    // TSS komplett nullen
+    uint8_t* p = (uint8_t*)&tss_entry;
+    for (uint32_t i = 0; i < sizeof(tss_entry_t); ++i)
+        p[i] = 0;
     
-    tss_entry.iomap_base = sizeof(tss_entry);
+    // Nur das, was du wirklich brauchst:
+    tss_entry.ss0  = ss0;        // Kernel Data Segment (0x10)
+    tss_entry.esp0 = esp0;       // Kernel-Stack (oberes Ende)
+    tss_entry.iomap_base = sizeof(tss_entry_t);
 }
 
-void gdt_init(void)
+void gdt_init(uint32_t kernel_stack_top)
 {
     gp.limit = sizeof(gdt) - 1;
     gp.base  = (uint32_t)&gdt;
-
+    
     // 0: Null-Descriptor
     gdt_set_gate(0, 0, 0, 0, 0);
 
@@ -113,13 +120,11 @@ void gdt_init(void)
     // 0xF2: DPL=3, Data
 
     // 5: TSS
-    write_tss(5, 0x10, 0); // ss0 = Kernel Data (0x10), esp0 setzen wir später
+    //extern uint32_t kernel_stack_top; // oder in kmain ermitteln und übergeben
+    write_tss(5, 0x10, kernel_stack_top);
 
-    gdt_flush((uint32_t)&gp);
-    tss_flush();
-}
-
-void tss_set_kernel_stack(uint32_t stack_top)
-{
-    tss_entry.esp0 = stack_top;
+    _gdt_flush((uint32_t)&gp);
+    _tss_flush();
+    
+    for(;;);
 }
