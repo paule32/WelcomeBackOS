@@ -147,7 +147,7 @@ extern void settextcolor(unsigned char forecolor, unsigned char backcolor);
 extern void putch(char c);
 extern void puts(char* text);
 extern void scroll();
-extern void k_printf(char* message, UINT line, unsigned char attribute);
+extern void kprintf(char* message, UINT line, unsigned char attribute);
 extern void set_cursor(unsigned char x, unsigned char y);
 extern void update_cursor();
 extern void move_cursor_right();
@@ -196,3 +196,13 @@ extern int  sata_read_sectors(uint32_t lba, uint32_t count, void *buffer);
 extern int cd_test_iso9660(void);
 
 extern int pe_load_image(const uint8_t* file, uint32_t size, pe_image_t* out);
+
+typedef struct {
+    uint32_t base;
+    uint32_t length;
+    uint32_t type;   // 1 = usable
+}   mem_map_entry_t;
+
+extern          mem_map_entry_t* mem_map;
+extern uint32_t mem_map_length; // Anzahl Einträge
+extern uint32_t max_mem;        // oberstes Ende des nutzbaren physikalischen RAMs

@@ -2,6 +2,8 @@
 // (c) 2025 by Jens Kallup - paule32
 
 # include "stdint.h"
+# include "proto.h"
+# include "vga.h"
 
 # define PAGE_SIZE       4096
 # define PAGE_ENTRIES    1024
@@ -22,17 +24,23 @@
 # define NUM_TABLES      ((NUM_PAGES + PAGE_ENTRIES - 1) / PAGE_ENTRIES)
 
 # define PAGE_PRESENT    0x001
-# define PAGE_RW         0x002
+# define PAGE_WRITE      0x002
+# define PAGE_USER       0x004
 
 # define MMIO_BASE   0xF0000000
 static uint32_t next_mmio = MMIO_BASE;
 
 // Symbole aus kernel.ld
 extern uint32_t __end;
+extern void* kmalloc(uint32_t);
 
 // 4 KiB aligned
 static uint32_t page_directory[PAGE_ENTRIES]                __attribute__((aligned(4096)));
 static uint32_t page_tables   [PAGE_ENTRIES][PAGE_ENTRIES]  __attribute__((aligned(4096)));
+static uint32_t* first_page_table;
+
+static uint32_t free_pages[PAGE_ENTRIES];
+static size_t   free_page_count = 0;
 
 # define MANAGED_MEMORY_BYTES (16 * 1024 * 1024)   // 16 MiB
 # define MAX_PAGES            (MANAGED_MEMORY_BYTES / PAGE_SIZE)
@@ -42,15 +50,15 @@ static uint8_t page_bitmap[BITMAP_SIZE_BYTES];
 
 // Bitmap helpers
 static inline void set_bit(uint32_t idx) {
-    page_bitmap[idx >> 3] |=  (1u << (idx & 7));
+    page_directory[idx >> 3] |=  (1u << (idx & 7));
 }
 
 static inline void clear_bit(uint32_t idx) {
-    page_bitmap[idx >> 3] &= ~(1u << (idx & 7));
+    page_directory[idx >> 3] &= ~(1u << (idx & 7));
 }
 
 static inline uint8_t test_bit(uint32_t idx) {
-    return (page_bitmap[idx >> 3] >> (idx & 7)) & 1u;
+    return (page_directory[idx >> 3] >> (idx & 7)) & 1u;
 }
 
 // Hilfsfunktionen, um CR3 zu lesen/schreiben
@@ -69,28 +77,39 @@ static inline uint32_t *get_page_directory(void) {
     return (uint32_t *)page_directory;
 }
 
+void page_allocator_add_page(uint32_t phys_addr)
+{
+    // Sicherheit: 4 KiB ausrichten
+    phys_addr &= ~(PAGE_SIZE - 1);
+
+    // Optional: ungültige oder zu kleine Bereiche ignorieren
+    // if (phys_addr < 0x100000) return;  // z.B. alles unter 1 MiB sperren
+
+    if (free_page_count < MAX_PAGES) {
+        free_pages[free_page_count++] = phys_addr;
+    } else {
+        // Optional: Fehlerbehandlung (kein Platz mehr im freien Stack)
+    }
+}
 
 // reserved_up_to: alle Frames unterhalb dieser Adresse gelten als belegt
-void page_init(uint32_t reserved_up_to)
+void page_init(uint32_t reserved)
 {
-    // alles erstmal als frei markieren
-    for (uint32_t i = 0; i < BITMAP_SIZE_BYTES; ++i) {
-        page_bitmap[i] = 0x00;
+    // alles < reserved ist belegt
+    // zusätzlich: framebuffer-Bereich blocken
+    vbe_info_t* vi   = (vbe_info_t*)0x800; 
+    uint32_t fb_phys = vi->phys_base;
+    uint32_t fb_size = vi->xres * vi->yres * (vi->bpp / 8);
+
+    uint32_t fb_start =  fb_phys & ~0xFFF;
+    uint32_t fb_end   = (fb_phys + fb_size + 0xFFF) & ~0xFFF;
+
+    for (uint32_t p = reserved; p < max_mem; p += 0x1000) {
+        if (p >= fb_start && p < fb_end) {
+            continue; // VRAM nicht in freien Pool aufnehmen
+        }
+        page_allocator_add_page(p);
     }
-
-    // alle Frames unterhalb 'reserved_up_to' als belegt markieren
-    uint32_t reserved_pages =
-        (reserved_up_to + PAGE_SIZE - 1) / PAGE_SIZE;  // aufrunden
-
-    if (reserved_pages > MAX_PAGES) {
-        reserved_pages = MAX_PAGES;
-    }
-
-    for (uint32_t i = 0; i < reserved_pages; ++i) {
-        set_bit(i);
-    }
-
-    // Frames oberhalb reserved_up_to bleiben frei (bit = 0)
 }
 
 void* page_alloc(void)
@@ -162,7 +181,7 @@ void *mmio_map(uint32_t phys, uint32_t size)
         vaddr += PAGE_SIZE;
         paddr += PAGE_SIZE;
     }
-
+    
     // TLB flush – CR3 neu laden
     uint32_t cr3 = read_cr3();
     write_cr3(cr3);
@@ -179,29 +198,26 @@ void paging_init(void)
         page_directory[i] = 0x00000002;   // RW, aber not present
     }
 
-    // 2. Page Tables für 0..16 MiB
-    uint32_t phys = 0;
-    for (uint32_t t = 0; t < NUM_TABLES; ++t) {
-        for (uint32_t i = 0; i < PAGE_ENTRIES; ++i) {
-            if (phys < NUM_MAPPED_MB * 1024 * 1024) {
-                page_tables[t][i] = phys | PAGE_PRESENT | PAGE_RW;
-                phys += PAGE_SIZE;
-            } else {
-                page_tables[t][i] = 0x00000002; // RW, not present
-            }
-        }
-        page_directory[t] = ((uint32_t)page_tables[t]) | PAGE_PRESENT | PAGE_RW;
+    // Erste Page Table füllen: identity mapping 0x00000000–0x003FFFFF
+    uint32_t phys = 0x00000000;
+    for (int i = 0; i < PAGE_ENTRIES; ++i) {
+        first_page_table[i] = (phys & 0xFFFFF000) | PAGE_PRESENT | PAGE_WRITE;
+        phys += PAGE_SIZE;   // nächste physische Seite
     }
+    
+    // PDE[0] zeigt auf first_page_table
+    uint32_t pt_phys = (uint32_t)first_page_table;
+    page_directory[0] = (pt_phys & 0xFFFFF000) | PAGE_PRESENT | PAGE_WRITE;
     
     // 3. CR3 = physische Adresse des Page Directory
     asm volatile("mov %0, %%cr3" :: "r"(page_directory));
-
+    
     // 4. Paging-Bit in CR0 setzen
     uint32_t cr0;
     asm volatile("mov %%cr0, %0" : "=r"(cr0));
     cr0 |= 0x80000000;
     asm volatile("mov %0, %%cr0" :: "r"(cr0));
-
+    
     // kleine Pipeline-Flush
     asm volatile("jmp .+2");
     

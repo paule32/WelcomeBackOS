@@ -58,8 +58,6 @@ extern void isr128();  // int 0x80 (syscall)
 
 void idt_init(void)
 {
-    for(;;);
-    /*
     idt_ptr.limit = sizeof(idt_entry_t) * 256 - 1;
     idt_ptr.base  = (uint32_t)&idt_entries;
 
@@ -113,5 +111,5 @@ void idt_init(void)
     idt_set_gate(0x80, (uint32_t)isr128, kcode_sel, 0xEE);
 
     // IDT der CPU mitteilen
-    idt_flush((uint32_t)&idt_ptr);*/
+    idt_flush((uint32_t)&idt_ptr);
 }

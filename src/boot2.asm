@@ -53,8 +53,9 @@ start_boot2:
     mov si, msgA20OK
     call print_string
     
-    sti
-    call set_vesa_mode
+    ;sti
+    ;call get_vesa_mode
+;   call set_vesa_mode
 
     ; -------------------------------------------------
     ; GDT laden, Protected Mode aktivieren
@@ -185,65 +186,38 @@ _out:
 ; -------------------------------------------------
 ; VESA Mode 0x114 mit LFB setzen und Infos sichern
 ; -------------------------------------------------
-set_vesa_mode:
+get_vesa_mode:
     ; 1) Mode-Info holen
-    mov ax, 0x4F01              ; VBE Get Mode Info
-    mov cx, 0x114               ; Modus 0x114 (800x600x16)
-    mov di, vesa_mode_info
+    mov ax, 0x4F01        ; VBE-Funktion: Get Mode Info
+    mov cx, 0x0114        ; gewünschter Modus: 0x114
+    mov di, 0x0800        ; Offset = 0x0800
+    xor bx, bx
+    mov es, bx            ; ES = 0x0000 → ES:DI = 0000:0800 (phys 0x00000800)
     int 0x10
-    cmp ax, 0x004F
-    jne .vesa_fail
-
-    ; 2) Wichtige Daten aus dem Mode Info holen:
-    ; Offset im ModeInfo:
-    ;   0x10: BytesPerScanLine (word)
-    ;   0x12: XResolution  (word)
-    ;   0x14: YResolution  (word)
-    ;   0x19: BitsPerPixel (byte)
-    ;   0x28: PhysBasePtr  (dword)
-
-    ; Signatur 'VBEI'
-    mov eax, 'V' | ('B' << 8) | ('E' << 16) | ('I' << 24)
-    mov [VBE_INFO_ADDR], eax
-
-    ; Modus
-    mov ax, 0x114
-    mov [VBE_INFO_ADDR+4], ax
-
-    ; X-Auflösung
-    mov ax, [vesa_mode_info+0x12]
-    mov [VBE_INFO_ADDR+6], ax
-
-    ; Y-Auflösung
-    mov ax, [vesa_mode_info+0x14]
-    mov [VBE_INFO_ADDR+8], ax
-
-    ; BPP
-    mov al, [vesa_mode_info+0x19]
-    mov [VBE_INFO_ADDR+0x0A], al
     
-    ; pitch
-    mov ax, [vesa_mode_info+0x10]
-    mov [VBE_INFO_ADDR+0x0B], ax
-
-    ; PhysBasePtr (32-bit)
-    mov eax, [vesa_mode_info+0x28]
-    mov [VBE_INFO_ADDR+0x0E], eax
-
-    ; 3) Mode setzen mit LFB (Bit 14 in BX)
-    mov ax, 0x4F02              ; VBE Set Mode
-    mov bx, 0x4114              ; 0x4000 | 0x114 -> LFB aktiv
-    int 0x10
     cmp ax, 0x004F
-    jne .vesa_fail
+    jne vbe_fail
+
+set_vesa_mode:
+    mov ax, 0x4F02        ; VBE-Funktion: Set VBE Mode
+    mov bx, 0x4114        ; 0x114 | 0x4000 (Bit14 = Linear Framebuffer)
+    int 0x10
+
+    cmp ax, 0x004F
+    jne vbe_fail
+
+    ; Erfolg: hier geht's normal weiter (z.B. in Protected Mode wechseln)
+    jmp vbe_ok
 
     ; optional: Debug: "VESA OK" ausgeben
     ; ...
+vbe_ok:
     ret
 
-.vesa_fail:
+vbe_fail:
     ; hier fallback z.B. Textmodus lassen, Meldung zeigen
     ; ...
+    jmp $
     ret
 
 BITS 32

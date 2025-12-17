@@ -18,15 +18,9 @@ void enter_shell(void)
         
         file_read(f, buffer, f->size);
         file_close(f);
-
-printformat("PE 3333\n");
-        gfx_init();
         
         app_entry_t entry = (app_entry_t)buffer;
         entry();
-
-printformat("PE 4444\n");
+        for(;;);
     }
-    
-    printformat("in shell\n");
 }

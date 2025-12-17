@@ -6,6 +6,7 @@
 # include "stdint.h"
 # include "proto.h"
 
+extern void enter_usermode(void);
 extern void enter_shell(void);
 
 // ----------------------------------------
@@ -97,7 +98,7 @@ void iso_init(iso_read_sectors_t reader)
         printformat("ISO mount Error.\n");
     }   else {
         printformat("ISO mount successfully.\n");
-        enter_shell();
+        enter_usermode();
     }
 }
 

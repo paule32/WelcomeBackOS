@@ -3,6 +3,7 @@
 // (c) 2025 by Jens Kallup - paule32
 
 # include "stdint.h"
+# include "proto.h"
 # include "kheap.h"
 
 // Symbol from linker script: first free byte after kernel + bss
@@ -20,10 +21,36 @@ typedef struct heap_block {
 
 static heap_block_t* heap_head = NULL;
 
+         mem_map_entry_t* mem_map;
+uint32_t mem_map_length; // Anzahl Einträge
+uint32_t max_mem = 0;    // oberstes Ende des nutzbaren physikalischen RAMs
+
 // simple helper: align up to 'align' (must be power of 2)
 static inline uint32_t align_up(uint32_t value, uint32_t align)
 {
     return (value + align - 1) & ~(align - 1);
+}
+
+void detect_memory(void)
+{
+    uint32_t highest = 0;
+    for (uint32_t i = 0; i < mem_map_length; ++i) {
+        mem_map_entry_t* e = &mem_map[i];
+
+        if (e->type != 1) {
+        continue; // nur "usable"
+        }
+
+        uint32_t end = e->base + e->length;
+        if (end > highest) {
+            highest = end;
+        }
+    }
+    // Auf 4 GiB begrenzen, falls du 32-bit bist
+    if (highest > 0xFFFFFFFFu) {
+        highest = 0xFFFFFFFFu;
+    }
+    max_mem = (uint32_t)highest;
 }
 
 // simple memcpy, weil keine libc vorhanden ist

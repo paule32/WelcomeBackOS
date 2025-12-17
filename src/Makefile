@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 CROSS    ?= 
 
-AS       := ../bin/nasm
+AS       := nasm
 ECHO     := @echo
 EXPORT   := export
 GZIP     := gzip
@@ -97,7 +97,12 @@ OBJS := $(OBJ)/ckernel.o        \
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the shell ...
 # -----------------------------------------------------------------------------
-SHOBJS := $(OBJ)/shell.o
+SHOBJS := \
+        $(OBJ)/shell.o  \
+        $(OBJ)/kheap.o  \
+        $(OBJ)/vga.o    \
+        $(OBJ)/video.o  \
+        $(OBJ)/util.o
 
 LBA        := $(SRC)/lba.inc
 ISO        := $(BIN)/bootcd.iso

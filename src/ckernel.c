@@ -23,6 +23,7 @@ extern int atapi_read_sectors(uint32_t lba, uint32_t count, void *buffer);
 extern int  sata_read_sectors(uint32_t lba, uint32_t count, void *buffer);
 
 extern void printformat(char*, ...);
+extern void detect_memory(void);
 extern void enter_usermode(void);
 
 void test_task(void);
@@ -39,23 +40,21 @@ int kmain()
     paging_init();
     kheap_init();
     
-    // alles unterhalb (Kernel + 1MiB Heap) als belegt markieren
+    detect_memory();          // setzt max_mem
     uint32_t reserved = (uint32_t)(&__end) + 0x00100000;
     page_init(reserved);
     
-    gdt_init(kernel_stack_top);
-    for (;;);
-    tss_set_kernel_stack(kernel_stack_top);
-    for(;;);
+    // 3) aktuellen Stack als esp0 für TSS verwenden
+    uint32_t esp;
+    __asm__ volatile("mov %%esp, %0" : "=r"(esp));
+    gdt_init(esp);
     idt_init();
-    for(;;);
     isr_init();
-    for(;;);
     irq_init();
-    for(;;);
+    
     syscall_init();
     tasking_init();
-    for(;;);
+    
     settextcolor(14,0);
     
     if (check_atapi() == 0) {
@@ -65,13 +64,11 @@ int kmain()
         printformat("NO ATAPI\n");
         check_ahci();
     }
-        
-    printformat("next stage\n");
 
     if (iso_mount() != 0) {
-        printformat("ISO mount Error.");
+        printformat("ISO mount Error.\n");
     }   else {
-        printformat("ISO mount successfully.");
+        printformat("ISO mount successfully.\n");
     }
     
     __asm__ volatile("sti");
@@ -80,7 +77,7 @@ int kmain()
     /*volatile char* VGA = (volatile char*)0xB8000;
     VGA[0] = 'K'; VGA[1] = 0x0F;
     VGA[2] = 'U'; VGA[3] = 0x0F;*/
-    
+
     enter_usermode();
     
 #if 0

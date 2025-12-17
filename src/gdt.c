@@ -125,6 +125,4 @@ void gdt_init(uint32_t kernel_stack_top)
 
     _gdt_flush((uint32_t)&gp);
     _tss_flush();
-    
-    for(;;);
 }

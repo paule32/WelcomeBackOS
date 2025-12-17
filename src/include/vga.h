@@ -1,0 +1,74 @@
+// --------------------------------------------------------------------------
+// \file   vga.h
+// \author Jens Kallup - paule32
+// \note   (c) 2025 all rights reserved.
+// --------------------------------------------------------------------------
+#ifndef __VGA_H__
+#define __VGA_H__
+
+# include "stdint.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+typedef struct __attribute__((packed))
+{
+    uint16_t attributes;      // 0x00
+    uint8_t  winA;            // 0x02
+    uint8_t  winB;            // 0x03
+    uint16_t granularity;     // 0x04
+    uint16_t winsize;         // 0x06
+    uint16_t segmentA;        // 0x08
+    uint16_t segmentB;        // 0x0A
+    uint32_t realFctPtr;      // 0x0C
+    uint16_t pitch;           // 0x10 (Bytes pro Scanline)
+    
+    uint16_t xres;          // Offset 0x12: XResolution
+    uint16_t yres;          // Offset 0x14: YResolution
+    uint8_t  x_char_size;   // 0x16
+    uint8_t  y_char_size;   // 0x17
+    uint8_t  planes;        // 0x18
+    uint8_t  bpp;           // 0x19: BitsPerPixel
+    uint8_t  banks;         // 0x1A
+    uint8_t  memory_model;  // 0x1B
+    uint8_t  bank_size;     // 0x1C
+    uint8_t  image_pages;   // 0x1D
+    uint8_t  reserved1;     // 0x1E
+
+    uint8_t  red_mask_size;       // 0x1F
+    uint8_t  red_field_position;  // 0x20
+    uint8_t  green_mask_size;     // 0x21
+    uint8_t  green_field_position;// 0x22
+    uint8_t  blue_mask_size;      // 0x23
+    uint8_t  blue_field_position; // 0x24
+    uint8_t  rsvd_mask_size;      // 0x25
+    uint8_t  rsvd_field_position; // 0x26
+    uint8_t  direct_color_info;   // 0x27
+
+    uint32_t phys_base;      // 0x28: PhysBasePtr (FrameBuffer-Adresse)
+    uint32_t offscreen_off;  // 0x2C
+    uint16_t offscreen_size; // 0x30
+
+    uint8_t  reserved2[206]; // auf 256 Bytes auffüllen
+}   vbe_info_t;
+
+extern uint32_t lfb_base ;
+extern uint16_t lfb_pitch;
+extern uint16_t lfb_xres ;
+extern uint16_t lfb_yres ;
+extern uint8_t  lfb_bpp  ;
+extern uint32_t lfb_phys ;
+
+extern void gfx_init(void);
+
+extern void gfx_clear    (                USHORT);
+extern void gfx_putPixel (int,int,        USHORT);
+extern void gfx_rectFill (int,int,int,int,USHORT);
+
+extern USHORT rgb565(UCHAR,UCHAR,UCHAR);
+
+#ifdef __cplusplus
+};
+#endif // __cplusplus
+#endif // __VGA_H__

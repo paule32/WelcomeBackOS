@@ -3,8 +3,8 @@ echo "-------------------------"
 objcopy -O binary ../obj/kernel.o ../bin/kernel.bin
 ls -l ../bin
 
-../bin/nasm -f bin ../src/boot1.asm -o ../bin/boot1.bin
-../bin/nasm -f bin ../src/boot2.asm -o ../bin/boot2.bin
+nasm -f bin ../src/boot1.asm -o ../bin/boot1.bin
+nasm -f bin ../src/boot2.asm -o ../bin/boot2.bin
 
 dd if=/dev/zero of=../bin/hdd.img bs=1M count=16
 dd if=../bin/boot1.bin of=../bin/hdd.img bs=512 count=1 conv=notrunc

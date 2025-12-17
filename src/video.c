@@ -1,8 +1,5 @@
 # include "proto.h"
 # include "my_stdarg.h"
-# include "vbe.h"
-
-# define VBE_INFO_ADDR 0x00000800
 
 unsigned char  csr_x  = 0;
 unsigned char  csr_y  = 0;
@@ -12,45 +9,8 @@ unsigned char  attrib = 0x0F;
 
 USHORT* tui_vidmem = (USHORT*) 0xb8000;
 
-extern volatile UCHAR* lfb_base;
+///extern volatile UCHAR* lfb_base;
 
-USHORT  lfb_pitch;
-USHORT  lfb_xres;
-USHORT  lfb_yres;
-UCHAR   lfb_bpp;
-ULONG   lfb_phys;
-
-static inline vbe_info_t* vbe_get_info(void) {
-    return (vbe_info_t*)VBE_INFO_ADDR;
-}
-
-void gfx_init(void)
-{
-    vbe_info_t* info = vbe_get_info();
-    for(;;);
-    if (info->sig != (('V') | ('B'<<8) | ('E'<<16) | ('I'<<24))) {
-        printformat("no valid VBE data.\n");
-        // Fallback auf Textmodus
-        return;
-    }
-    
-    lfb_phys  = info->phys_base;
-    lfb_pitch = info->pitch;
-    lfb_xres  = info->xres;
-    lfb_yres  = info->yres;
-    lfb_bpp   = info->bpp ;
-    
-    // z.B.: nur 16bpp-Modus erstmal unterstützen
-    if (lfb_bpp != 16) {
-        // Fallback
-        return;
-    }
-    
-    lfb_bpp = (uint32_t)lfb_xres *
-              (uint32_t)lfb_yres *
-              2;  // 2 bytes/pixel
-    for(;;);
-}
 /*
 uint16_t detect_bios_area_hardware(void)
 {
@@ -277,4 +237,3 @@ void restore_cursor()
     csr_y  = saved_csr_y;
     sti();
 }
-
