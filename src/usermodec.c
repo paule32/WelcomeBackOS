@@ -19,10 +19,7 @@ static inline void syscall_putchar(char c)
 
 void user_mode_main(void)
 {
-    const char* s = "[user] Hello from ring 3!";
-    for (int i = 0; s[i]; ++i) {
-        syscall_putchar(s[i]);
-    }
+    printformat("[user] Hello from ring 3!\n");
     enter_shell();
 }
 

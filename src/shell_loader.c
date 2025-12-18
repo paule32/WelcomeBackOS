@@ -1,6 +1,7 @@
 # include "stdint.h"
 # include "proto.h"
 # include "iso9660.h"
+# include "vga.h"
 
 extern void gfx_init(void);
 
@@ -20,6 +21,8 @@ void enter_shell(void)
         file_close(f);
         
         app_entry_t entry = (app_entry_t)buffer;
+        gfx_init();
+        
         entry();
         for(;;);
     }

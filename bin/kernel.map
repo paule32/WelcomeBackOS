@@ -30,7 +30,7 @@ Linker script and memory map
                 0x00000140                        __dll_characteristics__ = 0x140
                 0x00010000                        . = 0x10000
 
-.text           0x00010000     0x2e00
+.text           0x00010000     0x3000
                 0x00010000        0x4 LONG 0x10004 _kmain
                 0x00010004                        __code_start = .
  *(.text)
@@ -112,94 +112,101 @@ Linker script and memory map
  .text          0x00010d90       0x1d ../obj/usermode.o
                 0x00010d90                enter_usermode
  *fill*         0x00010dad        0x3 
- .text          0x00010db0       0x30 ../obj/usermodec.o
+ .text          0x00010db0       0x18 ../obj/usermodec.o
                 0x00010db0                user_mode_main
- .text          0x00010de0      0x1ec ../obj/task.o
-                0x00010e15                tasking_is_enabled
-                0x00010e1b                tasking_init
-                0x00010e68                task_create
-                0x00010ef8                schedule
- .text          0x00010fcc      0x5d4 ../obj/iso9660.o
-                0x00010fcc                iso_mount
-                0x00011097                iso_init
-                0x000110d9                iso_find_file
-                0x000113dd                file_open
-                0x0001142f                file_read
-                0x0001152d                file_getch
-                0x00011560                file_seek
-                0x00011586                file_close
- .text          0x000115a0      0x484 ../obj/video.o
-                0x000115a0                settextcolor
-                0x000115b8                move_cursor_right
-                0x000115da                move_cursor_left
-                0x0001160d                update_cursor
-                0x0001164e                k_clear_screen
-                0x00011691                move_cursor_home
-                0x0001169e                move_cursor_end
-                0x000116ab                set_cursor
-                0x000116c3                scroll
-                0x00011737                putch
-                0x0001185a                puts
-                0x00011883                kprintf
-                0x000118c6                printformat
-                0x000119ed                save_cursor
-                0x00011a08                restore_cursor
- .text          0x00011a24      0x2ec ../obj/util.o
-                0x00011a24                fetchESP
-                0x00011a27                fetchEBP
-                0x00011a2a                fetchSS
-                0x00011a2d                fetchCS
-                0x00011a30                fetchDS
-                0x00011a33                panic_assert
-                0x00011aa5                k_memshow
-                0x00011ada                reboot
-                0x00011b09                kitoa
-                0x00011baa                ki2hex
-                0x00011c03                float2string
- .text          0x00011d10      0x4f0 ../obj/atapi.o
-                0x00011e66                atapi_read_sector
-                0x00011faa                atapi_read_sectors
-                0x00011ff4                check_atapi
-                0x000120f4                cd_test_iso9660
- .text          0x00012200      0x6a8 ../obj/ahci.o
-                0x00012200                ahci_find_controller
-                0x00012301                ahci_port_init
-                0x00012397                sata_read_sectors
-                0x000125c0                ahci_probe_ports
-                0x000126b0                sata_test_iso9660
-                0x000127a4                ahci_init
-                0x00012806                check_ahci
- .text          0x000128a8       0x54 ../obj/shell_loader.o
-                0x000128a8                enter_shell
- .text          0x000128fc      0x1fc ../obj/pe.o
-                0x000128fc                pe_load_image
- .text          0x00012af8      0x2d4 ../obj/kheap.o
-                0x00012b1e                detect_memory
-                0x00012b63                kmemcpy
-                0x00012b8f                kmemset
-                0x00012bb1                kmemsetw
-                0x00012bd5                kstrlen
-                0x00012bf3                kstrncmp
-                0x00012c41                kstrcmp
-                0x00012c73                kstrcat
-                0x00012cac                kheap_init
-                0x00012ccb                kmalloc
-                0x00012d10                kfree
-                0x00012d52                krealloc
+ .text          0x00010dc8      0x1ec ../obj/task.o
+                0x00010dfd                tasking_is_enabled
+                0x00010e03                tasking_init
+                0x00010e50                task_create
+                0x00010ee0                schedule
+ .text          0x00010fb4      0x5d4 ../obj/iso9660.o
+                0x00010fb4                iso_mount
+                0x0001107f                iso_init
+                0x000110c1                iso_find_file
+                0x000113c5                file_open
+                0x00011417                file_read
+                0x00011515                file_getch
+                0x00011548                file_seek
+                0x0001156e                file_close
+ .text          0x00011588      0x484 ../obj/video.o
+                0x00011588                settextcolor
+                0x000115a0                move_cursor_right
+                0x000115c2                move_cursor_left
+                0x000115f5                update_cursor
+                0x00011636                k_clear_screen
+                0x00011679                move_cursor_home
+                0x00011686                move_cursor_end
+                0x00011693                set_cursor
+                0x000116ab                scroll
+                0x0001171f                putch
+                0x00011842                puts
+                0x0001186b                kprintf
+                0x000118ae                printformat
+                0x000119d5                save_cursor
+                0x000119f0                restore_cursor
+ .text          0x00011a0c      0x1e0 ../obj/vga.o
+                0x00011a0c                gfx_init
+                0x00011a7b                gfx_clear
+                0x00011ad7                rgb565
+                0x00011b00                gfx_putPixel
+                0x00011b39                gfx_rectFill
+ .text          0x00011bec      0x2ec ../obj/util.o
+                0x00011bec                fetchESP
+                0x00011bef                fetchEBP
+                0x00011bf2                fetchSS
+                0x00011bf5                fetchCS
+                0x00011bf8                fetchDS
+                0x00011bfb                panic_assert
+                0x00011c6d                k_memshow
+                0x00011ca2                reboot
+                0x00011cd1                kitoa
+                0x00011d72                ki2hex
+                0x00011dcb                float2string
+ .text          0x00011ed8      0x4f0 ../obj/atapi.o
+                0x0001202e                atapi_read_sector
+                0x00012172                atapi_read_sectors
+                0x000121bc                check_atapi
+                0x000122bc                cd_test_iso9660
+ .text          0x000123c8      0x6a8 ../obj/ahci.o
+                0x000123c8                ahci_find_controller
+                0x000124c9                ahci_port_init
+                0x0001255f                sata_read_sectors
+                0x00012788                ahci_probe_ports
+                0x00012878                sata_test_iso9660
+                0x0001296c                ahci_init
+                0x000129ce                check_ahci
+ .text          0x00012a70       0x58 ../obj/shell_loader.o
+                0x00012a70                enter_shell
+ .text          0x00012ac8      0x1fc ../obj/pe.o
+                0x00012ac8                pe_load_image
+ .text          0x00012cc4      0x2d4 ../obj/kheap.o
+                0x00012cea                detect_memory
+                0x00012d2f                kmemcpy
+                0x00012d5b                kmemset
+                0x00012d7d                kmemsetw
+                0x00012da1                kstrlen
+                0x00012dbf                kstrncmp
+                0x00012e0d                kstrcmp
+                0x00012e3f                kstrcat
+                0x00012e78                kheap_init
+                0x00012e97                kmalloc
+                0x00012edc                kfree
+                0x00012f1e                krealloc
 
-.rodata         0x00012dcc      0xa00
-                0x00012dcc                        __rodata_start = .
+.rodata         0x00012f98      0xa00
+                0x00012f98                        __rodata_start = .
  *(.rodata)
  *(.rdata)
- .rdata         0x00012dcc       0x50 ../obj/ckernel.o
- .rdata         0x00012e1c       0x1c ../obj/usermodec.o
- .rdata         0x00012e38       0x2c ../obj/iso9660.o
- .rdata         0x00012e64       0x84 ../obj/video.o
- .rdata         0x00012ee8       0x44 ../obj/util.o
- .rdata         0x00012f2c      0x368 ../obj/atapi.o
- .rdata         0x00013294      0x300 ../obj/ahci.o
- .rdata         0x00013594       0x28 ../obj/shell_loader.o
- .rdata         0x000135bc       0x2c ../obj/pe.o
+ .rdata         0x00012f98       0x50 ../obj/ckernel.o
+ .rdata         0x00012fe8       0x1c ../obj/usermodec.o
+ .rdata         0x00013004       0x2c ../obj/iso9660.o
+ .rdata         0x00013030       0x84 ../obj/video.o
+ .rdata         0x000130b4       0x28 ../obj/vga.o
+ .rdata         0x000130dc       0x44 ../obj/util.o
+ .rdata         0x00013120      0x368 ../obj/atapi.o
+ .rdata         0x00013488      0x300 ../obj/ahci.o
+ .rdata         0x00013788       0x28 ../obj/shell_loader.o
+ .rdata         0x000137b0       0x2c ../obj/pe.o
 
 .rdata          0x00014000      0x400
  .rdata$zzz     0x00014000       0x2c ../obj/ckernel.o
@@ -214,14 +221,15 @@ Linker script and memory map
  .rdata$zzz     0x0001418c       0x2c ../obj/task.o
  .rdata$zzz     0x000141b8       0x2c ../obj/iso9660.o
  .rdata$zzz     0x000141e4       0x2c ../obj/video.o
- .rdata$zzz     0x00014210       0x2c ../obj/util.o
- .rdata$zzz     0x0001423c       0x2c ../obj/atapi.o
- .rdata$zzz     0x00014268       0x2c ../obj/ahci.o
- .rdata$zzz     0x00014294       0x2c ../obj/shell_loader.o
- .rdata$zzz     0x000142c0       0x2c ../obj/pe.o
- .rdata$zzz     0x000142ec       0x2c ../obj/kheap.o
+ .rdata$zzz     0x00014210       0x2c ../obj/vga.o
+ .rdata$zzz     0x0001423c       0x2c ../obj/util.o
+ .rdata$zzz     0x00014268       0x2c ../obj/atapi.o
+ .rdata$zzz     0x00014294       0x2c ../obj/ahci.o
+ .rdata$zzz     0x000142c0       0x2c ../obj/shell_loader.o
+ .rdata$zzz     0x000142ec       0x2c ../obj/pe.o
+ .rdata$zzz     0x00014318       0x2c ../obj/kheap.o
 
-.eh_frame       0x00015000      0xe00
+.eh_frame       0x00015000     0x1000
  .eh_frame      0x00015000       0x50 ../obj/ckernel.o
  .eh_frame      0x00015050       0xe8 ../obj/paging.o
  .eh_frame      0x00015138       0x58 ../obj/idt.o
@@ -230,43 +238,45 @@ Linker script and memory map
  .eh_frame      0x0001523c       0x48 ../obj/gdt.o
  .eh_frame      0x00015284       0x54 ../obj/syscall.o
  .eh_frame      0x000152d8       0x2c ../obj/timer.o
- .eh_frame      0x00015304       0x38 ../obj/usermodec.o
- .eh_frame      0x0001533c       0xb4 ../obj/task.o
- .eh_frame      0x000153f0      0x140 ../obj/iso9660.o
- .eh_frame      0x00015530      0x1c0 ../obj/video.o
- .eh_frame      0x000156f0      0x19c ../obj/util.o
- .eh_frame      0x0001588c      0x154 ../obj/atapi.o
- .eh_frame      0x000159e0      0x15c ../obj/ahci.o
- .eh_frame      0x00015b3c       0x38 ../obj/shell_loader.o
- .eh_frame      0x00015b74       0x58 ../obj/pe.o
- .eh_frame      0x00015bcc      0x1b0 ../obj/kheap.o
+ .eh_frame      0x00015304       0x30 ../obj/usermodec.o
+ .eh_frame      0x00015334       0xb4 ../obj/task.o
+ .eh_frame      0x000153e8      0x140 ../obj/iso9660.o
+ .eh_frame      0x00015528      0x1c0 ../obj/video.o
+ .eh_frame      0x000156e8       0xc8 ../obj/vga.o
+ .eh_frame      0x000157b0      0x19c ../obj/util.o
+ .eh_frame      0x0001594c      0x154 ../obj/atapi.o
+ .eh_frame      0x00015aa0      0x15c ../obj/ahci.o
+ .eh_frame      0x00015bfc       0x38 ../obj/shell_loader.o
+ .eh_frame      0x00015c34       0x58 ../obj/pe.o
+ .eh_frame      0x00015c8c      0x1b0 ../obj/kheap.o
 
-.data           0x00015d7c      0x200
-                0x00015d7c                        __data_start = .
+.data           0x00015e3c      0x200
+                0x00015e3c                        __data_start = .
  *(.data)
- .data          0x00015d7c        0x4 ../obj/ckernel.o
-                0x00015d7c                kernel_stack_top
- .data          0x00015d80        0x4 ../obj/paging.o
- .data          0x00015d84        0x0 ../obj/idt.o
- .data          0x00015d84        0x0 ../obj/irqc.o
- .data          0x00015d84        0x0 ../obj/isrc.o
- .data          0x00015d84        0x0 ../obj/gdt.o
- .data          0x00015d84        0x4 ../obj/syscall.o
- .data          0x00015d88        0x0 ../obj/timer.o
- .data          0x00015d88        0x4 ../obj/usermodec.o
-                0x00015d88                user_stack_top
- .data          0x00015d8c        0x0 ../obj/task.o
- .data          0x00015d8c        0x4 ../obj/iso9660.o
- .data          0x00015d90        0x8 ../obj/video.o
-                0x00015d90                tui_vidmem
-                0x00015d94                attrib
- .data          0x00015d98        0x4 ../obj/util.o
-                0x00015d98                INT_MAX
- .data          0x00015d9c        0x8 ../obj/atapi.o
- .data          0x00015da4        0x0 ../obj/ahci.o
- .data          0x00015da4        0x0 ../obj/shell_loader.o
- .data          0x00015da4        0x0 ../obj/pe.o
- .data          0x00015da4        0x0 ../obj/kheap.o
+ .data          0x00015e3c        0x4 ../obj/ckernel.o
+                0x00015e3c                kernel_stack_top
+ .data          0x00015e40        0x4 ../obj/paging.o
+ .data          0x00015e44        0x0 ../obj/idt.o
+ .data          0x00015e44        0x0 ../obj/irqc.o
+ .data          0x00015e44        0x0 ../obj/isrc.o
+ .data          0x00015e44        0x0 ../obj/gdt.o
+ .data          0x00015e44        0x4 ../obj/syscall.o
+ .data          0x00015e48        0x0 ../obj/timer.o
+ .data          0x00015e48        0x4 ../obj/usermodec.o
+                0x00015e48                user_stack_top
+ .data          0x00015e4c        0x0 ../obj/task.o
+ .data          0x00015e4c        0x4 ../obj/iso9660.o
+ .data          0x00015e50        0x8 ../obj/video.o
+                0x00015e50                tui_vidmem
+                0x00015e54                attrib
+ .data          0x00015e58        0x0 ../obj/vga.o
+ .data          0x00015e58        0x4 ../obj/util.o
+                0x00015e58                INT_MAX
+ .data          0x00015e5c        0x8 ../obj/atapi.o
+ .data          0x00015e64        0x0 ../obj/ahci.o
+ .data          0x00015e64        0x0 ../obj/shell_loader.o
+ .data          0x00015e64        0x0 ../obj/pe.o
+ .data          0x00015e64        0x0 ../obj/kheap.o
 
 .bss            0x00016000     0x4410
                 0x00016000                        __bss_start = .
@@ -292,9 +302,16 @@ Linker script and memory map
                 0x00019921                saved_csr_x
                 0x00019922                csr_y
                 0x00019923                csr_x
- .bss           0x00019924        0x0 ../obj/util.o
- .bss           0x00019924        0xc ../obj/atapi.o
- *fill*         0x00019930      0x2d0 
+ .bss           0x00019924       0x10 ../obj/vga.o
+                0x00019924                lfb_phys
+                0x00019928                lfb_bpp
+                0x0001992a                lfb_yres
+                0x0001992c                lfb_xres
+                0x0001992e                lfb_pitch
+                0x00019930                lfb_base
+ .bss           0x00019934        0x0 ../obj/util.o
+ .bss           0x00019934        0xc ../obj/atapi.o
+ *fill*         0x00019940      0x2c0 
  .bss           0x00019c00      0x800 ../obj/ahci.o
  .bss           0x0001a400        0x0 ../obj/shell_loader.o
  .bss           0x0001a400        0x0 ../obj/pe.o
@@ -324,6 +341,7 @@ LOAD ../obj/usermodec.o
 LOAD ../obj/task.o
 LOAD ../obj/iso9660.o
 LOAD ../obj/video.o
+LOAD ../obj/vga.o
 LOAD ../obj/util.o
 LOAD ../obj/atapi.o
 LOAD ../obj/ahci.o

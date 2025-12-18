@@ -2,14 +2,15 @@
 # include "proto.h"
 # include "vga.h"
 
-void shell_main(void)
+extern "C" void shell_main(void)
 {
     // Testmarker, bevor wir springen:
-    volatile char* VGA = (volatile char*)0xB8000;
-    VGA[0] = 'K'; VGA[1] = 0x0F;
-    VGA[2] = 'U'; VGA[3] = 0x0F;
+    //volatile char* VGA = (volatile char*)0xB8000;
+    //VGA[0] = 'K'; VGA[1] = 0x0F;
+    //VGA[2] = 'U'; VGA[3] = 0x0F;
     
-    printformat("lolo\n");
+    settextcolor(15,1);
+    printformat("lolo---------------\n");
     
     
     /*

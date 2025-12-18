@@ -13,7 +13,7 @@ uint32_t lfb_phys ;
 
 void gfx_init(void)
 {
-    _vga = (vbe_info_t*)0x800;
+    _vga = (vbe_info_t*)0x00009000;
     
     lfb_base  = _vga->phys_base;
     lfb_pitch = _vga->pitch; 
@@ -22,15 +22,14 @@ void gfx_init(void)
     lfb_xres  = _vga->xres;
     lfb_yres  = _vga->yres;
     
+    printformat("--> X: %d, Y: %d, BPP: %d, ADDR: 0x%x\n",
+    lfb_xres,lfb_yres,lfb_bpp,lfb_base);
+    
     // z.B.: nur 16bpp-Modus erstmal unterstützen
     if (lfb_bpp != 16) {
         // Fallback
         return;
     }
-    
-    lfb_bpp = (uint32_t)lfb_xres *
-              (uint32_t)lfb_yres *
-              2;  // 2 bytes/pixel
 }
 
 void gfx_clear(

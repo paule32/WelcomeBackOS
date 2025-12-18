@@ -26,60 +26,119 @@ Linker script and memory map
                 0x00001000                        __size_of_heap_commit__ = 0x1000
                 0x00000000                        __loader_flags__ = 0x0
                 0x00000140                        __dll_characteristics__ = 0x140
-                0x00000000                        . = 0x0
+                0x00a00000                        . = 0xa00000
 
-.text           0x00000000      0xe00
- *(.text*)
- .text          0x00000000       0x30 ../obj/shell.o
-                0x00000000                shell_main()
- .text          0x00000030      0x2d4 ../obj/kheap.o
-                0x00000056                detect_memory
-                0x0000009b                kmemcpy
-                0x000000c7                kmemset
-                0x000000e9                kmemsetw
-                0x0000010d                kstrlen
-                0x0000012b                kstrncmp
-                0x00000179                kstrcmp
-                0x000001ab                kstrcat
-                0x000001e4                kheap_init
-                0x00000203                kmalloc
-                0x00000248                kfree
-                0x0000028a                krealloc
- .text          0x00000304      0x1c0 ../obj/vga.o
-                0x00000304                gfx_init
-                0x00000353                gfx_clear
-                0x000003af                rgb565
-                0x000003d8                gfx_putPixel
-                0x00000411                gfx_rectFill
- .text          0x000004c4      0x484 ../obj/video.o
-                0x000004c4                settextcolor
-                0x000004dc                move_cursor_right
-                0x000004fe                move_cursor_left
-                0x00000531                update_cursor
-                0x00000572                k_clear_screen
-                0x000005b5                move_cursor_home
-                0x000005c2                move_cursor_end
-                0x000005cf                set_cursor
-                0x000005e7                scroll
-                0x0000065b                putch
-                0x0000077e                puts
-                0x000007a7                kprintf
-                0x000007ea                printformat
-                0x00000911                save_cursor
-                0x0000092c                restore_cursor
- .text          0x00000948      0x2ec ../obj/util.o
-                0x00000948                fetchESP
-                0x0000094b                fetchEBP
-                0x0000094e                fetchSS
-                0x00000951                fetchCS
-                0x00000954                fetchDS
-                0x00000957                panic_assert
-                0x000009c9                k_memshow
-                0x000009fe                reboot
-                0x00000a2d                kitoa
-                0x00000ace                ki2hex
-                0x00000b27                float2string
-                0x00000c34                        ___end = .
+.text           0x00a00000      0xe00
+                0x00a00000        0x4 LONG 0xa00004 _shell_main
+                0x00a00004                        __code_start = .
+ *(.text)
+ .text          0x00a00004       0x28 ../obj/shell.o
+                0x00a00004                shell_main
+ .text          0x00a0002c      0x2d4 ../obj/kheap.o
+                0x00a00052                detect_memory
+                0x00a00097                kmemcpy
+                0x00a000c3                kmemset
+                0x00a000e5                kmemsetw
+                0x00a00109                kstrlen
+                0x00a00127                kstrncmp
+                0x00a00175                kstrcmp
+                0x00a001a7                kstrcat
+                0x00a001e0                kheap_init
+                0x00a001ff                kmalloc
+                0x00a00244                kfree
+                0x00a00286                krealloc
+ .text          0x00a00300      0x1e0 ../obj/vga.o
+                0x00a00300                gfx_init
+                0x00a0036f                gfx_clear
+                0x00a003cb                rgb565
+                0x00a003f4                gfx_putPixel
+                0x00a0042d                gfx_rectFill
+ .text          0x00a004e0      0x484 ../obj/video.o
+                0x00a004e0                settextcolor
+                0x00a004f8                move_cursor_right
+                0x00a0051a                move_cursor_left
+                0x00a0054d                update_cursor
+                0x00a0058e                k_clear_screen
+                0x00a005d1                move_cursor_home
+                0x00a005de                move_cursor_end
+                0x00a005eb                set_cursor
+                0x00a00603                scroll
+                0x00a00677                putch
+                0x00a0079a                puts
+                0x00a007c3                kprintf
+                0x00a00806                printformat
+                0x00a0092d                save_cursor
+                0x00a00948                restore_cursor
+ .text          0x00a00964      0x2ec ../obj/util.o
+                0x00a00964                fetchESP
+                0x00a00967                fetchEBP
+                0x00a0096a                fetchSS
+                0x00a0096d                fetchCS
+                0x00a00970                fetchDS
+                0x00a00973                panic_assert
+                0x00a009e5                k_memshow
+                0x00a00a1a                reboot
+                0x00a00a49                kitoa
+                0x00a00aea                ki2hex
+                0x00a00b43                float2string
+
+.rdata          0x00a01000      0x200
+ .rdata         0x00a01000       0x18 ../obj/shell.o
+ .rdata         0x00a01018       0x28 ../obj/vga.o
+ .rdata         0x00a01040       0x84 ../obj/video.o
+ .rdata         0x00a010c4       0x44 ../obj/util.o
+ .rdata$zzz     0x00a01108       0x2c ../obj/shell.o
+ .rdata$zzz     0x00a01134       0x2c ../obj/kheap.o
+ .rdata$zzz     0x00a01160       0x2c ../obj/vga.o
+ .rdata$zzz     0x00a0118c       0x2c ../obj/video.o
+ .rdata$zzz     0x00a011b8       0x2c ../obj/util.o
+
+.eh_frame       0x00a02000      0x800
+ .eh_frame      0x00a02000       0x30 ../obj/shell.o
+ .eh_frame      0x00a02030      0x1b0 ../obj/kheap.o
+ .eh_frame      0x00a021e0       0xc8 ../obj/vga.o
+ .eh_frame      0x00a022a8      0x1c0 ../obj/video.o
+ .eh_frame      0x00a02468      0x19c ../obj/util.o
+
+.rodata
+ *(.rodata*)
+
+.data           0x00a02604      0x200
+ *(.data*)
+ .data          0x00a02604        0x0 ../obj/shell.o
+ .data          0x00a02604        0x0 ../obj/kheap.o
+ .data          0x00a02604        0x0 ../obj/vga.o
+ .data          0x00a02604        0x8 ../obj/video.o
+                0x00a02604                tui_vidmem
+                0x00a02608                attrib
+ .data          0x00a0260c        0x4 ../obj/util.o
+                0x00a0260c                INT_MAX
+
+.reloc          0x00a03000      0x200
+ .reloc         0x00a03000      0x118 dll stuff
+
+.bss            0x00a03118       0x24
+ *(.bss*)
+ .bss           0x00a03118        0x0 ../obj/shell.o
+ .bss           0x00a03118       0x10 ../obj/kheap.o
+                0x00a03118                max_mem
+                0x00a0311c                mem_map_length
+                0x00a03120                mem_map
+ .bss           0x00a03128       0x10 ../obj/vga.o
+                0x00a03128                lfb_phys
+                0x00a0312c                lfb_bpp
+                0x00a0312e                lfb_yres
+                0x00a03130                lfb_xres
+                0x00a03132                lfb_pitch
+                0x00a03134                lfb_base
+ .bss           0x00a03138        0x4 ../obj/video.o
+                0x00a03138                saved_csr_y
+                0x00a03139                saved_csr_x
+                0x00a0313a                csr_y
+                0x00a0313b                csr_x
+ .bss           0x00a0313c        0x0 ../obj/util.o
+ *(COMMON)
+                0x00a0313c                        ___end = .
 LOAD ../obj/shell.o
 LOAD ../obj/kheap.o
 LOAD ../obj/vga.o
@@ -87,53 +146,3 @@ LOAD ../obj/video.o
 LOAD ../obj/util.o
 OUTPUT(../obj/shell.bin pei-i386)
 LOAD dll stuff
-
-.rdata          0x00001000      0x200
- .rdata         0x00001000        0x8 ../obj/shell.o
- .rdata         0x00001008       0x84 ../obj/video.o
- .rdata         0x0000108c       0x44 ../obj/util.o
- .rdata$zzz     0x000010d0       0x2c ../obj/shell.o
- .rdata$zzz     0x000010fc       0x2c ../obj/kheap.o
- .rdata$zzz     0x00001128       0x2c ../obj/vga.o
- .rdata$zzz     0x00001154       0x2c ../obj/video.o
- .rdata$zzz     0x00001180       0x2c ../obj/util.o
-
-.eh_frame       0x00002000      0x600
- .eh_frame      0x00002000       0x30 ../obj/shell.o
- .eh_frame      0x00002030      0x1b0 ../obj/kheap.o
- .eh_frame      0x000021e0       0xb8 ../obj/vga.o
- .eh_frame      0x00002298      0x1c0 ../obj/video.o
- .eh_frame      0x00002458      0x19c ../obj/util.o
-
-.data           0x00003000      0x200
- .data          0x00003000        0x0 ../obj/shell.o
- .data          0x00003000        0x0 ../obj/kheap.o
- .data          0x00003000        0x0 ../obj/vga.o
- .data          0x00003000        0x8 ../obj/video.o
-                0x00003000                tui_vidmem
-                0x00003004                attrib
- .data          0x00003008        0x4 ../obj/util.o
-                0x00003008                INT_MAX
-
-.reloc          0x00004000      0x200
- .reloc         0x00004000       0x4c dll stuff
-
-.bss            0x00005000       0x24
- .bss           0x00005000        0x0 ../obj/shell.o
- .bss           0x00005000       0x10 ../obj/kheap.o
-                0x00005000                max_mem
-                0x00005004                mem_map_length
-                0x00005008                mem_map
- .bss           0x00005010       0x10 ../obj/vga.o
-                0x00005010                lfb_phys
-                0x00005014                lfb_bpp
-                0x00005016                lfb_yres
-                0x00005018                lfb_xres
-                0x0000501a                lfb_pitch
-                0x0000501c                lfb_base
- .bss           0x00005020        0x4 ../obj/video.o
-                0x00005020                saved_csr_y
-                0x00005021                saved_csr_x
-                0x00005022                csr_y
-                0x00005023                csr_x
- .bss           0x00005024        0x0 ../obj/util.o

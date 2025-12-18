@@ -58,6 +58,7 @@ SRCC := $(SRC)/ckernel.c        \
         $(SRC)/task.c           \
         $(SRC)/iso9660.c        \
         $(SRC)/video.c          \
+        $(SRC)/vga.c            \
         $(SRC)/util.c           \
         $(SRC)/atapi.c          \
         $(SRC)/ahci.c           \
@@ -88,6 +89,7 @@ OBJS := $(OBJ)/ckernel.o        \
         $(OBJ)/task.o           \
         $(OBJ)/iso9660.o        \
         $(OBJ)/video.o          \
+        $(OBJ)/vga.o            \
         $(OBJ)/util.o           \
         $(OBJ)/atapi.o          \
         $(OBJ)/ahci.o           \

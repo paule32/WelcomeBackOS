@@ -14,7 +14,7 @@ start_boot2:
     mov fs, ax
     mov gs, ax
     mov ss, ax
-    mov sp, 0x9000      ; irgendein Stack im ersten MB
+    mov sp, 0x5000      ; irgendein Stack im ersten MB
     
     sti
 
@@ -53,8 +53,8 @@ start_boot2:
     mov si, msgA20OK
     call print_string
     
-    ;sti
-    ;call get_vesa_mode
+    sti
+    call get_vesa_mode
 ;   call set_vesa_mode
 
     ; -------------------------------------------------
@@ -190,13 +190,14 @@ get_vesa_mode:
     ; 1) Mode-Info holen
     mov ax, 0x4F01        ; VBE-Funktion: Get Mode Info
     mov cx, 0x0114        ; gewünschter Modus: 0x114
-    mov di, 0x0800        ; Offset = 0x0800
+    mov di, 0x9000        ; Offset = 0x0800
     xor bx, bx
     mov es, bx            ; ES = 0x0000 → ES:DI = 0000:0800 (phys 0x00000800)
     int 0x10
     
     cmp ax, 0x004F
     jne vbe_fail
+    ret
 
 set_vesa_mode:
     mov ax, 0x4F02        ; VBE-Funktion: Set VBE Mode
