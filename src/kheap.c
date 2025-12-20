@@ -7,7 +7,7 @@
 # include "kheap.h"
 
 // Symbol from linker script: first free byte after kernel + bss
-extern uint8_t __end;
+extern uint32_t __end;
 
 // 1 MiB heap size (can be adjusted)
 #define KHEAP_SIZE   (0x00100000)   // 1 MiB
