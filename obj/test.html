@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Banner</title>
+  <style>
+    :root{
+      --w: 800px;
+      --h: 200px;
+      --border: 3px;
+      --offset: 3px;  /* Shadow-Layer Offset */
+      --diagShift: 20px; /* „Verlauf ... um 20 Pixel“ */
+    }
+
+    body{
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #0b1020;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    .banner{
+      width: var(--w);
+      height: var(--h);
+      border: var(--border) outset #7aa7ff;
+      position: relative;
+      overflow: hidden;
+      border-radius: 10px;
+      box-sizing: border-box;
+
+      /* Basis-Verlauf */
+      background: linear-gradient(135deg, #1f7cff 0%, #0b1a3a 65%, #050a16 100%);
+    }
+
+    /* Glowing Layer (weich + animiert) */
+    .banner::before{
+      content:"";
+      position:absolute;
+      inset:-40px; /* größer, damit Blur nicht abgeschnitten wird */
+      background:
+        radial-gradient(700px 220px at 15% 25%, rgba(110, 210, 255, 0.55), transparent 60%),
+        radial-gradient(520px 240px at 85% 70%, rgba(60, 120, 255, 0.45), transparent 62%),
+        linear-gradient(135deg,
+          rgba(60,140,255,0.35) 0%,
+          rgba(10,20,50,0.0) 55%,
+          rgba(0,0,0,0.2) 100%
+        );
+      filter: blur(14px);
+      opacity: 0.9;
+      transform: translate(calc(var(--diagShift) * -1), calc(var(--diagShift) * -1));
+      animation: glowMove 4.5s ease-in-out infinite;
+      pointer-events:none;
+    }
+
+    /* zusätzlicher „Glanzstreifen“ diagonal */
+    .banner::after{
+      content:"";
+      position:absolute;
+      inset:-60px;
+      background: linear-gradient(135deg,
+        transparent 42%,
+        rgba(255,255,255,0.18) 50%,
+        transparent 58%
+      );
+      transform: translate(calc(var(--diagShift) * 1), calc(var(--diagShift) * 1));
+      filter: blur(6px);
+      opacity: 0.55;
+      animation: sheen 5.5s ease-in-out infinite;
+      pointer-events:none;
+    }
+
+    @keyframes glowMove{
+      0%   { transform: translate(calc(var(--diagShift) * -1), calc(var(--diagShift) * -1)); opacity: 0.85; }
+      50%  { transform: translate(calc(var(--diagShift) *  1), calc(var(--diagShift) *  1)); opacity: 1.00; }
+      100% { transform: translate(calc(var(--diagShift) * -1), calc(var(--diagShift) * -1)); opacity: 0.85; }
+    }
+
+    @keyframes sheen{
+      0%   { transform: translate(calc(var(--diagShift) *  2), calc(var(--diagShift) *  2)); opacity: 0.35; }
+      50%  { transform: translate(calc(var(--diagShift) * -2), calc(var(--diagShift) * -2)); opacity: 0.65; }
+      100% { transform: translate(calc(var(--diagShift) *  2), calc(var(--diagShift) *  2)); opacity: 0.35; }
+    }
+
+    .content{
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: grid;
+      align-content: center;
+      gap: 8px;
+      padding: 0 36px;
+    }
+
+    .title{
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      line-height: 1.05;
+    }
+
+    .sub{
+      font-size: 20px;
+      font-weight: 650;
+      opacity: 0.95;
+    }
+
+    /* Schatten-Text (schwarz) als eigener Layer, 3px versetzt */
+    .layer{
+      position: relative;
+      display: inline-block;
+    }
+
+    .layer .shadow,
+    .layer .front{
+      display: block;
+      white-space: nowrap;
+    }
+
+    .layer .shadow{
+      position: absolute;
+      left: var(--offset);
+      top: var(--offset);
+      color: #000;
+      opacity: 0.85;
+      text-shadow: 0 0 10px rgba(0,0,0,0.55);
+      z-index: 0;
+      user-select:none;
+    }
+
+    .layer .front{
+      position: relative;
+      color: #fff;
+      z-index: 1;
+      text-shadow:
+        0 0 10px rgba(120, 210, 255, 0.35),
+        0 0 22px rgba(40, 120, 255, 0.25);
+    }
+
+    /* kleine Deko-Punkte */
+    .dots{
+      position:absolute;
+      inset:0;
+      z-index:1;
+      background-image:
+        radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px);
+      background-size: 22px 22px;
+      opacity: 0.18;
+      mix-blend-mode: screen;
+      pointer-events:none;
+    }
+
+    /* JS gesteuert: Glow folgt minimal der Maus */
+    .parallax{
+      position:absolute;
+      inset:0;
+      z-index:1;
+      pointer-events:none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="banner" id="banner">
+    <div class="dots"></div>
+    <div class="parallax" id="parallax"></div>
+
+    <div class="content">
+      <div class="title layer">
+        <span class="shadow">Betriebsys-System-Programmierung</span>
+        <span class="front">Betriebsys-System-Programmierung</span>
+      </div>
+
+      <div class="sub layer">
+        <span class="shadow">Für Einsteger</span>
+        <span class="front">Für Einsteger</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Mini-Parallax: bewegt die Glow-Layer leicht in Richtung Maus
+    const banner = document.getElementById('banner');
+
+    function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
+    banner.addEventListener('mousemove', (e) => {
+      const r = banner.getBoundingClientRect();
+      const nx = (e.clientX - r.left) / r.width;   // 0..1
+      const ny = (e.clientY - r.top)  / r.height;  // 0..1
+
+      // leichte Verschiebung, max ~8px
+      const dx = (nx - 0.5) * 16;
+      const dy = (ny - 0.5) * 16;
+
+      banner.style.setProperty('--diagShift', (20 + clamp(dx, -8, 8)) + 'px');
+
+      // optional: Subtil die Glanzintensität variieren
+      const op = 0.85 + (Math.abs(nx - 0.5) + Math.abs(ny - 0.5)) * 0.10;
+      banner.style.filter = `saturate(1.15) brightness(1.02)`;
+      banner.style.opacity = op.toFixed(2);
+    });
+
+    banner.addEventListener('mouseleave', () => {
+      banner.style.setProperty('--diagShift', '20px');
+      banner.style.filter = '';
+      banner.style.opacity = '1';
+    });
+  </script>
+</body>
+</html>
+

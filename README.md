@@ -2,7 +2,7 @@
 (c) 2025 Jens Kallup – paule32  
 Alle Rechte vorbehalten.
 
-![Alpha Version](img/os0001.png)
+![Alpha Version](img/banner.png)
 
 ## Current System Status: 2025-12-14
 
