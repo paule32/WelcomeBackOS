@@ -28,119 +28,151 @@ Linker script and memory map
                 0x00000140                        __dll_characteristics__ = 0x140
                 0x00a00000                        . = 0xa00000
 
-.text           0x00a00000      0xe00
+.text           0x00a00000     0x1e00
                 0x00a00000        0x4 LONG 0xa00004 _shell_main
                 0x00a00004                        __code_start = .
  *(.text)
- .text          0x00a00004       0x28 ../obj/shell.o
+ .text          0x00a00004      0x6f0 ../obj/shell.o
                 0x00a00004                shell_main
- .text          0x00a0002c      0x2d4 ../obj/kheap.o
-                0x00a00052                detect_memory
-                0x00a00097                kmemcpy
-                0x00a000c3                kmemset
-                0x00a000e5                kmemsetw
-                0x00a00109                kstrlen
-                0x00a00127                kstrncmp
-                0x00a00175                kstrcmp
-                0x00a001a7                kstrcat
-                0x00a001e0                kheap_init
-                0x00a001ff                kmalloc
-                0x00a00244                kfree
-                0x00a00286                krealloc
- .text          0x00a00300      0x1e0 ../obj/vga.o
-                0x00a00300                gfx_init
-                0x00a0036f                gfx_clear
-                0x00a003cb                rgb565
-                0x00a003f4                gfx_putPixel
-                0x00a0042d                gfx_rectFill
- .text          0x00a004e0      0x484 ../obj/video.o
-                0x00a004e0                settextcolor
-                0x00a004f8                move_cursor_right
-                0x00a0051a                move_cursor_left
-                0x00a0054d                update_cursor
-                0x00a0058e                k_clear_screen
-                0x00a005d1                move_cursor_home
-                0x00a005de                move_cursor_end
-                0x00a005eb                set_cursor
-                0x00a00603                scroll
-                0x00a00677                putch
-                0x00a0079a                puts
-                0x00a007c3                kprintf
-                0x00a00806                printformat
-                0x00a0092d                save_cursor
-                0x00a00948                restore_cursor
- .text          0x00a00964      0x2ec ../obj/util.o
-                0x00a00964                fetchESP
-                0x00a00967                fetchEBP
-                0x00a0096a                fetchSS
-                0x00a0096d                fetchCS
-                0x00a00970                fetchDS
-                0x00a00973                panic_assert
-                0x00a009e5                k_memshow
-                0x00a00a1a                reboot
-                0x00a00a49                kitoa
-                0x00a00aea                ki2hex
-                0x00a00b43                float2string
+ *fill*         0x00a006f4        0xc 
+ .text          0x00a00700      0x310 ../obj/kheap.o
+                0x00a00726                detect_memory
+                0x00a00778                kmemcpy
+                0x00a007a5                kmemset
+                0x00a007ce                kmemsetw
+                0x00a007f1                kstrlen
+                0x00a00810                kstrncmp
+                0x00a0085e                kstrcmp
+                0x00a00890                kstrcat
+                0x00a008cd                kheap_init
+                0x00a008ec                kmalloc
+                0x00a0093a                kfree
+                0x00a00989                krealloc
+ *fill*         0x00a00a10       0x10 
+ .text          0x00a00a20       0xa0 ../obj/math.o
+                0x00a00a20                k_power
+                0x00a00a4e                k_abs
+                0x00a00a5a                k_sqrt
+ .text          0x00a00ac0      0x200 ../obj/paging.o
+                0x00a00ac0                page_allocator_add_page
+                0x00a00ae5                page_init
+                0x00a00ae6                page_alloc
+                0x00a00b36                page_free
+                0x00a00b60                mmio_map
+                0x00a00c4b                paging_init
+ .text          0x00a00cc0      0x880 ../obj/vga.o
+                0x00a00cc0                gfx_init()
+                0x00a00d70                gfx_clear(unsigned short)
+                0x00a00de3                rgb565(unsigned char, unsigned char, unsigned char)
+                0x00a00e0c                gfx_hLine(int, int, int, unsigned short)
+                0x00a00e8d                gfx_getPixel(int, int)
+                0x00a00ec9                gfx_putPixel(int, int, unsigned short)
+                0x00a00f05                gfx_putPixel(int, int, int, unsigned short)
+                0x00a00ff8                gfx_drawLine(int, int, int, int, int, unsigned short)
+                0x00a01144                gfx_drawCircle(int, int, int, unsigned short)
+                0x00a01288                gfx_drawCircle(int, int, int, int, unsigned short)
+                0x00a012e1                gfx_drawCircleFill(int, int, int, unsigned short)
+                0x00a013d2                gfx_rectFill(int, int, int, int, unsigned short)
+                0x00a0148e                gfx_rectFrame(int, int, int, int, int, unsigned short)
+ .text          0x00a01540      0x488 ../obj/video.o
+                0x00a01540                settextcolor
+                0x00a01558                move_cursor_right
+                0x00a0157a                move_cursor_left
+                0x00a015ad                update_cursor
+                0x00a015ee                k_clear_screen
+                0x00a01631                move_cursor_home
+                0x00a0163e                move_cursor_end
+                0x00a0164b                set_cursor
+                0x00a01663                scroll
+                0x00a016da                putch
+                0x00a017fe                puts
+                0x00a01827                kprintf
+                0x00a0186a                printformat
+                0x00a01991                save_cursor
+                0x00a019ac                restore_cursor
+ *fill*         0x00a019c8       0x38 
+ .text          0x00a01a00      0x380 ../obj/util.o
+                0x00a01a00                fetchESP
+                0x00a01a03                fetchEBP
+                0x00a01a06                fetchSS
+                0x00a01a09                fetchCS
+                0x00a01a0c                fetchDS
+                0x00a01a0f                panic_assert
+                0x00a01a82                k_memshow
+                0x00a01ab7                reboot
+                0x00a01ae6                kitoa
+                0x00a01bca                ki2hex
+                0x00a01c31                float2string
 
-.rdata          0x00a01000      0x200
- .rdata         0x00a01000       0x18 ../obj/shell.o
- .rdata         0x00a01018       0x28 ../obj/vga.o
- .rdata         0x00a01040       0x84 ../obj/video.o
- .rdata         0x00a010c4       0x44 ../obj/util.o
- .rdata$zzz     0x00a01108       0x2c ../obj/shell.o
- .rdata$zzz     0x00a01134       0x2c ../obj/kheap.o
- .rdata$zzz     0x00a01160       0x2c ../obj/vga.o
- .rdata$zzz     0x00a0118c       0x2c ../obj/video.o
- .rdata$zzz     0x00a011b8       0x2c ../obj/util.o
+.rdata          0x00a02000      0x400
+ .rdata         0x00a02000        0x4 ../obj/math.o
+ .rdata         0x00a02004       0x2c ../obj/vga.o
+ .rdata         0x00a02030       0x84 ../obj/video.o
+ .rdata         0x00a020b4       0x44 ../obj/util.o
+ .rdata$zzz     0x00a020f8       0x2c ../obj/shell.o
+ .rdata$zzz     0x00a02124       0x2c ../obj/kheap.o
+ .rdata$zzz     0x00a02150       0x2c ../obj/math.o
+ .rdata$zzz     0x00a0217c       0x2c ../obj/paging.o
+ .rdata$zzz     0x00a021a8       0x2c ../obj/vga.o
+ .rdata$zzz     0x00a021d4       0x2c ../obj/video.o
+ .rdata$zzz     0x00a02200       0x2c ../obj/util.o
 
-.eh_frame       0x00a02000      0x800
- .eh_frame      0x00a02000       0x30 ../obj/shell.o
- .eh_frame      0x00a02030      0x1b0 ../obj/kheap.o
- .eh_frame      0x00a021e0       0xc8 ../obj/vga.o
- .eh_frame      0x00a022a8      0x1c0 ../obj/video.o
- .eh_frame      0x00a02468      0x19c ../obj/util.o
+.eh_frame       0x00a03000      0xa00
+ .eh_frame      0x00a03000       0x58 ../obj/shell.o
+ .eh_frame      0x00a03058      0x18c ../obj/kheap.o
+ .eh_frame      0x00a031e4       0x5c ../obj/math.o
+ .eh_frame      0x00a03240       0xc4 ../obj/paging.o
+ .eh_frame      0x00a03304      0x270 ../obj/vga.o
+ .eh_frame      0x00a03574      0x1b4 ../obj/video.o
+ .eh_frame      0x00a03728      0x19c ../obj/util.o
 
 .rodata
  *(.rodata*)
 
-.data           0x00a02604      0x200
+.data           0x00a038c4      0x200
  *(.data*)
- .data          0x00a02604        0x0 ../obj/shell.o
- .data          0x00a02604        0x0 ../obj/kheap.o
- .data          0x00a02604        0x0 ../obj/vga.o
- .data          0x00a02604        0x8 ../obj/video.o
-                0x00a02604                tui_vidmem
-                0x00a02608                attrib
- .data          0x00a0260c        0x4 ../obj/util.o
-                0x00a0260c                INT_MAX
+ .data          0x00a038c4        0x0 ../obj/shell.o
+ .data          0x00a038c4        0x0 ../obj/kheap.o
+ .data          0x00a038c4        0x0 ../obj/math.o
+ .data          0x00a038c4        0x4 ../obj/paging.o
+ .data          0x00a038c8        0x0 ../obj/vga.o
+ .data          0x00a038c8        0x8 ../obj/video.o
+                0x00a038c8                tui_vidmem
+                0x00a038cc                attrib
+ .data          0x00a038d0        0x4 ../obj/util.o
+                0x00a038d0                INT_MAX
 
-.reloc          0x00a03000      0x200
- .reloc         0x00a03000      0x118 dll stuff
+.reloc          0x00a04000      0x200
+ .reloc         0x00a04000      0x164 dll stuff
 
-.bss            0x00a03118       0x24
+.bss            0x00a05000     0x3010
  *(.bss*)
- .bss           0x00a03118        0x0 ../obj/shell.o
- .bss           0x00a03118       0x10 ../obj/kheap.o
-                0x00a03118                max_mem
-                0x00a0311c                mem_map_length
-                0x00a03120                mem_map
- .bss           0x00a03128       0x10 ../obj/vga.o
-                0x00a03128                lfb_phys
-                0x00a0312c                lfb_bpp
-                0x00a0312e                lfb_yres
-                0x00a03130                lfb_xres
-                0x00a03132                lfb_pitch
-                0x00a03134                lfb_base
- .bss           0x00a03138        0x4 ../obj/video.o
-                0x00a03138                saved_csr_y
-                0x00a03139                saved_csr_x
-                0x00a0313a                csr_y
-                0x00a0313b                csr_x
- .bss           0x00a0313c        0x0 ../obj/util.o
+ .bss           0x00a05000        0x0 ../obj/shell.o
+ .bss           0x00a05000       0x10 ../obj/kheap.o
+                0x00a05000                max_mem
+                0x00a05004                mem_map_length
+                0x00a05008                mem_map
+ .bss           0x00a05010        0x0 ../obj/math.o
+ *fill*         0x00a05010      0xff0 
+ .bss           0x00a06000     0x2000 ../obj/paging.o
+ .bss           0x00a08000        0xc ../obj/vga.o
+                0x00a08000                lfb_bpp
+                0x00a08002                lfb_yres
+                0x00a08004                lfb_xres
+                0x00a08006                lfb_pitch
+                0x00a08008                lfb_base
+ .bss           0x00a0800c        0x4 ../obj/video.o
+                0x00a0800c                saved_csr_y
+                0x00a0800d                saved_csr_x
+                0x00a0800e                csr_y
+                0x00a0800f                csr_x
+ .bss           0x00a08010        0x0 ../obj/util.o
  *(COMMON)
-                0x00a0313c                        ___end = .
+                0x00a08010                        ___end = .
 LOAD ../obj/shell.o
 LOAD ../obj/kheap.o
+LOAD ../obj/math.o
+LOAD ../obj/paging.o
 LOAD ../obj/vga.o
 LOAD ../obj/video.o
 LOAD ../obj/util.o

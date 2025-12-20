@@ -8,11 +8,13 @@
 
 # include "stdint.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
+#ifndef DESKTOP
+  #ifdef __cplusplus
+  extern "C" {
+  #endif // __cplusplus
+#endif
 
-typedef struct __attribute__((packed))
+typedef struct
 {
     uint16_t attributes;      // 0x00
     uint8_t  winA;            // 0x02
@@ -50,25 +52,38 @@ typedef struct __attribute__((packed))
     uint32_t offscreen_off;  // 0x2C
     uint16_t offscreen_size; // 0x30
 
-    uint8_t  reserved2[206]; // auf 256 Bytes auffüllen
-}   vbe_info_t;
+    //uint8_t  reserved2[206]; // auf 256 Bytes auffüllen
+}   __attribute__((packed)) vbe_info_t;
 
-extern uint32_t lfb_base ;
-extern uint16_t lfb_pitch;
-extern uint16_t lfb_xres ;
-extern uint16_t lfb_yres ;
-extern uint8_t  lfb_bpp  ;
-extern uint32_t lfb_phys ;
+extern USHORT  lfb_pitch;
+extern USHORT  lfb_pitch;
+extern USHORT  lfb_xres ;
+extern USHORT  lfb_yres ;
+extern UCHAR   lfb_bpp  ;
 
-extern void gfx_init(void);
+extern    int gfx_init(void);
 
-extern void gfx_clear    (                USHORT);
-extern void gfx_putPixel (int,int,        USHORT);
-extern void gfx_rectFill (int,int,int,int,USHORT);
+#ifdef DESKTOP
+extern   void gfx_clear          (                    USHORT);
+extern   void gfx_drawCircle     (int,int,int,int,    USHORT);
+extern   void gfx_drawCircle     (int,int,int,        USHORT);
+extern   void gfx_drawCircleFill (int,int,int,        USHORT);
+extern   void gfx_drawLine       (int,int,int,int,int,USHORT);
+extern   void gfx_hLine          (int,int,int,        USHORT);
+extern USHORT gfx_getPixel       (int,int);
+extern   void gfx_putPixel       (int,int,            USHORT);
+extern   void gfx_putPixel       (int,int,int,        USHORT);
+extern   void gfx_rectFill       (int,int,int,int,    USHORT);
+extern   void gfx_rectFrame      (int,int,int,int,int,USHORT);
 
 extern USHORT rgb565(UCHAR,UCHAR,UCHAR);
-
-#ifdef __cplusplus
-};
+#else
 #endif // __cplusplus
-#endif // __VGA_H__
+
+#ifndef DESKTOP
+  #ifdef __cplusplus
+  };
+  #endif // __cplusplus
+#endif   // DESKTOP
+
+#endif   // __VGA_H__

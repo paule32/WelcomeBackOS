@@ -15,7 +15,7 @@ SECTIONS
         LONG(_kmain);
         __code_start = .;
         *(.text)
-    }
+    } 
     
     .rodata : {
         __rodata_start = .;

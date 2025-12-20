@@ -197,7 +197,7 @@ get_vesa_mode:
     
     cmp ax, 0x004F
     jne vbe_fail
-    ret
+    ;ret
 
 set_vesa_mode:
     mov ax, 0x4F02        ; VBE-Funktion: Set VBE Mode
@@ -218,6 +218,8 @@ vbe_ok:
 vbe_fail:
     ; hier fallback z.B. Textmodus lassen, Meldung zeigen
     ; ...
+    mov ax, 3
+    int 0x10
     jmp $
     ret
 

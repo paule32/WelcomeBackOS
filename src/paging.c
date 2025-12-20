@@ -46,8 +46,6 @@ static size_t   free_page_count = 0;
 # define MAX_PAGES            (MANAGED_MEMORY_BYTES / PAGE_SIZE)
 # define BITMAP_SIZE_BYTES    (MAX_PAGES / 8)
 
-static uint8_t page_bitmap[BITMAP_SIZE_BYTES];
-
 // Bitmap helpers
 static inline void set_bit(uint32_t idx) {
     page_directory[idx >> 3] |=  (1u << (idx & 7));
@@ -83,7 +81,7 @@ void page_allocator_add_page(uint32_t phys_addr)
     phys_addr &= ~(PAGE_SIZE - 1);
 
     // Optional: ungültige oder zu kleine Bereiche ignorieren
-    // if (phys_addr < 0x100000) return;  // z.B. alles unter 1 MiB sperren
+    if (phys_addr < 0x100000) return;  // z.B. alles unter 1 MiB sperren
 
     if (free_page_count < MAX_PAGES) {
         free_pages[free_page_count++] = phys_addr;
@@ -97,7 +95,7 @@ void page_init(uint32_t reserved)
 {
     // alles < reserved ist belegt
     // zusätzlich: framebuffer-Bereich blocken
-    vbe_info_t* vi   = (vbe_info_t*)0x800; 
+    /*vbe_info_t* vi   = (vbe_info_t*)0x9000; 
     uint32_t fb_phys = vi->phys_base;
     uint32_t fb_size = vi->xres * vi->yres * (vi->bpp / 8);
 
@@ -109,7 +107,7 @@ void page_init(uint32_t reserved)
             continue; // VRAM nicht in freien Pool aufnehmen
         }
         page_allocator_add_page(p);
-    }
+    }*/
 }
 
 void* page_alloc(void)
@@ -148,11 +146,11 @@ void *mmio_map(uint32_t phys, uint32_t size)
 
     uint32_t size_total   = size + offset;
     uint32_t num_pages    = (size_total + PAGE_SIZE - 1) / PAGE_SIZE;
-
+    
     uint32_t vaddr_start  = next_mmio;
     uint32_t vaddr        = vaddr_start;
     uint32_t paddr        = phys_aligned;
-
+    
     uint32_t *pd = get_page_directory();
 
     for (uint32_t i = 0; i < num_pages; ++i) {

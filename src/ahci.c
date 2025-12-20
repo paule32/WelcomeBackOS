@@ -376,8 +376,10 @@ int ahci_init(void)
 // A
     //printformat("ABAR phys: 0x%x\n", g_ahci.abar);
     
+    printformat("oooo\n");
     g_hba = (hba_mem_t *)mmio_map(g_ahci.abar, 4096); // mind. 4KB
 //  g_hba = (hba_mem_t *)(uintptr_t)g_ahci.abar;
+printformat("oaaaa\n");
     
     //printformat("g_hba Pointer (virt): 0x%x\n", (uint32_t)g_hba);
     printformat("AHCI-Version: 0x%x, Ports Implemented: 0x%x\n",
@@ -385,6 +387,7 @@ int ahci_init(void)
 // B
     // HBA einschalten (GHC.AE = 1)
     g_hba->ghc |= (1U << 31);
+    
     return 0;
 }
 

@@ -125,12 +125,14 @@ static inline uint16_t inw(uint16_t port) {
     __asm__ __volatile__ ("inw %1, %0" : "=a"(val) : "dN"(port));
     return val;
 }
-static inline uint32_t inl(uint32_t port) {
+static inline uint32_t inl(uint16_t port)
+{
     uint32_t val;
-    __asm__ __volatile__ ("inl %1, %0" : "=a"(val) : "dN"(port));
+    __asm__ __volatile__ ("inl %1, %0"
+                          : "=a"(val)
+                          : "Nd"(port));
     return val;
 }
-
 static inline void outw(uint16_t port, uint16_t val) {
     __asm__ __volatile__ ("outw %0, %1" :: "a"(val), "dN"(port));
 }
@@ -178,11 +180,11 @@ extern "C" {
 #endif
 extern void kitoa(int value, char* valuestring);
 extern void ki2hex(UINT val, char* dest, int len);
+
+extern void *mmio_map(uint32_t phys, uint32_t size);
 #ifdef __cplusplus
 };
 #endif
-
-extern void *mmio_map(uint32_t phys, uint32_t size);
 
 extern int check_atapi (void);
 extern int check_ahci  (void);

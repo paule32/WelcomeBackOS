@@ -3,12 +3,17 @@
 # include "iso9660.h"
 # include "vga.h"
 
-extern void gfx_init(void);
+extern int  gfx_init(void);
+extern void shell_main(void);
 
 typedef void (*app_entry_t)(void);
 
 void enter_shell(void)
 {
+    shell_main();
+    for(;;);
+    
+    /*
     FILE* f = file_open("/shell.exe");
     if (!f) {
         printformat("ERROR: shell.exe not found.\n");
@@ -23,7 +28,9 @@ void enter_shell(void)
         app_entry_t entry = (app_entry_t)buffer;
         gfx_init();
         
-        entry();
+        //entry();
+        shell_main();
         for(;;);
     }
+    */
 }

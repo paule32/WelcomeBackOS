@@ -29,7 +29,7 @@ CFLAGS   := -m32 -O1 -ffreestanding -fno-stack-protector -fno-builtin   \
             -Wno-unused-value -Wno-unused-parameter -Wno-sign-compare   \
             -I../src/include
 
-CPPFLAGS := -std=c++20
+CPPFLAGS := -std=c++20 -Wno-write-strings
 
 LDFLAGS  := -nostdlib -T ../src/kernel.ld -Map ../bin/kernel.map
 LDSHFLGS := -nostdlib -T ../src/shell.ld  -Map ../bin/shell.map
@@ -56,6 +56,7 @@ SRCC := $(SRC)/ckernel.c        \
         $(SRC)/timer.c          \
         $(SRC)/usermodec.c      \
         $(SRC)/task.c           \
+        $(SRC)/math.c           \
         $(SRC)/iso9660.c        \
         $(SRC)/video.c          \
         $(SRC)/vga.c            \
@@ -63,12 +64,13 @@ SRCC := $(SRC)/ckernel.c        \
         $(SRC)/atapi.c          \
         $(SRC)/ahci.c           \
         $(SRC)/shell_loader.c   \
+        $(SRC)/shell.cc         \
         $(SRC)/pe.c             \
         $(SRC)/kheap.c
 # -----------------------------------------------------------------------------
 # source files for the C-kernel ...
 # -----------------------------------------------------------------------------
-SHSRCC := $(SRC)/shell.c
+SHSRCC := $(SRC)/shell.c $(SRC)/paging.c
 
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the C-kernel ...
@@ -84,6 +86,7 @@ OBJS := $(OBJ)/ckernel.o        \
         $(OBJ)/gdt.o            \
         $(OBJ)/syscall.o        \
         $(OBJ)/timer.o          \
+        $(OBJ)/math.o           \
         $(OBJ)/usermode.o       \
         $(OBJ)/usermodec.o      \
         $(OBJ)/task.o           \
@@ -94,6 +97,7 @@ OBJS := $(OBJ)/ckernel.o        \
         $(OBJ)/atapi.o          \
         $(OBJ)/ahci.o           \
         $(OBJ)/shell_loader.o   \
+        $(OBJ)/shell.o          \
         $(OBJ)/pe.o             \
         $(OBJ)/kheap.o
 # -----------------------------------------------------------------------------
@@ -102,6 +106,8 @@ OBJS := $(OBJ)/ckernel.o        \
 SHOBJS := \
         $(OBJ)/shell.o  \
         $(OBJ)/kheap.o  \
+        $(OBJ)/math.o   \
+        $(OBJ)/paging.o \
         $(OBJ)/vga.o    \
         $(OBJ)/video.o  \
         $(OBJ)/util.o
@@ -196,7 +202,7 @@ $(OBJ)/%.o: $(SRC)/%.c
 	$(GCC) $(CFLAGS) -c $< -o $@
     
 $(OBJ)/%.o: $(SRC)/%.cc
-	$(CPP) $(CFLAGS) -c $< -o $@
+	$(CPP) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 # -----------------------------------------------------------------------------
 # compile all *.asm files to *.o bject files ...
