@@ -6,13 +6,11 @@
 
 extern "C" void shell_main(void)
 {
-    gfx_init();
-
     USHORT red, green, blue;
     
-    red   = rgb565(255, 0, 0);
-    green = rgb565(0, 255, 0);
-    blue  = rgb565(0, 0, 255);
+    red   = gfx_rgbColor(255, 0, 0);
+    green = gfx_rgbColor(0, 255, 0);
+    blue  = gfx_rgbColor(0, 0, 255);
 
     // drei Pixel zeichnen
     gfx_putPixel(100, 50, red  );
@@ -32,9 +30,9 @@ extern "C" void shell_main(void)
     // sehr dick
     gfx_drawLine(50, 300, 300, 450, 7, blue);
     
-    red   = rgb565(255, 0,   0);
-    green = rgb565(0,   255, 0);
-    blue  = rgb565(0,   0,   255);
+    red   = gfx_rgbColor(255, 0,   0);
+    green = gfx_rgbColor(0,   255, 0);
+    blue  = gfx_rgbColor(0,   0,   255);
 
     gfx_drawLine(50,  50, 300, 100, 1, red  );  // dünn
     gfx_drawLine(50, 150, 300, 250, 4, green);  // dicker
@@ -42,8 +40,8 @@ extern "C" void shell_main(void)
 
     gfx_rectFill(300, 300, 100, 42, green);
     
-    gfx_rectFill (50, 50, 300, 200,    rgb565(0  , 120, 255));  // Block
-    gfx_rectFrame(50, 50, 300, 200, 4, rgb565(255, 255, 255));  // Rahmen
+    gfx_rectFill (50, 50, 300, 200,    gfx_rgbColor(0  , 120, 255));  // Block
+    gfx_rectFrame(50, 50, 300, 200, 4, gfx_rgbColor(255, 255, 255));  // Rahmen
     
     
     // dünn
@@ -56,23 +54,23 @@ extern "C" void shell_main(void)
     gfx_drawCircle(200, 200, 60, 8, blue);
     gfx_drawCircleFill(260, 200, 50, red);
     
-    gfx_rectFill (50, 50, 300, 100,  rgb565(0, 120, 255));  // Block
+    gfx_rectFill (50, 50, 300, 100,  gfx_rgbColor(0, 120, 255));  // Block
     
-    gfx_rectFill (350, 350, 200, 100,    rgb565(0  , 120, 255));  // Block
-    gfx_rectFill (30,  350, 120, 100,    rgb565(140, 120, 255));  // Block
-    gfx_drawLine (50,   50, 300, 100, 1, rgb565(255, 0, 0));
+    gfx_rectFill (350, 350, 200, 100,    gfx_rgbColor(0  , 120, 255));  // Block
+    gfx_rectFill (30,  350, 120, 100,    gfx_rgbColor(140, 120, 255));  // Block
+    gfx_drawLine (50,   50, 300, 100, 1, gfx_rgbColor(255, 0, 0));
     
-    gfx_rectFill (30, 350, 20, 100,    rgb565(40  , 120, 255));  // Block
-    gfx_rectFill (50, 350, 20, 100,    rgb565(40  , 120, 255));  // Block
+    gfx_rectFill (30, 350, 20, 100,    gfx_rgbColor(40  , 120, 255));  // Block
+    gfx_rectFill (50, 350, 20, 100,    gfx_rgbColor(40  , 120, 255));  // Block
     
     
     gfx_putPixel(100, 50, red  );
     gfx_putPixel(101, 50, green);
     gfx_putPixel(102, 50, blue );
 
-    gfx_rectFill (350, 350, 200, 100,    rgb565(0  , 120, 255));  // Block
-    gfx_rectFill (230, 350, 120, 100,    rgb565(140, 120, 255));  // Block
-    gfx_drawLine (250,  50, 300, 100, 1, rgb565(255, 0, 0));
+    gfx_rectFill (350, 350, 200, 100,    gfx_rgbColor(0  , 120, 255));  // Block
+    gfx_rectFill (230, 350, 120, 100,    gfx_rgbColor(140, 120, 255));  // Block
+    gfx_drawLine (250,  50, 300, 100, 1, gfx_rgbColor(255, 0, 0));
     
     gfx_drawCircle(260, 200, 50, red);
 }

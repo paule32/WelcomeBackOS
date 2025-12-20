@@ -55,13 +55,13 @@ typedef struct
     //uint8_t  reserved2[206]; // auf 256 Bytes auffüllen
 }   __attribute__((packed)) vbe_info_t;
 
+extern volatile uint32_t lfb_base;
+
 extern USHORT  lfb_pitch;
 extern USHORT  lfb_pitch;
 extern USHORT  lfb_xres ;
 extern USHORT  lfb_yres ;
 extern UCHAR   lfb_bpp  ;
-
-extern    int gfx_init(void);
 
 #ifdef DESKTOP
 extern   void gfx_clear          (                    USHORT);
@@ -76,8 +76,9 @@ extern   void gfx_putPixel       (int,int,int,        USHORT);
 extern   void gfx_rectFill       (int,int,int,int,    USHORT);
 extern   void gfx_rectFrame      (int,int,int,int,int,USHORT);
 
-extern USHORT rgb565(UCHAR,UCHAR,UCHAR);
+extern USHORT gfx_rgbColor(UCHAR,UCHAR,UCHAR);
 #else
+extern    int gfx_init(void);
 #endif // __cplusplus
 
 #ifndef DESKTOP

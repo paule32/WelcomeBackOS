@@ -28,31 +28,30 @@ Linker script and memory map
                 0x00000140                        __dll_characteristics__ = 0x140
                 0x00a00000                        . = 0xa00000
 
-.text           0x00a00000     0x1e00
+.text           0x00a00000     0x2200
                 0x00a00000        0x4 LONG 0xa00004 _shell_main
                 0x00a00004                        __code_start = .
  *(.text)
- .text          0x00a00004      0x6f0 ../obj/shell.o
+ .text          0x00a00004      0x6ec ../obj/shell.o
                 0x00a00004                shell_main
- *fill*         0x00a006f4        0xc 
- .text          0x00a00700      0x310 ../obj/kheap.o
-                0x00a00726                detect_memory
-                0x00a00778                kmemcpy
-                0x00a007a5                kmemset
-                0x00a007ce                kmemsetw
-                0x00a007f1                kstrlen
-                0x00a00810                kstrncmp
-                0x00a0085e                kstrcmp
-                0x00a00890                kstrcat
-                0x00a008cd                kheap_init
-                0x00a008ec                kmalloc
-                0x00a0093a                kfree
-                0x00a00989                krealloc
- *fill*         0x00a00a10       0x10 
- .text          0x00a00a20       0xa0 ../obj/math.o
-                0x00a00a20                k_power
-                0x00a00a4e                k_abs
-                0x00a00a5a                k_sqrt
+ .text          0x00a006f0      0x310 ../obj/kheap.o
+                0x00a00716                detect_memory
+                0x00a00768                kmemcpy
+                0x00a00795                kmemset
+                0x00a007be                kmemsetw
+                0x00a007e1                kstrlen
+                0x00a00800                kstrncmp
+                0x00a0084e                kstrcmp
+                0x00a00880                kstrcat
+                0x00a008bd                kheap_init
+                0x00a008dc                kmalloc
+                0x00a0092a                kfree
+                0x00a00979                krealloc
+ .text          0x00a00a00       0xa0 ../obj/math.o
+                0x00a00a00                k_power
+                0x00a00a2e                k_abs
+                0x00a00a3a                k_sqrt
+ *fill*         0x00a00aa0       0x20 
  .text          0x00a00ac0      0x200 ../obj/paging.o
                 0x00a00ac0                page_allocator_add_page
                 0x00a00ae5                page_init
@@ -60,119 +59,135 @@ Linker script and memory map
                 0x00a00b36                page_free
                 0x00a00b60                mmio_map
                 0x00a00c4b                paging_init
- .text          0x00a00cc0      0x880 ../obj/vga.o
-                0x00a00cc0                gfx_init()
-                0x00a00d70                gfx_clear(unsigned short)
-                0x00a00de3                rgb565(unsigned char, unsigned char, unsigned char)
-                0x00a00e0c                gfx_hLine(int, int, int, unsigned short)
-                0x00a00e8d                gfx_getPixel(int, int)
-                0x00a00ec9                gfx_putPixel(int, int, unsigned short)
-                0x00a00f05                gfx_putPixel(int, int, int, unsigned short)
-                0x00a00ff8                gfx_drawLine(int, int, int, int, int, unsigned short)
-                0x00a01144                gfx_drawCircle(int, int, int, unsigned short)
-                0x00a01288                gfx_drawCircle(int, int, int, int, unsigned short)
-                0x00a012e1                gfx_drawCircleFill(int, int, int, unsigned short)
-                0x00a013d2                gfx_rectFill(int, int, int, int, unsigned short)
-                0x00a0148e                gfx_rectFrame(int, int, int, int, int, unsigned short)
- .text          0x00a01540      0x488 ../obj/video.o
-                0x00a01540                settextcolor
-                0x00a01558                move_cursor_right
-                0x00a0157a                move_cursor_left
-                0x00a015ad                update_cursor
-                0x00a015ee                k_clear_screen
-                0x00a01631                move_cursor_home
-                0x00a0163e                move_cursor_end
-                0x00a0164b                set_cursor
-                0x00a01663                scroll
-                0x00a016da                putch
-                0x00a017fe                puts
-                0x00a01827                kprintf
-                0x00a0186a                printformat
-                0x00a01991                save_cursor
-                0x00a019ac                restore_cursor
- *fill*         0x00a019c8       0x38 
- .text          0x00a01a00      0x380 ../obj/util.o
-                0x00a01a00                fetchESP
-                0x00a01a03                fetchEBP
-                0x00a01a06                fetchSS
-                0x00a01a09                fetchCS
-                0x00a01a0c                fetchDS
-                0x00a01a0f                panic_assert
-                0x00a01a82                k_memshow
-                0x00a01ab7                reboot
-                0x00a01ae6                kitoa
-                0x00a01bca                ki2hex
-                0x00a01c31                float2string
+ .text          0x00a00cc0      0x3cc ../obj/ps2_mouse.o
+                0x00a00d06                cursor_update(int, int)
+                0x00a00d1a                mouse_loop()
+                0x00a00d98                mouse_write(unsigned char)
+                0x00a00ec1                mouse_poll
+                0x00a00f91                mouse_install
+ *fill*         0x00a0108c       0x14 
+ .text          0x00a010a0      0x880 ../obj/vga.o
+                0x00a010a0                gfx_init
+                0x00a01150                gfx_clear(unsigned short)
+                0x00a011c3                gfx_rgbColor(unsigned char, unsigned char, unsigned char)
+                0x00a011ec                gfx_hLine(int, int, int, unsigned short)
+                0x00a0126d                gfx_getPixel(int, int)
+                0x00a012a9                gfx_putPixel(int, int, unsigned short)
+                0x00a012e5                gfx_putPixel(int, int, int, unsigned short)
+                0x00a013d8                gfx_drawLine(int, int, int, int, int, unsigned short)
+                0x00a01524                gfx_drawCircle(int, int, int, unsigned short)
+                0x00a01668                gfx_drawCircle(int, int, int, int, unsigned short)
+                0x00a016c1                gfx_drawCircleFill(int, int, int, unsigned short)
+                0x00a017b2                gfx_rectFill(int, int, int, int, unsigned short)
+                0x00a0186e                gfx_rectFrame(int, int, int, int, int, unsigned short)
+ .text          0x00a01920      0x488 ../obj/video.o
+                0x00a01920                settextcolor
+                0x00a01938                move_cursor_right
+                0x00a0195a                move_cursor_left
+                0x00a0198d                update_cursor
+                0x00a019ce                k_clear_screen
+                0x00a01a11                move_cursor_home
+                0x00a01a1e                move_cursor_end
+                0x00a01a2b                set_cursor
+                0x00a01a43                scroll
+                0x00a01aba                putch
+                0x00a01bde                puts
+                0x00a01c07                kprintf
+                0x00a01c4a                printformat
+                0x00a01d71                save_cursor
+                0x00a01d8c                restore_cursor
+ *fill*         0x00a01da8       0x18 
+ .text          0x00a01dc0      0x380 ../obj/util.o
+                0x00a01dc0                fetchESP
+                0x00a01dc3                fetchEBP
+                0x00a01dc6                fetchSS
+                0x00a01dc9                fetchCS
+                0x00a01dcc                fetchDS
+                0x00a01dcf                panic_assert
+                0x00a01e42                k_memshow
+                0x00a01e77                reboot
+                0x00a01ea6                kitoa
+                0x00a01f8a                ki2hex
+                0x00a01ff1                float2string
 
-.rdata          0x00a02000      0x400
- .rdata         0x00a02000        0x4 ../obj/math.o
- .rdata         0x00a02004       0x2c ../obj/vga.o
- .rdata         0x00a02030       0x84 ../obj/video.o
- .rdata         0x00a020b4       0x44 ../obj/util.o
- .rdata$zzz     0x00a020f8       0x2c ../obj/shell.o
- .rdata$zzz     0x00a02124       0x2c ../obj/kheap.o
- .rdata$zzz     0x00a02150       0x2c ../obj/math.o
- .rdata$zzz     0x00a0217c       0x2c ../obj/paging.o
- .rdata$zzz     0x00a021a8       0x2c ../obj/vga.o
- .rdata$zzz     0x00a021d4       0x2c ../obj/video.o
- .rdata$zzz     0x00a02200       0x2c ../obj/util.o
+.rdata          0x00a03000      0x400
+ .rdata         0x00a03000        0x4 ../obj/math.o
+ .rdata         0x00a03004       0x2c ../obj/vga.o
+ .rdata         0x00a03030       0x84 ../obj/video.o
+ .rdata         0x00a030b4       0x44 ../obj/util.o
+ .rdata$zzz     0x00a030f8       0x2c ../obj/shell.o
+ .rdata$zzz     0x00a03124       0x2c ../obj/kheap.o
+ .rdata$zzz     0x00a03150       0x2c ../obj/math.o
+ .rdata$zzz     0x00a0317c       0x2c ../obj/paging.o
+ .rdata$zzz     0x00a031a8       0x2c ../obj/ps2_mouse.o
+ .rdata$zzz     0x00a031d4       0x2c ../obj/vga.o
+ .rdata$zzz     0x00a03200       0x2c ../obj/video.o
+ .rdata$zzz     0x00a0322c       0x2c ../obj/util.o
 
-.eh_frame       0x00a03000      0xa00
- .eh_frame      0x00a03000       0x58 ../obj/shell.o
- .eh_frame      0x00a03058      0x18c ../obj/kheap.o
- .eh_frame      0x00a031e4       0x5c ../obj/math.o
- .eh_frame      0x00a03240       0xc4 ../obj/paging.o
- .eh_frame      0x00a03304      0x270 ../obj/vga.o
- .eh_frame      0x00a03574      0x1b4 ../obj/video.o
- .eh_frame      0x00a03728      0x19c ../obj/util.o
+.eh_frame       0x00a04000      0xa00
+ .eh_frame      0x00a04000       0x58 ../obj/shell.o
+ .eh_frame      0x00a04058      0x18c ../obj/kheap.o
+ .eh_frame      0x00a041e4       0x5c ../obj/math.o
+ .eh_frame      0x00a04240       0xc4 ../obj/paging.o
+ .eh_frame      0x00a04304      0x114 ../obj/ps2_mouse.o
+ .eh_frame      0x00a04418      0x270 ../obj/vga.o
+ .eh_frame      0x00a04688      0x1b4 ../obj/video.o
+ .eh_frame      0x00a0483c      0x19c ../obj/util.o
 
 .rodata
  *(.rodata*)
 
-.data           0x00a038c4      0x200
+.data           0x00a049d8      0x200
  *(.data*)
- .data          0x00a038c4        0x0 ../obj/shell.o
- .data          0x00a038c4        0x0 ../obj/kheap.o
- .data          0x00a038c4        0x0 ../obj/math.o
- .data          0x00a038c4        0x4 ../obj/paging.o
- .data          0x00a038c8        0x0 ../obj/vga.o
- .data          0x00a038c8        0x8 ../obj/video.o
-                0x00a038c8                tui_vidmem
-                0x00a038cc                attrib
- .data          0x00a038d0        0x4 ../obj/util.o
-                0x00a038d0                INT_MAX
+ .data          0x00a049d8        0x0 ../obj/shell.o
+ .data          0x00a049d8        0x0 ../obj/kheap.o
+ .data          0x00a049d8        0x0 ../obj/math.o
+ .data          0x00a049d8        0x4 ../obj/paging.o
+ .data          0x00a049dc        0x8 ../obj/ps2_mouse.o
+ .data          0x00a049e4        0x0 ../obj/vga.o
+ .data          0x00a049e4        0x8 ../obj/video.o
+                0x00a049e4                tui_vidmem
+                0x00a049e8                attrib
+ .data          0x00a049ec        0x4 ../obj/util.o
+                0x00a049ec                INT_MAX
 
-.reloc          0x00a04000      0x200
- .reloc         0x00a04000      0x164 dll stuff
+.reloc          0x00a05000      0x200
+ .reloc         0x00a05000      0x1a8 dll stuff
 
-.bss            0x00a05000     0x3010
+.bss            0x00a06000     0x3018
  *(.bss*)
- .bss           0x00a05000        0x0 ../obj/shell.o
- .bss           0x00a05000       0x10 ../obj/kheap.o
-                0x00a05000                max_mem
-                0x00a05004                mem_map_length
-                0x00a05008                mem_map
- .bss           0x00a05010        0x0 ../obj/math.o
- *fill*         0x00a05010      0xff0 
- .bss           0x00a06000     0x2000 ../obj/paging.o
- .bss           0x00a08000        0xc ../obj/vga.o
-                0x00a08000                lfb_bpp
-                0x00a08002                lfb_yres
-                0x00a08004                lfb_xres
-                0x00a08006                lfb_pitch
-                0x00a08008                lfb_base
- .bss           0x00a0800c        0x4 ../obj/video.o
-                0x00a0800c                saved_csr_y
-                0x00a0800d                saved_csr_x
-                0x00a0800e                csr_y
-                0x00a0800f                csr_x
- .bss           0x00a08010        0x0 ../obj/util.o
+ .bss           0x00a06000        0x0 ../obj/shell.o
+ .bss           0x00a06000       0x10 ../obj/kheap.o
+                0x00a06000                max_mem
+                0x00a06004                mem_map_length
+                0x00a06008                mem_map
+ .bss           0x00a06010        0x0 ../obj/math.o
+ *fill*         0x00a06010      0xff0 
+ .bss           0x00a07000     0x2000 ../obj/paging.o
+ .bss           0x00a09000        0x8 ../obj/ps2_mouse.o
+                0x00a09000                mouse_y
+                0x00a09002                mouse_x
+                0x00a09004                mouse_byte
+                0x00a09007                mouse_cycle
+ .bss           0x00a09008        0xc ../obj/vga.o
+                0x00a09008                lfb_bpp
+                0x00a0900a                lfb_yres
+                0x00a0900c                lfb_xres
+                0x00a0900e                lfb_pitch
+                0x00a09010                lfb_base
+ .bss           0x00a09014        0x4 ../obj/video.o
+                0x00a09014                saved_csr_y
+                0x00a09015                saved_csr_x
+                0x00a09016                csr_y
+                0x00a09017                csr_x
+ .bss           0x00a09018        0x0 ../obj/util.o
  *(COMMON)
-                0x00a08010                        ___end = .
+                0x00a09018                        ___end = .
 LOAD ../obj/shell.o
 LOAD ../obj/kheap.o
 LOAD ../obj/math.o
 LOAD ../obj/paging.o
+LOAD ../obj/ps2_mouse.o
 LOAD ../obj/vga.o
 LOAD ../obj/video.o
 LOAD ../obj/util.o

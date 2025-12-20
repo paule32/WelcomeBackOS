@@ -18,6 +18,9 @@
 
 extern void timer_tick();
 
+extern void irq12_stub(void);          // asm stub
+//extern void idt_set_gate(int n, uint32_t base, uint16_t sel, uint8_t flags);
+
 // einfache Portfunktionen
 static inline void outb(uint16_t port, uint8_t val) {
     __asm__ volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
@@ -85,4 +88,8 @@ void irq_init(void)
     // IRQ1 - Keyboard
     extern void irq1();
     idt_set_gate(33, (uint32_t)irq1, 0x08, 0x8E);
+    
+    // IRQ12 - Mouse
+    //extern void irq12();
+    //idt_set_gate(34, (uint32_t)irq12, 0x08, 0x8E);
 }

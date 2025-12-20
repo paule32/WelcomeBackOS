@@ -29,7 +29,7 @@ CFLAGS   := -m32 -O1 -ffreestanding -fno-stack-protector -fno-builtin   \
             -Wno-unused-value -Wno-unused-parameter -Wno-sign-compare   \
             -I../src/include
 
-CPPFLAGS := -std=c++20 -Wno-write-strings
+CPPFLAGS := -std=c++20 -Wno-write-strings -Wno-volatile
 
 LDFLAGS  := -nostdlib -T ../src/kernel.ld -Map ../bin/kernel.map
 LDSHFLGS := -nostdlib -T ../src/shell.ld  -Map ../bin/shell.map
@@ -63,6 +63,7 @@ SRCC := $(SRC)/ckernel.c        \
         $(SRC)/util.c           \
         $(SRC)/atapi.c          \
         $(SRC)/ahci.c           \
+        $(SRC)/ps2_mouse.cc     \
         $(SRC)/shell_loader.c   \
         $(SRC)/shell.cc         \
         $(SRC)/pe.c             \
@@ -70,7 +71,10 @@ SRCC := $(SRC)/ckernel.c        \
 # -----------------------------------------------------------------------------
 # source files for the C-kernel ...
 # -----------------------------------------------------------------------------
-SHSRCC := $(SRC)/shell.c $(SRC)/paging.c
+SHSRCC := \
+        $(SRC)/shell.c          \
+        $(SRC)/ps2_mouse.cc     \
+        $(SRC)/paging.c
 
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the C-kernel ...
@@ -96,6 +100,7 @@ OBJS := $(OBJ)/ckernel.o        \
         $(OBJ)/util.o           \
         $(OBJ)/atapi.o          \
         $(OBJ)/ahci.o           \
+        $(OBJ)/ps2_mouse.o      \
         $(OBJ)/shell_loader.o   \
         $(OBJ)/shell.o          \
         $(OBJ)/pe.o             \
@@ -104,12 +109,13 @@ OBJS := $(OBJ)/ckernel.o        \
 # *.o bject files for linkage stage of the shell ...
 # -----------------------------------------------------------------------------
 SHOBJS := \
-        $(OBJ)/shell.o  \
-        $(OBJ)/kheap.o  \
-        $(OBJ)/math.o   \
-        $(OBJ)/paging.o \
-        $(OBJ)/vga.o    \
-        $(OBJ)/video.o  \
+        $(OBJ)/shell.o          \
+        $(OBJ)/kheap.o          \
+        $(OBJ)/math.o           \
+        $(OBJ)/paging.o         \
+        $(OBJ)/ps2_mouse.o      \
+        $(OBJ)/vga.o            \
+        $(OBJ)/video.o          \
         $(OBJ)/util.o
 
 LBA        := $(SRC)/lba.inc

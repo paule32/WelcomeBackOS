@@ -1,12 +1,16 @@
 // idt.c
-#include "stdint.h"
-#include "idt.h"
+# include "stdint.h"
+# include "idt.h"
+# include "proto.h"
 
 // 256 mögliche IDT-Einträge (0..255)
 static idt_entry_t idt_entries[256];
 static idt_ptr_t   idt_ptr;
 
 extern void idt_flush(uint32_t);  // in ASM
+
+extern void irq12_stub(void);          // asm stub
+//extern void idt_set_gate(int n, uint32_t base, uint16_t sel, uint8_t flags);
 
 // base = Adresse des Handlers
 // sel  = Code-Segment-Selector (z.B. 0x08)

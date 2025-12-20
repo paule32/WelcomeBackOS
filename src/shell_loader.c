@@ -5,12 +5,21 @@
 
 extern int  gfx_init(void);
 extern void shell_main(void);
+extern void mouse_install(void);
+extern void mouse_poll(void);
 
 typedef void (*app_entry_t)(void);
 
 void enter_shell(void)
 {
+    mouse_install();
     shell_main();
+    
+    for (;;) {
+        mouse_poll();
+    }
+    
+    
     for(;;);
     
     /*

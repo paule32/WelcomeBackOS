@@ -15,7 +15,7 @@ USHORT  lfb_xres  = 0;
 USHORT  lfb_yres  = 0;
 UCHAR   lfb_bpp   = 0;
 
-int gfx_init(void)
+extern "C" int gfx_init(void)
 {
     const vbe_info_t* mi = VBE_MODE_INFO_PTR;
 
@@ -55,7 +55,7 @@ void gfx_clear(uint16_t color)
     }
 }
 
-USHORT rgb565(
+USHORT gfx_rgbColor(
     UCHAR r,
     UCHAR g,
     UCHAR b) {
