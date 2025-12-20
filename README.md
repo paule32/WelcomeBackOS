@@ -2,6 +2,8 @@
 (c) 2025 Jens Kallup – paule32  
 Alle Rechte vorbehalten.
 
+![Alpha Version](img/os0001.png)
+
 ## Current System Status: 2025-12-14
 
 ## 1️ Bootprozess: Stage 1 & Stage 2 erfolgreich implementiert
