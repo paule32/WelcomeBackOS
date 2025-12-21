@@ -126,8 +126,50 @@ int mouse_write(uint8_t a_write)
     return 0;
 }
 
+static void ps2_flush_output(void) {
+    for (int i=0;i<64;i++) {
+        if (!(inb(PS2_STATUS) & ST_OUT_FULL)) break;
+        (void)inb(PS2_DATA);
+    }
+}
+static bool ps2_wait_in_clear(uint32_t t) {
+    while (t--) if ((inb(PS2_STATUS) & ST_IN_FULL) == 0) return true;
+    return false;
+}
+static int ps2_wait_out_full(uint32_t t) {
+    while (t--) if (inb(0x64) & 0x01) return 1;
+    return 0;
+}
+static int ps2_read_data(uint8_t *out) {
+    if (!ps2_wait_out_full(200000)) return 0;
+    *out = inb(0x60);
+    return 1;
+}
+static bool ps2_send_cmd(uint8_t cmd) {
+    if (!ps2_wait_in_clear(200000)) return false;
+    outb(PS2_CMD, cmd);
+    return true;
+}
+static bool ps2_write_data(uint8_t v) {
+    if (!ps2_wait_in_clear(200000)) return false;
+    outb(PS2_DATA, v);
+    return true;
+}
+// an die Maus senden: erst 0xD4 an 0x64, dann Byte an 0x60
+static bool ps2_mouse_write(uint8_t v) {
+    if (!ps2_send_cmd(0xD4)) return false;
+    return ps2_write_data(v);
+}
+static bool ps2_expect_ack(void) {
+    uint8_t r;
+    if (!ps2_read_data(&r)) return false;
+    return (r == 0xFA); // ACK
+}
+
 static int mouse_try_read(uint8_t *out)
 {
+    uint8_t cfg;
+    
     // 1) Controller Self-Test: 0xAA -> 0x55
     {
         // Alles, was im Output-Buffer hängt, weglesen
@@ -177,7 +219,7 @@ static int mouse_try_read(uint8_t *out)
             }
         }
         if (flag == 0) {
-            gfx_printf("PS2 Controller: Port 1: error.\n");
+            gfx_printf("PS2 Controller: Port 1: timeout.\n");
             return 0;
         }   else {
             uint8_t st = inb(0x60);
@@ -189,8 +231,122 @@ static int mouse_try_read(uint8_t *out)
             }
         }
     }
+    // 3) Interface Test Port 2: 0xA9 -> 0x00 (ok)
+    {
+        // Alles, was im Output-Buffer hängt, weglesen
+        for (int i = 0; i < 32; i++) {
+            if (!(inb(0x64) & 0x01)) break;
+            (void)inb(0x60);
+        }
+        
+        uint32_t timeout = 200000;
+        uint8_t  flag    = 0;
+        while (timeout--) {
+            if ((inb(0x64) & 0x02) == 0) {
+                outb(0x64, 0xA9);
+                flag = 1;
+                break;
+            }
+        }
+        if (flag == 0) {
+            gfx_printf("PS2 Controller: Port 2: timeout.\n");
+            return 0;
+        }   else {
+            uint8_t st = inb(0x60);
+            if (st == 0x00) {
+                gfx_printf("PS/2 Port 2: success.\n");
+            }   else {
+                gfx_printf("PS/2 Port 2: error.\n");
+                return 0;
+            }
+        }
+    }
     
+    // AUX (Port 2) aktivieren
+    {
+        // Alles, was im Output-Buffer hängt, weglesen
+        for (int i = 0; i < 32; i++) {
+            if (!(inb(0x64) & 0x01)) break;
+            (void)inb(0x60);
+        }
+        
+        if (!ps2_send_cmd(0xA8)) {
+            gfx_printf("PS2 Controller: AUX Port 2: timeout.\n");
+            return 0;
+        }   else {
+            gfx_printf("PS2 Controller: AUX Port 2: active.\n");
+        }
+    }
     
+    // Config Byte lesen
+    {
+        if (!ps2_send_cmd(0x20)) {
+            gfx_printf("PS2 Controller: Config Byte: read error.\n");
+            return 0;
+        }   else {
+            gfx_printf("PS2 Controller: Config Byte: read ok.\n");
+        }
+        if (!ps2_read_data(&cfg)) {
+            gfx_printf("PS2 Controller: no data.\n");
+            return 0;
+        }   else {
+            gfx_printf("PS2 Controller: have data.\n");
+        }
+    }
+    
+    // IRQ12 einschalten (Bit 1)
+    cfg |= (1 << 1);
+    
+    // Config Byte schreiben
+    {
+        if (!ps2_send_cmd(0x60)) {
+            gfx_printf("PS2 Controller: Config Byte: send error.\n");
+            return 0;
+        }   else {
+            gfx_printf("PS2 Controller: Config Byte: send ok.\n");
+        }
+        if (!ps2_write_data(cfg)) {
+            gfx_printf("PS2 Controller: Config Byte: write error.\n");
+            return 0;
+        }   else {
+            gfx_printf("PS2 Controller: Config Byte: write ok.\n");
+        }
+    }
+    
+    // Maus Defaults
+    {
+        gfx_printf("PS2 Controller: M defaults.\n");
+        if (!ps2_mouse_write(0xF6)) {
+            gfx_printf("PS2 Controller: Mouse Defaults: no defaults.\n");
+            return 0;
+        }   else {
+            gfx_printf("PS2 Controller: Mouse Defaults: use deefaults.\n");
+        }
+        if (!ps2_expect_ack()) {
+            gfx_printf("PS2 Controller: Mouse ACK: error.\n");
+            return 0;
+        }   else {
+            gfx_printf("PS2 Controller: Mouse ACK: success.\n");
+        }
+    }
+
+    // Streaming aktivieren
+    {
+        if (!ps2_mouse_write(0xF4)) {
+            gfx_printf("PS2 Controller: Streaming: error.\n");
+            return 0;
+        }   else {
+            gfx_printf("PS2 Controller: Streaming: ok.\n");
+        }
+        if (!ps2_expect_ack()) {
+            gfx_printf("PS2 Controller: Streaming ACK: error.\n");
+            return 0;
+        }   else {
+            gfx_printf("PS2 Controller: Streaming ACK: success.\n");
+        }
+    }
+    
+    return 1;
     
     
     #if 0
