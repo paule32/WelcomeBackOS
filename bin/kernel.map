@@ -30,7 +30,7 @@ Linker script and memory map
                 0x00000140                        __dll_characteristics__ = 0x140
                 0x00010000                        . = 0x10000
 
-.text           0x00010000     0x4400
+.text           0x00010000     0x4600
                 0x00010000        0x4 LONG 0x10004 _kmain
                 0x00010004                        __code_start = .
  *(.text)
@@ -152,7 +152,7 @@ Linker script and memory map
                 0x00011a91                save_cursor
                 0x00011aac                restore_cursor
  *fill*         0x00011ac8       0x18 
- .text          0x00011ae0      0x880 ../obj/vga.o
+ .text          0x00011ae0      0xae0 ../obj/vga.o
                 0x00011ae0                gfx_init
                 0x00011b90                gfx_clear(unsigned short)
                 0x00011c03                gfx_rgbColor(unsigned char, unsigned char, unsigned char)
@@ -166,73 +166,77 @@ Linker script and memory map
                 0x00012101                gfx_drawCircleFill(int, int, int, unsigned short)
                 0x000121f2                gfx_rectFill(int, int, int, int, unsigned short)
                 0x000122ae                gfx_rectFrame(int, int, int, int, int, unsigned short)
- *fill*         0x00012360       0x20 
- .text          0x00012380      0x380 ../obj/util.o
-                0x00012380                fetchESP
-                0x00012383                fetchEBP
-                0x00012386                fetchSS
-                0x00012389                fetchCS
-                0x0001238c                fetchDS
-                0x0001238f                panic_assert
-                0x00012402                k_memshow
-                0x00012437                reboot
-                0x00012466                kitoa
-                0x0001254a                ki2hex
-                0x000125b1                float2string
- .text          0x00012700      0x500 ../obj/atapi.o
-                0x00012856                atapi_read_sector
-                0x000129a9                atapi_read_sectors
-                0x000129f3                check_atapi
-                0x00012af3                cd_test_iso9660
- .text          0x00012c00      0x720 ../obj/ahci.o
-                0x00012c00                ahci_find_controller
-                0x00012d01                ahci_port_init
-                0x00012db3                sata_read_sectors
-                0x00013002                ahci_probe_ports
-                0x000130f4                sata_test_iso9660
-                0x000131e5                ahci_init
-                0x00013264                check_ahci
- .text          0x00013320      0x3bc ../obj/ps2_mouse.o
-                0x00013366                cursor_update(int, int)
-                0x0001337a                mouse_loop()
-                0x000133f8                mouse_write(unsigned char)
-                0x00013480                mouse_poll
-                0x000135e0                mouse_install
- .text          0x000136dc       0x14 ../obj/shell_loader.o
-                0x000136dc                enter_shell
- .text          0x000136f0      0x6ec ../obj/shell.o
-                0x000136f0                shell_main
- .text          0x00013ddc      0x200 ../obj/pe.o
-                0x00013ddc                pe_load_image
- *fill*         0x00013fdc        0x4 
- .text          0x00013fe0      0x310 ../obj/kheap.o
-                0x00014006                detect_memory
-                0x00014058                kmemcpy
-                0x00014085                kmemset
-                0x000140ae                kmemsetw
-                0x000140d1                kstrlen
-                0x000140f0                kstrncmp
-                0x0001413e                kstrcmp
-                0x00014170                kstrcat
-                0x000141ad                kheap_init
-                0x000141cc                kmalloc
-                0x0001421a                kfree
-                0x00014269                krealloc
+                0x0001234c                gfx_drawChar(int, int, unsigned char, unsigned short, unsigned short)
+                0x000123d8                gfx_putChar(char)
+                0x00012454                gfx_print(char const*)
+                0x0001247d                gfx_printf(char*, ...)
+ .text          0x000125c0      0x380 ../obj/util.o
+                0x000125c0                fetchESP
+                0x000125c3                fetchEBP
+                0x000125c6                fetchSS
+                0x000125c9                fetchCS
+                0x000125cc                fetchDS
+                0x000125cf                panic_assert
+                0x00012642                k_memshow
+                0x00012677                reboot
+                0x000126a6                kitoa
+                0x0001278a                ki2hex
+                0x000127f1                float2string
+ .text          0x00012940      0x500 ../obj/atapi.o
+                0x00012a96                atapi_read_sector
+                0x00012be9                atapi_read_sectors
+                0x00012c33                check_atapi
+                0x00012d33                cd_test_iso9660
+ .text          0x00012e40      0x720 ../obj/ahci.o
+                0x00012e40                ahci_find_controller
+                0x00012f41                ahci_port_init
+                0x00012ff3                sata_read_sectors
+                0x00013242                ahci_probe_ports
+                0x00013334                sata_test_iso9660
+                0x00013425                ahci_init
+                0x000134a4                check_ahci
+ .text          0x00013560      0x2f8 ../obj/ps2_mouse.o
+                0x0001366e                cursor_update(int, int)
+                0x00013682                mouse_loop()
+                0x00013700                mouse_write(unsigned char)
+                0x00013788                mouse_poll
+                0x00013836                mouse_install
+ .text          0x00013858       0x10 ../obj/shell_loader.o
+                0x00013858                enter_shell
+ .text          0x00013868      0x6f8 ../obj/shell.o
+                0x00013868                shell_main
+ .text          0x00013f60      0x200 ../obj/pe.o
+                0x00013f60                pe_load_image
+ .text          0x00014160      0x310 ../obj/kheap.o
+                0x00014186                detect_memory
+                0x000141d8                kmemcpy
+                0x00014205                kmemset
+                0x0001422e                kmemsetw
+                0x00014251                kstrlen
+                0x00014270                kstrncmp
+                0x000142be                kstrcmp
+                0x000142f0                kstrcat
+                0x0001432d                kheap_init
+                0x0001434c                kmalloc
+                0x0001439a                kfree
+                0x000143e9                krealloc
 
-.rodata         0x000142f0      0xa00
-                0x000142f0                        __rodata_start = .
+.rodata         0x00014470      0xa00
+                0x00014470                        __rodata_start = .
  *(.rodata)
  *(.rdata)
- .rdata         0x000142f0       0x40 ../obj/ckernel.o
- .rdata         0x00014330        0x4 ../obj/math.o
- .rdata         0x00014334       0x1c ../obj/usermodec.o
- .rdata         0x00014350       0x2c ../obj/iso9660.o
- .rdata         0x0001437c       0x84 ../obj/video.o
- .rdata         0x00014400       0x2c ../obj/vga.o
- .rdata         0x0001442c       0x44 ../obj/util.o
- .rdata         0x00014470      0x368 ../obj/atapi.o
- .rdata         0x000147d8      0x30c ../obj/ahci.o
- .rdata         0x00014ae4       0x2c ../obj/pe.o
+ .rdata         0x00014470       0x40 ../obj/ckernel.o
+ .rdata         0x000144b0        0x4 ../obj/math.o
+ .rdata         0x000144b4       0x1c ../obj/usermodec.o
+ .rdata         0x000144d0       0x2c ../obj/iso9660.o
+ .rdata         0x000144fc       0x84 ../obj/video.o
+ .rdata         0x00014580       0xb0 ../obj/vga.o
+ .rdata         0x00014630       0x44 ../obj/util.o
+ .rdata         0x00014674      0x368 ../obj/atapi.o
+ .rdata         0x000149dc      0x30c ../obj/ahci.o
+ .rdata         0x00014ce8       0xa8 ../obj/ps2_mouse.o
+ .rdata         0x00014d90       0x10 ../obj/shell.o
+ .rdata         0x00014da0       0x2c ../obj/pe.o
 
 .rdata          0x00015000      0x400
  .rdata$zzz     0x00015000       0x2c ../obj/ckernel.o
@@ -272,46 +276,48 @@ Linker script and memory map
  .eh_frame      0x00016340       0xb8 ../obj/task.o
  .eh_frame      0x000163f8      0x140 ../obj/iso9660.o
  .eh_frame      0x00016538      0x1b4 ../obj/video.o
- .eh_frame      0x000166ec      0x270 ../obj/vga.o
- .eh_frame      0x0001695c      0x19c ../obj/util.o
- .eh_frame      0x00016af8      0x154 ../obj/atapi.o
- .eh_frame      0x00016c4c      0x150 ../obj/ahci.o
- .eh_frame      0x00016d9c      0x110 ../obj/ps2_mouse.o
- .eh_frame      0x00016eac       0x2c ../obj/shell_loader.o
- .eh_frame      0x00016ed8       0x58 ../obj/shell.o
- .eh_frame      0x00016f30       0x58 ../obj/pe.o
- .eh_frame      0x00016f88      0x18c ../obj/kheap.o
+ .eh_frame      0x000166ec      0x338 ../obj/vga.o
+ .eh_frame      0x00016a24      0x19c ../obj/util.o
+ .eh_frame      0x00016bc0      0x154 ../obj/atapi.o
+ .eh_frame      0x00016d14      0x150 ../obj/ahci.o
+ .eh_frame      0x00016e64      0x110 ../obj/ps2_mouse.o
+ .eh_frame      0x00016f74       0x2c ../obj/shell_loader.o
+ .eh_frame      0x00016fa0       0x58 ../obj/shell.o
+ .eh_frame      0x00016ff8       0x58 ../obj/pe.o
+ .eh_frame      0x00017050      0x18c ../obj/kheap.o
 
-.data           0x00017114      0x200
-                0x00017114                        __data_start = .
+.data           0x000171e0      0x600
+                0x000171e0                        __data_start = .
  *(.data)
- .data          0x00017114        0x4 ../obj/ckernel.o
-                0x00017114                kernel_stack_top
- .data          0x00017118        0x4 ../obj/paging.o
- .data          0x0001711c        0x0 ../obj/idt.o
- .data          0x0001711c        0x0 ../obj/irqc.o
- .data          0x0001711c        0x0 ../obj/isrc.o
- .data          0x0001711c        0x0 ../obj/gdt.o
- .data          0x0001711c        0x4 ../obj/syscall.o
- .data          0x00017120        0x0 ../obj/timer.o
- .data          0x00017120        0x0 ../obj/math.o
- .data          0x00017120        0x4 ../obj/usermodec.o
-                0x00017120                user_stack_top
- .data          0x00017124        0x0 ../obj/task.o
- .data          0x00017124        0x4 ../obj/iso9660.o
- .data          0x00017128        0x8 ../obj/video.o
-                0x00017128                tui_vidmem
-                0x0001712c                attrib
- .data          0x00017130        0x0 ../obj/vga.o
- .data          0x00017130        0x4 ../obj/util.o
-                0x00017130                INT_MAX
- .data          0x00017134        0x8 ../obj/atapi.o
- .data          0x0001713c        0x0 ../obj/ahci.o
- .data          0x0001713c        0x8 ../obj/ps2_mouse.o
- .data          0x00017144        0x0 ../obj/shell_loader.o
- .data          0x00017144        0x0 ../obj/shell.o
- .data          0x00017144        0x0 ../obj/pe.o
- .data          0x00017144        0x0 ../obj/kheap.o
+ .data          0x000171e0        0x4 ../obj/ckernel.o
+                0x000171e0                kernel_stack_top
+ .data          0x000171e4        0x4 ../obj/paging.o
+ .data          0x000171e8        0x0 ../obj/idt.o
+ .data          0x000171e8        0x0 ../obj/irqc.o
+ .data          0x000171e8        0x0 ../obj/isrc.o
+ .data          0x000171e8        0x0 ../obj/gdt.o
+ .data          0x000171e8        0x4 ../obj/syscall.o
+ .data          0x000171ec        0x0 ../obj/timer.o
+ .data          0x000171ec        0x0 ../obj/math.o
+ .data          0x000171ec        0x4 ../obj/usermodec.o
+                0x000171ec                user_stack_top
+ .data          0x000171f0        0x0 ../obj/task.o
+ .data          0x000171f0        0x4 ../obj/iso9660.o
+ .data          0x000171f4        0x8 ../obj/video.o
+                0x000171f4                tui_vidmem
+                0x000171f8                attrib
+ *fill*         0x000171fc        0x4 
+ .data          0x00017200      0x420 ../obj/vga.o
+                0x00017220                font8x8
+ .data          0x00017620        0x4 ../obj/util.o
+                0x00017620                INT_MAX
+ .data          0x00017624        0x8 ../obj/atapi.o
+ .data          0x0001762c        0x0 ../obj/ahci.o
+ .data          0x0001762c        0x8 ../obj/ps2_mouse.o
+ .data          0x00017634        0x0 ../obj/shell_loader.o
+ .data          0x00017634        0x0 ../obj/shell.o
+ .data          0x00017634        0x0 ../obj/pe.o
+ .data          0x00017634        0x0 ../obj/kheap.o
 
 .bss            0x00018000     0x4418
                 0x00018000                        __bss_start = .

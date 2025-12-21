@@ -69,12 +69,16 @@ extern   void gfx_drawCircle     (int,int,int,int,    USHORT);
 extern   void gfx_drawCircle     (int,int,int,        USHORT);
 extern   void gfx_drawCircleFill (int,int,int,        USHORT);
 extern   void gfx_drawLine       (int,int,int,int,int,USHORT);
+extern   void gfx_drawChar       (int,int,uint8_t,    USHORT,USHORT);
 extern   void gfx_hLine          (int,int,int,        USHORT);
 extern USHORT gfx_getPixel       (int,int);
 extern   void gfx_putPixel       (int,int,            USHORT);
 extern   void gfx_putPixel       (int,int,int,        USHORT);
 extern   void gfx_rectFill       (int,int,int,int,    USHORT);
 extern   void gfx_rectFrame      (int,int,int,int,int,USHORT);
+extern   void gfx_print          (const char*);
+extern   void gfx_printf         (char*, ... );
+extern   void gfx_putChar        (char);
 
 extern USHORT gfx_rgbColor(UCHAR,UCHAR,UCHAR);
 #else

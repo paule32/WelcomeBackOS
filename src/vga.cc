@@ -1,8 +1,16 @@
+// ---------------------------------------------------------------------------
+// \file  program_1.c – A simple freestanding C-Kernel
+// \note  (c) 2025 by Jens Kallup - paule32
+//        all rights reserved.
+// ---------------------------------------------------------------------------
 # include "stdint.h"
+# include "my_stdarg.h"
 # include "proto.h"
-#define DESKTOP
+
+# define DESKTOP
 # include "vga.h"
 # include "math.h"
+# include "font8x8.h"
 
 # define VBE_MODE_INFO_PTR ((const vbe_info_t*)0x00009000)
 
@@ -14,6 +22,9 @@ USHORT  lfb_pitch = 0;
 USHORT  lfb_xres  = 0;
 USHORT  lfb_yres  = 0;
 UCHAR   lfb_bpp   = 0;
+
+static int cur_x = 1;
+static int cur_y = 1;
 
 extern "C" int gfx_init(void)
 {
@@ -328,4 +339,104 @@ void gfx_rectFrame(
     gfx_rectFill(x, y+h-thick, w, thick, color);         // unten
     gfx_rectFill(x, y, thick, h, color);                 // links
     gfx_rectFill(x+w-thick, y, thick, h, color);         // rechts
+}
+
+void gfx_drawChar(
+    int x, int y,
+    uint8_t    c,
+    USHORT    fg,
+    USHORT    bg) {
+        
+    uint8_t *glyph = font8x8[c];
+
+    for (int row = 0; row < 8; row++) {
+        uint8_t bits = glyph[row];
+        for (int col = 0; col < 8; col++) {
+            uint32_t color = (bits & (1 << (7 - col))) ? fg : bg;
+            gfx_putPixel(x + col, y + row, color);
+        }
+    }
+}
+
+void gfx_putChar(char c)
+{
+    if (c == '\n') {
+        cur_x  = 1;
+        cur_y += 10;
+        return;
+    }
+
+    gfx_drawChar(
+        cur_x, cur_y,
+        c,
+        gfx_rgbColor(255,255,255),   // weiß
+        gfx_rgbColor(  0,  0,  0)    // schwarz
+    );
+
+    cur_x += 8;
+    if (cur_x >= lfb_xres) {
+        cur_x  = 1;
+        cur_y += 10;
+    }
+}
+
+void gfx_print(const char *s) {
+    while (*s)
+    gfx_putChar(*s++);
+}
+void gfx_printf(char *args, ...)
+{
+	va_list ap;
+	va_start (ap, args);
+
+    int index = 0, d;
+	UINT u;
+    char c, *s;
+	char buffer[256];
+
+	while (args[index])
+	{
+		switch (args[index])
+		{
+		case '%':
+			++index;
+			switch (args[index])
+			{
+			case 'u':
+				u = va_arg (ap, UINT);
+				kitoa(u, buffer);
+				gfx_print(buffer);
+				break;
+			case 'd':
+			case 'i':
+				d = va_arg (ap, int);
+				kitoa(d, buffer);
+				gfx_print(buffer);
+				break;
+			case 'X':
+			case 'x':
+				d = va_arg (ap, int);
+				ki2hex(d, buffer,8);
+				gfx_print(buffer);
+				break;
+			case 's':
+				s = va_arg (ap, char*);
+				gfx_print(s);
+				break;
+			case 'c':
+				c = (char) va_arg (ap, int);
+				gfx_putChar(c);
+				break;
+			default:
+				gfx_putChar('%');
+				gfx_putChar('%');
+				break;
+			}
+			break;
+		default:
+			gfx_putChar(args[index]);
+			break;
+		}
+		++index;
+	}
 }

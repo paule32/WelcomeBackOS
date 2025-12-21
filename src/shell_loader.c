@@ -16,7 +16,7 @@ void enter_shell(void)
     shell_main();
     
     for (;;) {
-        mouse_poll();
+        //mouse_poll();
     }
     
     

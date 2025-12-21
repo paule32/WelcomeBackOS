@@ -128,7 +128,80 @@ int mouse_write(uint8_t a_write)
 
 static int mouse_try_read(uint8_t *out)
 {
-    uint8_t st = inb(0x64);
+    // 1) Controller Self-Test: 0xAA -> 0x55
+    {
+        // Alles, was im Output-Buffer hängt, weglesen
+        for (int i = 0; i < 32; i++) {
+            if (!(inb(0x64) & 0x01)) break;
+            (void)inb(0x60);
+        }
+
+        uint32_t timeout = 200000;
+        uint8_t  flag    = 0;
+        while (timeout--) {
+            if ((inb(0x64) & 0x02) == 0) {
+                outb(0x64, 0xAA);
+                flag = 1;
+                break;
+            }
+        }
+        if (flag == 0) {
+            gfx_printf("PS2 Controller: timeout.\n");
+            return 0;
+        }   else {
+            uint8_t st = inb(0x60);
+            if (st == 0x55) {
+                gfx_printf("PS/2 Controller: success.\n");
+            }   else {
+                gfx_printf("PS/2 Controller: error.\n");
+                return 0;
+            }
+        }
+    }
+    
+    // 2) Interface Test Port 1: 0xAB -> 0x00 (ok)
+    {
+        // Alles, was im Output-Buffer hängt, weglesen
+        for (int i = 0; i < 32; i++) {
+            if (!(inb(0x64) & 0x01)) break;
+            (void)inb(0x60);
+        }
+        
+        uint32_t timeout = 200000;
+        uint8_t  flag    = 0;
+        while (timeout--) {
+            if ((inb(0x64) & 0x02) == 0) {
+                outb(0x64, 0xAB);
+                flag = 1;
+                break;
+            }
+        }
+        if (flag == 0) {
+            gfx_printf("PS2 Controller: Port 1: error.\n");
+            return 0;
+        }   else {
+            uint8_t st = inb(0x60);
+            if (st == 0x00) {
+                gfx_printf("PS/2 Port 1: success.\n");
+            }   else {
+                gfx_printf("PS/2 Port 1: error.\n");
+                return 0;
+            }
+        }
+    }
+    
+    
+    
+    
+    #if 0
+    outb(PS2_CMD, cmd);
+    
+    if (st == 0x55) {
+        gfx_printf("PS/2 Controller: ok.\n");
+    }   else {
+        gfx_printf("PS/2 Controller: fail: 0x%x.\n",st);
+        return 0;
+    }
     if (st & 0x01) {            // Daten vorhanden ?
         if (st & 0x20) {        // von Maus ?
             uint8_t mb = inb(0x60);
@@ -145,12 +218,13 @@ static int mouse_try_read(uint8_t *out)
         *out = inb(0x60);
         return 1;
     }
+    #endif
     return 0;
 }
 
 extern "C" void mouse_poll(void)
 {
-    uint8_t b;
+    uint8_t b = 0;
     if (!mouse_try_read(&b))
     return;
 
@@ -179,9 +253,17 @@ extern "C" void mouse_poll(void)
 
 extern "C" void mouse_install()
 {
-    unsigned char _status;
-
-    //Enable the auxiliary mouse device
+    uint8_t _status;
+    uint8_t b = 0;
+    if (!mouse_try_read(&b)) {
+        gfx_printf("no data\n");
+    }
+    
+    if (b == 0xFA) {
+        gfx_printf("mouse b:      0x%x\n", b);
+        gfx_rectFill(100,100,200,300,gfx_rgbColor(0,200,0));
+    }
+    return;
     mouse_wait(1);
     outportb(0x64, 0xA8);
 
