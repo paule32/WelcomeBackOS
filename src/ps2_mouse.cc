@@ -47,24 +47,144 @@ uint16_t mouse_y = 0;
 static int mx = 0;
 static int my = 0;
 
-static void cursor_draw_shape(int x, int y)
-{
-    uint16_t color = gfx_rgbColor(255,255,255);
-    gfx_drawCircleFill(x,y,40,color);
+typedef struct {
+    int old_x, old_y;
+    int saved_x, saved_y;    // tatsächlich gesicherte Ecke (geclippt)
+    int saved_w, saved_h;    // tatsächlich gesicherte Größe (geclippt)
+    bool has_saved;
+    
+    // Hintergrundpuffer max 16x16 Pixel
+    uint32_t bg32[CUR_W * CUR_H];
+    uint16_t bg16[CUR_W * CUR_H];
+}   cursor_overlay_t;
+
+static cursor_overlay_t g_cur = {
+    .old_x = -9999, .old_y = -9999,
+    .has_saved = false
+};
+
+static inline uint16_t fb_get16(int x, int y) {
+    return gfx_getPixel(x,y);
 }
+static inline void fb_put16(int x, int y, uint16_t c) {
+    gfx_putPixel(x,y,c);
+}
+
+static inline int clampi(int v, int lo, int hi) {
+    if (v < lo) return lo;
+    if (v > hi) return hi;
+    return v;
+}
+
+// Berechnet geclippten Cursor-Rechteckbereich auf dem Screen
+static void cursor_clip_rect(
+    int   x, int   y,
+    int *sx, int *sy,
+    int *sw, int *sh) {
+        
+    int x0 = x;
+    int y0 = y;
+    int x1 = x + CUR_W;
+    int y1 = y + CUR_H;
+
+    // Screen clip
+    int cx0 = clampi(x0, 0, (int)lfb_xres);
+    int cy0 = clampi(y0, 0, (int)lfb_yres);
+    int cx1 = clampi(x1, 0, (int)lfb_xres);
+    int cy1 = clampi(y1, 0, (int)lfb_yres);
+
+    *sx = cx0;
+    *sy = cy0;
+    *sw = cx1 - cx0;
+    *sh = cy1 - cy0;
+}
+static void cursor_save_bg(int x, int y)
+{
+    int sx, sy, sw, sh;
+    cursor_clip_rect(x, y, &sx, &sy, &sw, &sh);
+
+    g_cur.saved_x = sx;
+    g_cur.saved_y = sy;
+    g_cur.saved_w = sw;
+    g_cur.saved_h = sh;
+
+    if (sw <= 0 || sh <= 0) {
+        g_cur.has_saved = false;
+        return;
+    }
+
+    if (lfb_bpp == 16) {
+        for (int yy = 0; yy < sh; yy++) {
+            for (int xx = 0; xx < sw; xx++) {
+                g_cur.bg16[yy * CUR_W + xx] = gfx_getPixel(sx + xx, sy + yy);
+            }
+        }
+    }
+
+    g_cur.has_saved = true;
+}
+static void cursor_restore_bg(void)
+{
+    if (!g_cur.has_saved) return;
+
+    int sx = g_cur.saved_x, sy = g_cur.saved_y;
+    int sw = g_cur.saved_w, sh = g_cur.saved_h;
+
+    if (lfb_bpp == 16) {
+        for (int yy = 0; yy < sh; yy++) {
+            for (int xx = 0; xx < sw; xx++) {
+                fb_put16(sx + xx, sy + yy, g_cur.bg16[yy * CUR_W + xx]);
+            }
+        }
+    }
+
+    g_cur.has_saved = false;
+}
+
+static void cursor_draw(int x, int y)
+{
+    int sx, sy, sw, sh;
+    cursor_clip_rect(x, y, &sx, &sy, &sw, &sh);
+    if (sw <= 0 || sh <= 0) return;
+
+    // Offset, falls Cursor links/oben aus dem Screen raussteht
+    int offx = sx - x;
+    int offy = sy - y;
+
+    if (lfb_bpp == 16) {
+        const uint16_t col = gfx_rgbColor(255,255,255);
+        for (int yy = 0; yy < sh; yy++) {
+            uint16_t rowmask = cursor_mask[offy + yy];
+            for (int xx = 0; xx < sw; xx++) {
+                int bit = 15 - (offx + xx);
+                if (bit >= 0 && bit < 16) {
+                    if (rowmask & (1u << bit)) {
+                        fb_put16(sx + xx, sy + yy, col);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void cursor_overlay_move(int new_x, int new_y)
+{
+    // 1) alten Bereich zurück
+    cursor_restore_bg();
+
+    // 2) neuen Bereich sichern
+    cursor_save_bg(new_x, new_y);
+
+    // 3) Cursor drüber zeichnen
+    cursor_draw(new_x, new_y);
+
+    g_cur.old_x = new_x;
+    g_cur.old_y = new_y;
+}
+
 void cursor_update(int x, int y)
 {
-    // alten Cursor entfernen
-    //if (cur_old_x >= 0) {
-    //    cursor_restore_bg(cur_old_x, cur_old_y);
-    //}
-//gfx_rectFill(500,100,100,100,gfx_rgbColor(100,200,100));
-    // neuen Hintergrund sichern + Cursor zeichnen
-    //cursor_save_bg(x, y);
-    cursor_draw_shape(x, y);
-
-//    cur_old_x = x;
-    //cur_old_y = y;
+    cursor_overlay_move(mx, my);
 }
 
 volatile uint32_t seen_out = 0;
@@ -199,7 +319,7 @@ extern "C" void mouse_poll(void)
 
     seen_out++;
     if (st & ST_AUX) seen_aux++;
-gfx_drawCircleFill(mx,my,40,gfx_rgbColor(255,0,255));
+
     // nur wenn es wirklich von der Maus ist:
     if (!(st & ST_AUX))
         return;
