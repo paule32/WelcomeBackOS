@@ -121,48 +121,55 @@ int mouse_write(uint8_t a_write)
     
     //Wait for the final part
     if (mouse_wait(1) != 0) return -1;
-    
     //Finally write
-    gfx_rectFill(100,100,100,100,gfx_rgbColor(20,20,200));
     outportb(0x60, a_write);
-    gfx_rectFill(200,200,100,100,gfx_rgbColor(20,20,200));
-    
     return 0;
 }
 
 static int mouse_try_read(uint8_t *out)
 {
-    uint8_t st = inportb(PS2_STATUS);
-    if (!(st & ST_OUT_FULL)) return 0;      // nichts da
-    if (!(st & 0x20)) {                     // nicht von Maus -> z.B. Keyboard
-        (void)inportb(PS2_DATA);            // wegwerfen oder an Keyboard-Treiber geben
-        return 0;
+    uint8_t st = inb(0x64);
+    if (st & 0x01) {            // Daten vorhanden ?
+        if (st & 0x20) {        // von Maus ?
+            uint8_t mb = inb(0x60);
+            // mb is mouse byte
+            gfx_rectFill(100,100,200,300,gfx_rgbColor(0,200,0));
+        }   else {
+            uint8_t kb = inb(0x60);
+            // kb is keyboard byte
+            gfx_rectFill(100,100,200,300,gfx_rgbColor(0,0,200));
+        }
     }
-    *out = inportb(PS2_DATA);
-    return 1;
+    
+    if ((st & 0x02) == 0) {
+        *out = inb(0x60);
+        return 1;
+    }
+    return 0;
 }
 
 extern "C" void mouse_poll(void)
 {
     uint8_t b;
-    if (!mouse_try_read(&b)) return;
+    if (!mouse_try_read(&b))
+    return;
 
     // Sync: erstes Byte muss bit3=1 haben
     if (mouse_cycle == 0 && !(b & 0x08)) return;
-
-    mouse_byte[mouse_cycle++] = (signed char)b;
+    mouse_byte[mouse_cycle++] = b;
 
     if (mouse_cycle == 3) {
         mouse_cycle = 0;
 
-        int16_t dx = (int16_t)mouse_byte[1];
-        int16_t dy = (int16_t)mouse_byte[2];
+        int16_t dx = mouse_byte[1];
+        int16_t dy = mouse_byte[2];
 
         mx += dx;
         my -= dy;
 
         if (mx < 0) mx = 0;
         if (my < 0) my = 0;
+        
         if (mx >= lfb_xres) mx = lfb_xres - 1;
         if (my >= lfb_yres) my = lfb_yres - 1;
 
