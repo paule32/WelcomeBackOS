@@ -14,6 +14,7 @@
 // Status bits
 #define ST_OUT_FULL 0x01
 #define ST_IN_FULL  0x02
+#define ST_AUX      0x20   // 1 = Daten von Maus (AUX), 0 = Keyboard
 
 #define CUR_W 16
 #define CUR_H 16
@@ -43,8 +44,8 @@ signed char mouse_byte[ 3 ];
 uint16_t mouse_x = 0;
 uint16_t mouse_y = 0;
 
-static int mx = 400;
-static int my = 300;
+static int mx = 0;
+static int my = 0;
 
 static void cursor_draw_shape(int x, int y)
 {
@@ -66,373 +67,158 @@ void cursor_update(int x, int y)
     //cur_old_y = y;
 }
 
-static void ps2_drain_output_once(void) {
-    if (inportb(PS2_STATUS) & ST_OUT_FULL)
-        (void)inportb(PS2_DATA);
-}
+volatile uint32_t seen_out = 0;
+volatile uint32_t seen_aux = 0;
 
-void mouse_loop(void)
+static inline int ps2_try_read_any(uint8_t *st_out, uint8_t *data_out)
 {
-    switch (mouse_cycle)
-    {
-        case 0:
-            mouse_byte[0] = inportb(0x60);
-            mouse_cycle++;
-        break;
-        case 1:
-            mouse_byte[1] = inportb(0x60);
-            mouse_cycle++;
-        break;
-        case 2:
-            mouse_byte[2] = inportb(0x60);
-            mouse_x       = mouse_byte[1];
-            mouse_y       = mouse_byte[2];
-            mouse_cycle   = 0;
-        break;
-    }
-    cursor_update(mouse_x, mouse_y);
-}
-
-inline int mouse_wait(uint8_t a_type)
-{
-    uint32_t timeout = 500000;
-    while (timeout--) {
-        uint8_t st = inportb(PS2_STATUS);
-
-        // Output-Buffer leeren, damit nichts staut
-        if (st & ST_OUT_FULL) (void)inportb(PS2_DATA);
-
-        if (a_type == 0) {          // warten auf Output
-            if (st & ST_OUT_FULL) return 0;
-        } else {                    // warten auf Input leer
-            if ((st & ST_IN_FULL) == 0) return 0;
-        }
-    }
-    return -1;
-}
-
-int mouse_write(uint8_t a_write)
-{
-    //Wait to be able to send a command
-    if (mouse_wait(1) != 0) return -1;
+    uint8_t st = inb(0x64);
+    if (!(st & ST_OUT_FULL)) return 0;
     
-    //Tell the mouse we are sending a command
-    outportb(0x64, 0xD4);
+    uint8_t d = inb(0x60);
+    *st_out = st;
+    *data_out = d;
     
-    //Wait for the final part
-    if (mouse_wait(1) != 0) return -1;
-    //Finally write
-    outportb(0x60, a_write);
-    return 0;
+    return 1;
 }
 
 static void ps2_flush_output(void) {
     for (int i=0;i<64;i++) {
-        if (!(inb(PS2_STATUS) & ST_OUT_FULL)) break;
-        (void)inb(PS2_DATA);
+        if (!(inb(0x64) & ST_OUT_FULL)) break;
+        (void)inb(0x60);
     }
 }
-static bool ps2_wait_in_clear(uint32_t t) {
-    while (t--) if ((inb(PS2_STATUS) & ST_IN_FULL) == 0) return true;
-    return false;
-}
+
 static int ps2_wait_out_full(uint32_t t) {
-    while (t--) if (inb(0x64) & 0x01) return 1;
+    while (t--) {
+        if (inb(0x64) & ST_OUT_FULL) return 1;
+    }
     return 0;
 }
-static int ps2_read_data(uint8_t *out) {
-    if (!ps2_wait_out_full(200000)) return 0;
-    *out = inb(0x60);
-    return 1;
-}
-static bool ps2_send_cmd(uint8_t cmd) {
-    if (!ps2_wait_in_clear(200000)) return false;
-    outb(PS2_CMD, cmd);
-    return true;
-}
-static bool ps2_write_data(uint8_t v) {
-    if (!ps2_wait_in_clear(200000)) return false;
-    outb(PS2_DATA, v);
-    return true;
-}
-// an die Maus senden: erst 0xD4 an 0x64, dann Byte an 0x60
-static bool ps2_mouse_write(uint8_t v) {
-    if (!ps2_send_cmd(0xD4)) return false;
-    return ps2_write_data(v);
-}
-static bool ps2_expect_ack(void) {
-    uint8_t r;
-    if (!ps2_read_data(&r)) return false;
-    return (r == 0xFA); // ACK
+
+static int ps2_wait_in_clear(uint32_t t) {
+    while (t--) {
+        if ((inb(0x64) & ST_IN_FULL) == 0) return 1;
+    }
+    return 0;
 }
 
-static int mouse_try_read(uint8_t *out)
+static int ps2_read_mouse_byte(uint8_t *out)
+{
+    uint8_t st = inb(PS2_STATUS);
+
+    if (!(st & ST_OUT_FULL))
+        return 0;               // nichts da -> sofort zurück
+
+    uint8_t d = inb(PS2_DATA);  // MUSS gelesen werden, wenn OUT_FULL gesetzt ist
+
+    if (!(st & ST_AUX))
+        return 0;               // war Keyboard/sonstwas -> ignorieren (oder extra behandeln)
+
+    *out = d;
+    return 1;
+}
+
+static int ps2_expect_mouse_ack(void)
+{
+    uint8_t b;
+    // mehrere Versuche, falls Keyboard dazwischenfunkt
+    for (int i = 0; i < 64; i++) {
+        if (ps2_read_mouse_byte(&b)) {
+            return (b == 0xFA);
+        }
+    }
+    return 0;
+}
+
+static int ps2_send_cmd(uint8_t cmd) {
+    if (!ps2_wait_in_clear(200000)) return 0;
+    outb(0x64, cmd);
+    return 1;
+}
+
+static int ps2_write_data(uint8_t v) {
+    if (!ps2_wait_in_clear(200000)) return 0;
+    outb(0x60, v);
+    return 1;
+}
+
+static int ps2_mouse_write(uint8_t v) {
+    if (!ps2_wait_in_clear(200000)) return 0;
+    outb(0x64, 0xD4);
+    if (!ps2_wait_in_clear(200000)) return 0;
+    outb(0x60, v);
+    return 1;
+}
+
+
+extern "C" int mouse_install(void)
 {
     uint8_t cfg;
-    
-    // 1) Controller Self-Test: 0xAA -> 0x55
-    {
-        // Alles, was im Output-Buffer hängt, weglesen
-        for (int i = 0; i < 32; i++) {
-            if (!(inb(0x64) & 0x01)) break;
-            (void)inb(0x60);
-        }
 
-        uint32_t timeout = 200000;
-        uint8_t  flag    = 0;
-        while (timeout--) {
-            if ((inb(0x64) & 0x02) == 0) {
-                outb(0x64, 0xAA);
-                flag = 1;
-                break;
-            }
-        }
-        if (flag == 0) {
-            gfx_printf("PS2 Controller: timeout.\n");
-            return 0;
-        }   else {
-            uint8_t st = inb(0x60);
-            if (st == 0x55) {
-                gfx_printf("PS/2 Controller: success.\n");
-            }   else {
-                gfx_printf("PS/2 Controller: error.\n");
-                return 0;
-            }
-        }
-    }
-    
-    // 2) Interface Test Port 1: 0xAB -> 0x00 (ok)
-    {
-        // Alles, was im Output-Buffer hängt, weglesen
-        for (int i = 0; i < 32; i++) {
-            if (!(inb(0x64) & 0x01)) break;
-            (void)inb(0x60);
-        }
-        
-        uint32_t timeout = 200000;
-        uint8_t  flag    = 0;
-        while (timeout--) {
-            if ((inb(0x64) & 0x02) == 0) {
-                outb(0x64, 0xAB);
-                flag = 1;
-                break;
-            }
-        }
-        if (flag == 0) {
-            gfx_printf("PS2 Controller: Port 1: timeout.\n");
-            return 0;
-        }   else {
-            uint8_t st = inb(0x60);
-            if (st == 0x00) {
-                gfx_printf("PS/2 Port 1: success.\n");
-            }   else {
-                gfx_printf("PS/2 Port 1: error.\n");
-                return 0;
-            }
-        }
-    }
-    // 3) Interface Test Port 2: 0xA9 -> 0x00 (ok)
-    {
-        // Alles, was im Output-Buffer hängt, weglesen
-        for (int i = 0; i < 32; i++) {
-            if (!(inb(0x64) & 0x01)) break;
-            (void)inb(0x60);
-        }
-        
-        uint32_t timeout = 200000;
-        uint8_t  flag    = 0;
-        while (timeout--) {
-            if ((inb(0x64) & 0x02) == 0) {
-                outb(0x64, 0xA9);
-                flag = 1;
-                break;
-            }
-        }
-        if (flag == 0) {
-            gfx_printf("PS2 Controller: Port 2: timeout.\n");
-            return 0;
-        }   else {
-            uint8_t st = inb(0x60);
-            if (st == 0x00) {
-                gfx_printf("PS/2 Port 2: success.\n");
-            }   else {
-                gfx_printf("PS/2 Port 2: error.\n");
-                return 0;
-            }
-        }
-    }
-    
+    asm volatile("cli");
+
+    ps2_flush_output();
+
     // AUX (Port 2) aktivieren
-    {
-        // Alles, was im Output-Buffer hängt, weglesen
-        for (int i = 0; i < 32; i++) {
-            if (!(inb(0x64) & 0x01)) break;
-            (void)inb(0x60);
-        }
-        
-        if (!ps2_send_cmd(0xA8)) {
-            gfx_printf("PS2 Controller: AUX Port 2: timeout.\n");
-            return 0;
-        }   else {
-            gfx_printf("PS2 Controller: AUX Port 2: active.\n");
-        }
-    }
-    
-    // Config Byte lesen
-    {
-        if (!ps2_send_cmd(0x20)) {
-            gfx_printf("PS2 Controller: Config Byte: read error.\n");
-            return 0;
-        }   else {
-            gfx_printf("PS2 Controller: Config Byte: read ok.\n");
-        }
-        if (!ps2_read_data(&cfg)) {
-            gfx_printf("PS2 Controller: no data.\n");
-            return 0;
-        }   else {
-            gfx_printf("PS2 Controller: have data.\n");
-        }
-    }
-    
-    // IRQ12 einschalten (Bit 1)
-    cfg |= (1 << 1);
-    
-    // Config Byte schreiben
-    {
-        if (!ps2_send_cmd(0x60)) {
-            gfx_printf("PS2 Controller: Config Byte: send error.\n");
-            return 0;
-        }   else {
-            gfx_printf("PS2 Controller: Config Byte: send ok.\n");
-        }
-        if (!ps2_write_data(cfg)) {
-            gfx_printf("PS2 Controller: Config Byte: write error.\n");
-            return 0;
-        }   else {
-            gfx_printf("PS2 Controller: Config Byte: write ok.\n");
-        }
-    }
-    
-    // Maus Defaults
-    {
-        gfx_printf("PS2 Controller: M defaults.\n");
-        if (!ps2_mouse_write(0xF6)) {
-            gfx_printf("PS2 Controller: Mouse Defaults: no defaults.\n");
-            return 0;
-        }   else {
-            gfx_printf("PS2 Controller: Mouse Defaults: use deefaults.\n");
-        }
-        if (!ps2_expect_ack()) {
-            gfx_printf("PS2 Controller: Mouse ACK: error.\n");
-            return 0;
-        }   else {
-            gfx_printf("PS2 Controller: Mouse ACK: success.\n");
-        }
-    }
+    if (!ps2_send_cmd(0xA8)) { asm volatile("sti"); return 0; }
 
-    // Streaming aktivieren
-    {
-        if (!ps2_mouse_write(0xF4)) {
-            gfx_printf("PS2 Controller: Streaming: error.\n");
-            return 0;
-        }   else {
-            gfx_printf("PS2 Controller: Streaming: ok.\n");
-        }
-        if (!ps2_expect_ack()) {
-            gfx_printf("PS2 Controller: Streaming ACK: error.\n");
-            return 0;
-        }   else {
-            gfx_printf("PS2 Controller: Streaming ACK: success.\n");
-        }
-    }
+    // Config lesen
+    if (!ps2_send_cmd(0x20)) { asm volatile("sti"); return 0; }
+    // hier NICHT "ps2_read_data" ohne Filter, wir lesen einfach das nächste Byte
+    if (!ps2_wait_out_full(200000)) { asm volatile("sti"); return 0; }
+    cfg = inb(0x60);
+
+    // IRQ12 enable
+    cfg |= (1 << 1);
+
+    // Config schreiben
+    if (!ps2_send_cmd(0x60)) { asm volatile("sti"); return 0; }
+    if (!ps2_write_data(cfg)) { asm volatile("sti"); return 0; }
+
+    ps2_flush_output();
+
+    // Defaults optional – wenn du da Probleme hattest: erstmal weglassen
+    // ps2_mouse_write(0xF6); ps2_expect_mouse_ack();
+
+    // Data Reporting ON (wichtig!)
+    if (!ps2_mouse_write(0xF4)) { asm volatile("sti"); return 0; }
+    if (!ps2_expect_mouse_ack()) { asm volatile("sti"); return 0; }
+
+    asm volatile("sti");
     
     return 1;
-    
-    
-    #if 0
-    outb(PS2_CMD, cmd);
-    
-    if (st == 0x55) {
-        gfx_printf("PS/2 Controller: ok.\n");
-    }   else {
-        gfx_printf("PS/2 Controller: fail: 0x%x.\n",st);
-        return 0;
-    }
-    if (st & 0x01) {            // Daten vorhanden ?
-        if (st & 0x20) {        // von Maus ?
-            uint8_t mb = inb(0x60);
-            // mb is mouse byte
-            gfx_rectFill(100,100,200,300,gfx_rgbColor(0,200,0));
-        }   else {
-            uint8_t kb = inb(0x60);
-            // kb is keyboard byte
-            gfx_rectFill(100,100,200,300,gfx_rgbColor(0,0,200));
-        }
-    }
-    
-    if ((st & 0x02) == 0) {
-        *out = inb(0x60);
-        return 1;
-    }
-    #endif
-    return 0;
 }
 
 extern "C" void mouse_poll(void)
 {
-    uint8_t b = 0;
-    if (!mouse_try_read(&b))
-    return;
+    uint8_t st, b;
 
-    // Sync: erstes Byte muss bit3=1 haben
+    if (!ps2_try_read_any(&st, &b))
+        return;
+
+    seen_out++;
+    if (st & ST_AUX) seen_aux++;
+gfx_drawCircleFill(mx,my,40,gfx_rgbColor(255,0,255));
+    // nur wenn es wirklich von der Maus ist:
+    if (!(st & ST_AUX))
+        return;
+
     if (mouse_cycle == 0 && !(b & 0x08)) return;
     mouse_byte[mouse_cycle++] = b;
+    if (mouse_cycle < 3) return;
+    mouse_cycle = 0;
 
-    if (mouse_cycle == 3) {
-        mouse_cycle = 0;
+    int8_t dx = (int8_t)mouse_byte[1];
+    int8_t dy = (int8_t)mouse_byte[2];
 
-        int16_t dx = mouse_byte[1];
-        int16_t dy = mouse_byte[2];
+    mx += dx;
+    my -= dy;
 
-        mx += dx;
-        my -= dy;
+    if (mx < 0) mx = 0;
+    if (my < 0) my = 0;
+    if (mx >= lfb_xres) mx = lfb_xres - 1;
+    if (my >= lfb_yres) my = lfb_yres - 1;
 
-        if (mx < 0) mx = 0;
-        if (my < 0) my = 0;
-        
-        if (mx >= lfb_xres) mx = lfb_xres - 1;
-        if (my >= lfb_yres) my = lfb_yres - 1;
-
-        cursor_update(mx, my);
-    }
-}
-
-extern "C" void mouse_install()
-{
-    uint8_t _status;
-    uint8_t b = 0;
-    if (!mouse_try_read(&b)) {
-        gfx_printf("no data\n");
-    }
-    
-    if (b == 0xFA) {
-        gfx_printf("mouse b:      0x%x\n", b);
-        gfx_rectFill(100,100,200,300,gfx_rgbColor(0,200,0));
-    }
-    return;
-    mouse_wait(1);
-    outportb(0x64, 0xA8);
-
-    //Enable the interrupts
-    mouse_wait(1);
-    outportb(0x64, 0x20);
-
-    mouse_wait(0);
-    _status = (inportb(0x60) | 2);
-    
-    mouse_wait(1);
-    outportb(0x64, 0x60);
-    
-    mouse_wait(1);
-    outportb(0x60, _status);
+    cursor_update(mx, my);
 }

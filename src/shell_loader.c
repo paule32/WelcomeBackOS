@@ -5,18 +5,37 @@
 
 extern int  gfx_init(void);
 extern void shell_main(void);
-extern void mouse_install(void);
+extern int  mouse_install(void);
 extern void mouse_poll(void);
 
 typedef void (*app_entry_t)(void);
+
+static inline void io_wait(void) { outb(0x80, 0); }
+
+static void pic_mask_irq(uint8_t irq)
+{
+    uint16_t port = (irq < 8) ? 0x21 : 0xA1;
+    uint8_t  bit  = (irq < 8) ? irq : (irq - 8);
+    outb(port, inb(port) | (1u << bit));
+}
+
+void ps2_polling_enable(void)
+{
+    pic_mask_irq(1);   // Keyboard IRQ1
+    pic_mask_irq(12);  // Mouse IRQ12
+}
 
 void enter_shell(void)
 {
     mouse_install();
     shell_main();
-    
+
+    ps2_polling_enable();
+    asm volatile("sti");      // Timer/Rest läuft weiter    
+    //asm volatile("cli");
     for (;;) {
-        //mouse_poll();
+        mouse_poll();
+        io_wait();
     }
     
     

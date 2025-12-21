@@ -30,7 +30,7 @@ Linker script and memory map
                 0x00000140                        __dll_characteristics__ = 0x140
                 0x00010000                        . = 0x10000
 
-.text           0x00010000     0x4800
+.text           0x00010000     0x4600
                 0x00010000        0x4 LONG 0x10004 _kmain
                 0x00010004                        __code_start = .
  *(.text)
@@ -195,181 +195,181 @@ Linker script and memory map
                 0x00013334                sata_test_iso9660
                 0x00013425                ahci_init
                 0x000134a4                check_ahci
- .text          0x00013560      0x5fc ../obj/ps2_mouse.o
-                0x0001396f                cursor_update(int, int)
-                0x00013983                mouse_loop()
-                0x00013a01                mouse_write(unsigned char)
-                0x00013a89                mouse_poll
-                0x00013b37                mouse_install
- .text          0x00013b5c       0x10 ../obj/shell_loader.o
-                0x00013b5c                enter_shell
- .text          0x00013b6c      0x6f8 ../obj/shell.o
-                0x00013b6c                shell_main
- .text          0x00014264      0x200 ../obj/pe.o
-                0x00014264                pe_load_image
- *fill*         0x00014464        0xc 
- .text          0x00014470      0x310 ../obj/kheap.o
-                0x00014496                detect_memory
-                0x000144e8                kmemcpy
-                0x00014515                kmemset
-                0x0001453e                kmemsetw
-                0x00014561                kstrlen
-                0x00014580                kstrncmp
-                0x000145ce                kstrcmp
-                0x00014600                kstrcat
-                0x0001463d                kheap_init
-                0x0001465c                kmalloc
-                0x000146aa                kfree
-                0x000146f9                krealloc
+ .text          0x00013560      0x2fc ../obj/ps2_mouse.o
+                0x000135d4                cursor_update(int, int)
+                0x000135e8                mouse_install
+                0x000136dd                mouse_poll
+ .text          0x0001385c       0x34 ../obj/shell_loader.o
+                0x0001385c                ps2_polling_enable
+                0x0001386b                enter_shell
+ .text          0x00013890      0x6f8 ../obj/shell.o
+                0x00013890                shell_main
+ .text          0x00013f88      0x200 ../obj/pe.o
+                0x00013f88                pe_load_image
+ *fill*         0x00014188        0x8 
+ .text          0x00014190      0x310 ../obj/kheap.o
+                0x000141b6                detect_memory
+                0x00014208                kmemcpy
+                0x00014235                kmemset
+                0x0001425e                kmemsetw
+                0x00014281                kstrlen
+                0x000142a0                kstrncmp
+                0x000142ee                kstrcmp
+                0x00014320                kstrcat
+                0x0001435d                kheap_init
+                0x0001437c                kmalloc
+                0x000143ca                kfree
+                0x00014419                krealloc
 
-.rodata         0x00014780      0xe00
-                0x00014780                        __rodata_start = .
+.rodata         0x000144a0      0xa00
+                0x000144a0                        __rodata_start = .
  *(.rodata)
  *(.rdata)
- .rdata         0x00014780       0x40 ../obj/ckernel.o
- .rdata         0x000147c0        0x4 ../obj/math.o
- .rdata         0x000147c4       0x1c ../obj/usermodec.o
- .rdata         0x000147e0       0x2c ../obj/iso9660.o
- .rdata         0x0001480c       0x84 ../obj/video.o
- .rdata         0x00014890       0xb0 ../obj/vga.o
- .rdata         0x00014940       0x44 ../obj/util.o
- .rdata         0x00014984      0x368 ../obj/atapi.o
- .rdata         0x00014cec      0x30c ../obj/ahci.o
- .rdata         0x00014ff8      0x3e0 ../obj/ps2_mouse.o
- .rdata         0x000153d8       0x10 ../obj/shell.o
- .rdata         0x000153e8       0x2c ../obj/pe.o
+ .rdata         0x000144a0       0x40 ../obj/ckernel.o
+ .rdata         0x000144e0        0x4 ../obj/math.o
+ .rdata         0x000144e4       0x1c ../obj/usermodec.o
+ .rdata         0x00014500       0x2c ../obj/iso9660.o
+ .rdata         0x0001452c       0x84 ../obj/video.o
+ .rdata         0x000145b0       0xb0 ../obj/vga.o
+ .rdata         0x00014660       0x44 ../obj/util.o
+ .rdata         0x000146a4      0x368 ../obj/atapi.o
+ .rdata         0x00014a0c      0x30c ../obj/ahci.o
+ .rdata         0x00014d18       0x10 ../obj/shell.o
+ .rdata         0x00014d28       0x2c ../obj/pe.o
 
-.rdata          0x00016000      0x400
- .rdata$zzz     0x00016000       0x2c ../obj/ckernel.o
- .rdata$zzz     0x0001602c       0x2c ../obj/paging.o
- .rdata$zzz     0x00016058       0x2c ../obj/idt.o
- .rdata$zzz     0x00016084       0x2c ../obj/irqc.o
- .rdata$zzz     0x000160b0       0x2c ../obj/isrc.o
- .rdata$zzz     0x000160dc       0x2c ../obj/gdt.o
- .rdata$zzz     0x00016108       0x2c ../obj/syscall.o
- .rdata$zzz     0x00016134       0x2c ../obj/timer.o
- .rdata$zzz     0x00016160       0x2c ../obj/math.o
- .rdata$zzz     0x0001618c       0x2c ../obj/usermodec.o
- .rdata$zzz     0x000161b8       0x2c ../obj/task.o
- .rdata$zzz     0x000161e4       0x2c ../obj/iso9660.o
- .rdata$zzz     0x00016210       0x2c ../obj/video.o
- .rdata$zzz     0x0001623c       0x2c ../obj/vga.o
- .rdata$zzz     0x00016268       0x2c ../obj/util.o
- .rdata$zzz     0x00016294       0x2c ../obj/atapi.o
- .rdata$zzz     0x000162c0       0x2c ../obj/ahci.o
- .rdata$zzz     0x000162ec       0x2c ../obj/ps2_mouse.o
- .rdata$zzz     0x00016318       0x2c ../obj/shell_loader.o
- .rdata$zzz     0x00016344       0x2c ../obj/shell.o
- .rdata$zzz     0x00016370       0x2c ../obj/pe.o
- .rdata$zzz     0x0001639c       0x2c ../obj/kheap.o
+.rdata          0x00015000      0x400
+ .rdata$zzz     0x00015000       0x2c ../obj/ckernel.o
+ .rdata$zzz     0x0001502c       0x2c ../obj/paging.o
+ .rdata$zzz     0x00015058       0x2c ../obj/idt.o
+ .rdata$zzz     0x00015084       0x2c ../obj/irqc.o
+ .rdata$zzz     0x000150b0       0x2c ../obj/isrc.o
+ .rdata$zzz     0x000150dc       0x2c ../obj/gdt.o
+ .rdata$zzz     0x00015108       0x2c ../obj/syscall.o
+ .rdata$zzz     0x00015134       0x2c ../obj/timer.o
+ .rdata$zzz     0x00015160       0x2c ../obj/math.o
+ .rdata$zzz     0x0001518c       0x2c ../obj/usermodec.o
+ .rdata$zzz     0x000151b8       0x2c ../obj/task.o
+ .rdata$zzz     0x000151e4       0x2c ../obj/iso9660.o
+ .rdata$zzz     0x00015210       0x2c ../obj/video.o
+ .rdata$zzz     0x0001523c       0x2c ../obj/vga.o
+ .rdata$zzz     0x00015268       0x2c ../obj/util.o
+ .rdata$zzz     0x00015294       0x2c ../obj/atapi.o
+ .rdata$zzz     0x000152c0       0x2c ../obj/ahci.o
+ .rdata$zzz     0x000152ec       0x2c ../obj/ps2_mouse.o
+ .rdata$zzz     0x00015318       0x2c ../obj/shell_loader.o
+ .rdata$zzz     0x00015344       0x2c ../obj/shell.o
+ .rdata$zzz     0x00015370       0x2c ../obj/pe.o
+ .rdata$zzz     0x0001539c       0x2c ../obj/kheap.o
 
-.eh_frame       0x00017000     0x1400
- .eh_frame      0x00017000       0x2c ../obj/ckernel.o
- .eh_frame      0x0001702c       0xc4 ../obj/paging.o
- .eh_frame      0x000170f0       0x58 ../obj/idt.o
- .eh_frame      0x00017148       0x60 ../obj/irqc.o
- .eh_frame      0x000171a8       0x44 ../obj/isrc.o
- .eh_frame      0x000171ec       0x48 ../obj/gdt.o
- .eh_frame      0x00017234       0x54 ../obj/syscall.o
- .eh_frame      0x00017288       0x2c ../obj/timer.o
- .eh_frame      0x000172b4       0x5c ../obj/math.o
- .eh_frame      0x00017310       0x30 ../obj/usermodec.o
- .eh_frame      0x00017340       0xb8 ../obj/task.o
- .eh_frame      0x000173f8      0x140 ../obj/iso9660.o
- .eh_frame      0x00017538      0x1b4 ../obj/video.o
- .eh_frame      0x000176ec      0x338 ../obj/vga.o
- .eh_frame      0x00017a24      0x19c ../obj/util.o
- .eh_frame      0x00017bc0      0x154 ../obj/atapi.o
- .eh_frame      0x00017d14      0x150 ../obj/ahci.o
- .eh_frame      0x00017e64      0x15c ../obj/ps2_mouse.o
- .eh_frame      0x00017fc0       0x2c ../obj/shell_loader.o
- .eh_frame      0x00017fec       0x58 ../obj/shell.o
- .eh_frame      0x00018044       0x58 ../obj/pe.o
- .eh_frame      0x0001809c      0x18c ../obj/kheap.o
+.eh_frame       0x00016000     0x1200
+ .eh_frame      0x00016000       0x2c ../obj/ckernel.o
+ .eh_frame      0x0001602c       0xc4 ../obj/paging.o
+ .eh_frame      0x000160f0       0x58 ../obj/idt.o
+ .eh_frame      0x00016148       0x60 ../obj/irqc.o
+ .eh_frame      0x000161a8       0x44 ../obj/isrc.o
+ .eh_frame      0x000161ec       0x48 ../obj/gdt.o
+ .eh_frame      0x00016234       0x54 ../obj/syscall.o
+ .eh_frame      0x00016288       0x2c ../obj/timer.o
+ .eh_frame      0x000162b4       0x5c ../obj/math.o
+ .eh_frame      0x00016310       0x30 ../obj/usermodec.o
+ .eh_frame      0x00016340       0xb8 ../obj/task.o
+ .eh_frame      0x000163f8      0x140 ../obj/iso9660.o
+ .eh_frame      0x00016538      0x1b4 ../obj/video.o
+ .eh_frame      0x000166ec      0x338 ../obj/vga.o
+ .eh_frame      0x00016a24      0x19c ../obj/util.o
+ .eh_frame      0x00016bc0      0x154 ../obj/atapi.o
+ .eh_frame      0x00016d14      0x150 ../obj/ahci.o
+ .eh_frame      0x00016e64       0xd0 ../obj/ps2_mouse.o
+ .eh_frame      0x00016f34       0x48 ../obj/shell_loader.o
+ .eh_frame      0x00016f7c       0x58 ../obj/shell.o
+ .eh_frame      0x00016fd4       0x58 ../obj/pe.o
+ .eh_frame      0x0001702c      0x18c ../obj/kheap.o
 
-.data           0x00018240      0x600
-                0x00018240                        __data_start = .
+.data           0x000171c0      0x600
+                0x000171c0                        __data_start = .
  *(.data)
- .data          0x00018240        0x4 ../obj/ckernel.o
-                0x00018240                kernel_stack_top
- .data          0x00018244        0x4 ../obj/paging.o
- .data          0x00018248        0x0 ../obj/idt.o
- .data          0x00018248        0x0 ../obj/irqc.o
- .data          0x00018248        0x0 ../obj/isrc.o
- .data          0x00018248        0x0 ../obj/gdt.o
- .data          0x00018248        0x4 ../obj/syscall.o
- .data          0x0001824c        0x0 ../obj/timer.o
- .data          0x0001824c        0x0 ../obj/math.o
- .data          0x0001824c        0x4 ../obj/usermodec.o
-                0x0001824c                user_stack_top
- .data          0x00018250        0x0 ../obj/task.o
- .data          0x00018250        0x4 ../obj/iso9660.o
- .data          0x00018254        0x8 ../obj/video.o
-                0x00018254                tui_vidmem
-                0x00018258                attrib
- *fill*         0x0001825c        0x4 
- .data          0x00018260      0x420 ../obj/vga.o
-                0x00018280                font8x8
- .data          0x00018680        0x4 ../obj/util.o
-                0x00018680                INT_MAX
- .data          0x00018684        0x8 ../obj/atapi.o
- .data          0x0001868c        0x0 ../obj/ahci.o
- .data          0x0001868c        0x8 ../obj/ps2_mouse.o
- .data          0x00018694        0x0 ../obj/shell_loader.o
- .data          0x00018694        0x0 ../obj/shell.o
- .data          0x00018694        0x0 ../obj/pe.o
- .data          0x00018694        0x0 ../obj/kheap.o
+ .data          0x000171c0        0x4 ../obj/ckernel.o
+                0x000171c0                kernel_stack_top
+ .data          0x000171c4        0x4 ../obj/paging.o
+ .data          0x000171c8        0x0 ../obj/idt.o
+ .data          0x000171c8        0x0 ../obj/irqc.o
+ .data          0x000171c8        0x0 ../obj/isrc.o
+ .data          0x000171c8        0x0 ../obj/gdt.o
+ .data          0x000171c8        0x4 ../obj/syscall.o
+ .data          0x000171cc        0x0 ../obj/timer.o
+ .data          0x000171cc        0x0 ../obj/math.o
+ .data          0x000171cc        0x4 ../obj/usermodec.o
+                0x000171cc                user_stack_top
+ .data          0x000171d0        0x0 ../obj/task.o
+ .data          0x000171d0        0x4 ../obj/iso9660.o
+ .data          0x000171d4        0x8 ../obj/video.o
+                0x000171d4                tui_vidmem
+                0x000171d8                attrib
+ *fill*         0x000171dc        0x4 
+ .data          0x000171e0      0x420 ../obj/vga.o
+                0x00017200                font8x8
+ .data          0x00017600        0x4 ../obj/util.o
+                0x00017600                INT_MAX
+ .data          0x00017604        0x8 ../obj/atapi.o
+ .data          0x0001760c        0x0 ../obj/ahci.o
+ .data          0x0001760c        0x0 ../obj/ps2_mouse.o
+ .data          0x0001760c        0x0 ../obj/shell_loader.o
+ .data          0x0001760c        0x0 ../obj/shell.o
+ .data          0x0001760c        0x0 ../obj/pe.o
+ .data          0x0001760c        0x0 ../obj/kheap.o
 
-.bss            0x00019000     0x4418
-                0x00019000                        __bss_start = .
+.bss            0x00018000     0x4428
+                0x00018000                        __bss_start = .
  *(.bss)
- .bss           0x00019000        0x0 ../obj/ckernel.o
- .bss           0x00019000     0x2000 ../obj/paging.o
- .bss           0x0001b000      0x820 ../obj/idt.o
- .bss           0x0001b820        0x0 ../obj/irqc.o
- .bss           0x0001b820        0x0 ../obj/isrc.o
- .bss           0x0001b820       0xc0 ../obj/gdt.o
-                0x0001b820                tss_entry
-                0x0001b87c                gp
-                0x0001b8a0                gdt
- .bss           0x0001b8e0        0x0 ../obj/syscall.o
- .bss           0x0001b8e0        0x4 ../obj/timer.o
- .bss           0x0001b8e4        0x0 ../obj/math.o
- *fill*         0x0001b8e4       0x1c 
- .bss           0x0001b900     0x1000 ../obj/usermodec.o
-                0x0001b900                user_stack
- .bss           0x0001c900       0x10 ../obj/task.o
- .bss           0x0001c910       0x10 ../obj/iso9660.o
- .bss           0x0001c920        0x4 ../obj/video.o
-                0x0001c920                saved_csr_y
-                0x0001c921                saved_csr_x
-                0x0001c922                csr_y
-                0x0001c923                csr_x
- .bss           0x0001c924        0xc ../obj/vga.o
-                0x0001c924                lfb_bpp
-                0x0001c926                lfb_yres
-                0x0001c928                lfb_xres
-                0x0001c92a                lfb_pitch
-                0x0001c92c                lfb_base
- .bss           0x0001c930        0x0 ../obj/util.o
- .bss           0x0001c930        0xc ../obj/atapi.o
- *fill*         0x0001c93c      0x2c4 
- .bss           0x0001cc00      0x800 ../obj/ahci.o
- .bss           0x0001d400        0x8 ../obj/ps2_mouse.o
-                0x0001d400                mouse_y
-                0x0001d402                mouse_x
-                0x0001d404                mouse_byte
-                0x0001d407                mouse_cycle
- .bss           0x0001d408        0x0 ../obj/shell_loader.o
- .bss           0x0001d408        0x0 ../obj/shell.o
- .bss           0x0001d408        0x0 ../obj/pe.o
- .bss           0x0001d408       0x10 ../obj/kheap.o
-                0x0001d408                max_mem
-                0x0001d40c                mem_map_length
-                0x0001d410                mem_map
+ .bss           0x00018000        0x0 ../obj/ckernel.o
+ .bss           0x00018000     0x2000 ../obj/paging.o
+ .bss           0x0001a000      0x820 ../obj/idt.o
+ .bss           0x0001a820        0x0 ../obj/irqc.o
+ .bss           0x0001a820        0x0 ../obj/isrc.o
+ .bss           0x0001a820       0xc0 ../obj/gdt.o
+                0x0001a820                tss_entry
+                0x0001a87c                gp
+                0x0001a8a0                gdt
+ .bss           0x0001a8e0        0x0 ../obj/syscall.o
+ .bss           0x0001a8e0        0x4 ../obj/timer.o
+ .bss           0x0001a8e4        0x0 ../obj/math.o
+ *fill*         0x0001a8e4       0x1c 
+ .bss           0x0001a900     0x1000 ../obj/usermodec.o
+                0x0001a900                user_stack
+ .bss           0x0001b900       0x10 ../obj/task.o
+ .bss           0x0001b910       0x10 ../obj/iso9660.o
+ .bss           0x0001b920        0x4 ../obj/video.o
+                0x0001b920                saved_csr_y
+                0x0001b921                saved_csr_x
+                0x0001b922                csr_y
+                0x0001b923                csr_x
+ .bss           0x0001b924        0xc ../obj/vga.o
+                0x0001b924                lfb_bpp
+                0x0001b926                lfb_yres
+                0x0001b928                lfb_xres
+                0x0001b92a                lfb_pitch
+                0x0001b92c                lfb_base
+ .bss           0x0001b930        0x0 ../obj/util.o
+ .bss           0x0001b930        0xc ../obj/atapi.o
+ *fill*         0x0001b93c      0x2c4 
+ .bss           0x0001bc00      0x800 ../obj/ahci.o
+ .bss           0x0001c400       0x18 ../obj/ps2_mouse.o
+                0x0001c400                seen_aux
+                0x0001c404                seen_out
+                0x0001c408                mouse_y
+                0x0001c40a                mouse_x
+                0x0001c40c                mouse_byte
+                0x0001c40f                mouse_cycle
+ .bss           0x0001c418        0x0 ../obj/shell_loader.o
+ .bss           0x0001c418        0x0 ../obj/shell.o
+ .bss           0x0001c418        0x0 ../obj/pe.o
+ .bss           0x0001c418       0x10 ../obj/kheap.o
+                0x0001c418                max_mem
+                0x0001c41c                mem_map_length
+                0x0001c420                mem_map
  *(COMMON)
-                0x0001d418                        __bss_end = .
-                0x0001d418                        ___end = .
+                0x0001c428                        __bss_end = .
+                0x0001c428                        ___end = .
 
 /DISCARD/
  *(.reloc)
