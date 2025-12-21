@@ -58,7 +58,6 @@ typedef struct
 extern volatile uint32_t lfb_base;
 
 extern USHORT  lfb_pitch;
-extern USHORT  lfb_pitch;
 extern USHORT  lfb_xres ;
 extern USHORT  lfb_yres ;
 extern UCHAR   lfb_bpp  ;

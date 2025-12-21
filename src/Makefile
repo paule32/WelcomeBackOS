@@ -64,9 +64,10 @@ SRCC := $(SRC)/ckernel.c        \
         $(SRC)/atapi.c          \
         $(SRC)/ahci.c           \
         $(SRC)/ps2_mouse.cc     \
-        $(SRC)/shell_loader.c   \
+        $(SRC)/shell_loader.cc  \
         $(SRC)/shell.cc         \
         $(SRC)/pe.c             \
+        $(SRC)/wm.c             \
         $(SRC)/kheap.c
 # -----------------------------------------------------------------------------
 # source files for the C-kernel ...
@@ -104,6 +105,7 @@ OBJS := $(OBJ)/ckernel.o        \
         $(OBJ)/shell_loader.o   \
         $(OBJ)/shell.o          \
         $(OBJ)/pe.o             \
+        $(OBJ)/wm.o             \
         $(OBJ)/kheap.o
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the shell ...

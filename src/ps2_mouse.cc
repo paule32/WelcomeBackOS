@@ -31,11 +31,11 @@ static const uint16_t cursor_mask[CUR_H] = {
     0b1111111110000000,
     0b1111111111000000,
     0b1111110000000000,
-    0b1110110000000000,
-    0b1100011000000000,
-    0b1000001100000000,
-    0b0000000110000000,
-    0b0000000010000000,
+    0b1110111000000000,
+    0b1100011100000000,
+    0b1000001110000000,
+    0b0000000111000000,
+    0b0000000011000000,
 };
 
 signed char mouse_cycle = 0;
@@ -271,6 +271,35 @@ static int ps2_mouse_write(uint8_t v) {
     return 1;
 }
 
+static void mouse_process_byte(uint8_t b)
+{
+    // Sync-Bit (Bit3) muss beim ersten Byte gesetzt sein
+    if (mouse_cycle == 0 && !(b & 0x08)) return;
+
+    mouse_byte[mouse_cycle++] = (signed char)b;
+    if (mouse_cycle < 3) return;
+    mouse_cycle = 0;
+
+    int8_t dx = (int8_t)mouse_byte[1];
+    int8_t dy = (int8_t)mouse_byte[2];
+
+    mx += dx;
+    my -= dy;
+
+    mx = clampi(mx, 0, (int)lfb_xres - 1);
+    my = clampi(my, 0, (int)lfb_yres - 1);
+
+    cursor_overlay_move(mx, my);
+}
+
+// --- Keyboard: Set 1 Scancode (raw) ---
+static void kbd_process_byte(uint8_t sc)
+{
+    // Optional: nur Make-Codes anzeigen (Key-Down). Break hat Bit7 gesetzt.
+    if (sc & 0x80) return;
+
+    gfx_printf("key: %d  ", (int)sc);
+}
 
 extern "C" int mouse_install(void)
 {
@@ -312,33 +341,10 @@ extern "C" int mouse_install(void)
 
 extern "C" void mouse_poll(void)
 {
-    uint8_t st, b;
+    uint8_t st, d;
+    if (!ps2_try_read_any(&st, &d))
+    return;
 
-    if (!ps2_try_read_any(&st, &b))
-        return;
-
-    seen_out++;
-    if (st & ST_AUX) seen_aux++;
-
-    // nur wenn es wirklich von der Maus ist:
-    if (!(st & ST_AUX))
-        return;
-
-    if (mouse_cycle == 0 && !(b & 0x08)) return;
-    mouse_byte[mouse_cycle++] = b;
-    if (mouse_cycle < 3) return;
-    mouse_cycle = 0;
-
-    int8_t dx = (int8_t)mouse_byte[1];
-    int8_t dy = (int8_t)mouse_byte[2];
-
-    mx += dx;
-    my -= dy;
-
-    if (mx < 0) mx = 0;
-    if (my < 0) my = 0;
-    if (mx >= lfb_xres) mx = lfb_xres - 1;
-    if (my >= lfb_yres) my = lfb_yres - 1;
-
-    cursor_update(mx, my);
+    if (st & ST_AUX) { mouse_process_byte(d); }
+    else             {   kbd_process_byte(d); }
 }

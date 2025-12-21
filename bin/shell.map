@@ -117,50 +117,50 @@ Linker script and memory map
  .rdata         0x00a03000       0x10 ../obj/shell.o
  .rdata         0x00a03010        0x4 ../obj/math.o
  *fill*         0x00a03014        0xc 
- .rdata         0x00a03020       0x20 ../obj/ps2_mouse.o
- .rdata         0x00a03040       0xb0 ../obj/vga.o
- .rdata         0x00a030f0       0x84 ../obj/video.o
- .rdata         0x00a03174       0x44 ../obj/util.o
- .rdata$zzz     0x00a031b8       0x2c ../obj/shell.o
- .rdata$zzz     0x00a031e4       0x2c ../obj/kheap.o
- .rdata$zzz     0x00a03210       0x2c ../obj/math.o
- .rdata$zzz     0x00a0323c       0x2c ../obj/paging.o
- .rdata$zzz     0x00a03268       0x2c ../obj/ps2_mouse.o
- .rdata$zzz     0x00a03294       0x2c ../obj/vga.o
- .rdata$zzz     0x00a032c0       0x2c ../obj/video.o
- .rdata$zzz     0x00a032ec       0x2c ../obj/util.o
+ .rdata         0x00a03020       0x40 ../obj/ps2_mouse.o
+ .rdata         0x00a03060       0xb0 ../obj/vga.o
+ .rdata         0x00a03110       0x84 ../obj/video.o
+ .rdata         0x00a03194       0x44 ../obj/util.o
+ .rdata$zzz     0x00a031d8       0x2c ../obj/shell.o
+ .rdata$zzz     0x00a03204       0x2c ../obj/kheap.o
+ .rdata$zzz     0x00a03230       0x2c ../obj/math.o
+ .rdata$zzz     0x00a0325c       0x2c ../obj/paging.o
+ .rdata$zzz     0x00a03288       0x2c ../obj/ps2_mouse.o
+ .rdata$zzz     0x00a032b4       0x2c ../obj/vga.o
+ .rdata$zzz     0x00a032e0       0x2c ../obj/video.o
+ .rdata$zzz     0x00a0330c       0x2c ../obj/util.o
 
 .eh_frame       0x00a04000      0xc00
  .eh_frame      0x00a04000       0x58 ../obj/shell.o
  .eh_frame      0x00a04058      0x18c ../obj/kheap.o
  .eh_frame      0x00a041e4       0x5c ../obj/math.o
  .eh_frame      0x00a04240       0xc4 ../obj/paging.o
- .eh_frame      0x00a04304       0xdc ../obj/ps2_mouse.o
- .eh_frame      0x00a043e0      0x338 ../obj/vga.o
- .eh_frame      0x00a04718      0x1b4 ../obj/video.o
- .eh_frame      0x00a048cc      0x19c ../obj/util.o
+ .eh_frame      0x00a04304       0xd0 ../obj/ps2_mouse.o
+ .eh_frame      0x00a043d4      0x338 ../obj/vga.o
+ .eh_frame      0x00a0470c      0x1b4 ../obj/video.o
+ .eh_frame      0x00a048c0      0x19c ../obj/util.o
 
 .rodata
  *(.rodata*)
 
-.data           0x00a04a80      0xc00
+.data           0x00a04a60      0xc00
  *(.data*)
- .data          0x00a04a80        0x0 ../obj/shell.o
- .data          0x00a04a80        0x0 ../obj/kheap.o
- .data          0x00a04a80        0x0 ../obj/math.o
- .data          0x00a04a80        0x4 ../obj/paging.o
- *fill*         0x00a04a84       0x1c 
- .data          0x00a04aa0      0x620 ../obj/ps2_mouse.o
- .data          0x00a050c0      0x420 ../obj/vga.o
-                0x00a050e0                font8x8
- .data          0x00a054e0        0x8 ../obj/video.o
-                0x00a054e0                tui_vidmem
-                0x00a054e4                attrib
- .data          0x00a054e8        0x4 ../obj/util.o
-                0x00a054e8                INT_MAX
+ .data          0x00a04a60        0x0 ../obj/shell.o
+ .data          0x00a04a60        0x0 ../obj/kheap.o
+ .data          0x00a04a60        0x0 ../obj/math.o
+ .data          0x00a04a60        0x4 ../obj/paging.o
+ *fill*         0x00a04a64       0x1c 
+ .data          0x00a04a80      0x620 ../obj/ps2_mouse.o
+ .data          0x00a050a0      0x420 ../obj/vga.o
+                0x00a050c0                font8x8
+ .data          0x00a054c0        0x8 ../obj/video.o
+                0x00a054c0                tui_vidmem
+                0x00a054c4                attrib
+ .data          0x00a054c8        0x4 ../obj/util.o
+                0x00a054c8                INT_MAX
 
 .reloc          0x00a06000      0x400
- .reloc         0x00a06000      0x224 dll stuff
+ .reloc         0x00a06000      0x218 dll stuff
 
 .bss            0x00a07000     0x3028
  *(.bss*)

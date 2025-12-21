@@ -2,6 +2,7 @@
 # include "proto.h"
 # include "iso9660.h"
 # include "vga.h"
+# include "wm.h"
 
 extern int  gfx_init(void);
 extern void shell_main(void);
@@ -27,14 +28,23 @@ void ps2_polling_enable(void)
 
 void enter_shell(void)
 {
+    wm_init(
+    lfb_xres, lfb_yres,
+    lfb_base, lfb_pitch);
+    
     mouse_install();
     shell_main();
+
+    wm_create_window( 60,  60, 320, 200, "Console");
+    wm_create_window(120, 120, 280, 160, "Test"   );
 
     ps2_polling_enable();
     asm volatile("sti");      // Timer/Rest läuft weiter    
     //asm volatile("cli");
     for (;;) {
         mouse_poll();
+        
+        wm_tick();
         io_wait();
     }
     
