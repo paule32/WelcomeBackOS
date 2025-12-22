@@ -36,6 +36,9 @@ static int g_resize_anchor_x = 0, g_resize_anchor_y = 0;
 static uint16_t g_cursor_mask[16];
 static int g_cursor_w = 16, g_cursor_h = 16;
 
+extern volatile uint32_t lfb_base;   // virtuelle Adresse nach mmio_map
+extern USHORT lfb_pitch;             // Bytes pro Scanline
+
 // ====== EVENT QUEUE ======
 static event_t g_evq[WM_MAX_EVENTS];
 static volatile int g_evq_r = 0;
@@ -410,7 +413,12 @@ void wm_tick(void) {
 }
 
 // ====== INIT ======
-void wm_init(int screen_w, int screen_h, uint32_t lfb, int lfb_pitch_pixels) {
+void wm_init(
+    int screen_w,
+    int screen_h,
+    uint32_t lfb,
+    int lfb_pitch_pixels) {
+        
     g_sw = screen_w; g_sh = screen_h;
     g_lfb = lfb;
     g_lfb_pitch = lfb_pitch_pixels;
@@ -469,13 +477,51 @@ void wm_on_key(int scancode, int down) {
 }
 
 // ====== GFX HOOK IMPLEMENTATION (anpassen) ======
-static inline void gfx_present_to_lfb(const uint32_t *src, int sw, int sh) {
-    // Copy src (sw*sh) -> LFB with pitch
+static inline uint16_t xrgb8888_to_rgb565(uint32_t p)
+{
+    // p: 0x00RRGGBB oder 0xFFRRGGBB (Alpha wird ignoriert)
+    uint8_t r = (uint8_t)((p >> 16) & 0xFF);
+    uint8_t g = (uint8_t)((p >>  8) & 0xFF);
+    uint8_t b = (uint8_t)((p >>  0) & 0xFF);
+
+    // RGB565: R=5bit, G=6bit, B=5bit
+    return (uint16_t)(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
+}
+
+static inline void gfx_present_to_lfb_from32(const uint32_t *src, int sw, int sh)
+{
+    uint16_t *dst = (uint16_t *)(uintptr_t)lfb_base;
+    int dst_pitch_pixels = (int)lfb_pitch / 2;
+
     for (int y = 0; y < sh; ++y) {
         const uint32_t *s = &src[y * sw];
-        uint32_t d = &g_lfb[y * g_lfb_pitch];
-        for (int x = 0; x < sw; ++x) d[x] = s[x];
+        uint16_t *d = &dst[y * dst_pitch_pixels];
+        for (int x = 0; x < sw; ++x) {
+            d[x] = xrgb8888_to_rgb565(s[x]);
+        }
     }
+}
+static inline void gfx_present_to_lfb565(const uint32_t *src, int sw, int sh)
+{
+    uint16_t *dst = (uint16_t *)(uintptr_t)lfb_base;
+
+    // VBE pitch ist Bytes/Scanline -> in Pixel umrechnen (2 bytes pro Pixel bei 16bpp)
+    int dst_pitch_pixels = (int)lfb_pitch / 2;
+
+    for (int y = 0; y < sh; ++y) {
+        const uint32_t *s = &src[y * sw];
+        uint16_t *d = &dst[y * dst_pitch_pixels];
+        for (int x = 0; x < sw; ++x) {
+            d[x] = s[x];
+        }
+    }
+}
+
+static inline void gfx_present_to_lfb(
+    const uint32_t *src,
+    int sw,
+    int sh) {
+    gfx_present_to_lfb565(src,sw,sh);
 }
 
 static inline void gfx_text(int x, int y, uint32_t col, const char *s) {

@@ -5,9 +5,10 @@
 # include "wm.h"
 
 extern int  gfx_init(void);
-extern void shell_main(void);
-extern int  mouse_install(void);
-extern void mouse_poll(void);
+extern "C" void shell_main(void);
+extern "C" void mouse_poll(void);
+extern "C"  int mouse_install(void);
+//extern void wm_init(int,int,uint32_t,int);
 
 typedef void (*app_entry_t)(void);
 
@@ -26,17 +27,10 @@ void ps2_polling_enable(void)
     pic_mask_irq(12);  // Mouse IRQ12
 }
 
-void enter_shell(void)
+extern "C" void enter_shell(void)
 {
-    wm_init(
-    lfb_xres, lfb_yres,
-    lfb_base, lfb_pitch);
-    
     mouse_install();
     shell_main();
-
-    wm_create_window( 60,  60, 320, 200, "Console");
-    wm_create_window(120, 120, 280, 160, "Test"   );
 
     ps2_polling_enable();
     asm volatile("sti");      // Timer/Rest läuft weiter    
@@ -47,7 +41,12 @@ void enter_shell(void)
         wm_tick();
         io_wait();
     }
+    wm_init(
+    lfb_xres, lfb_yres,
+    lfb_base, lfb_pitch);
     
+    wm_create_window( 60,  60, 320, 200, "Console");
+    wm_create_window(120, 120, 280, 160, "Test"   );
     
     for(;;);
     

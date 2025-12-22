@@ -1,6 +1,12 @@
-#pragma once
+#ifndef __WM_H__
+#define __WM_H__
+
 # include "stdint.h"
 # include "proto.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 
 typedef struct { int x, y, w, h; } rect_t;
 
@@ -57,3 +63,9 @@ void wm_tick(void);     // dispatch events + compose + present
 // Optional helpers to integrate your pollers
 void wm_on_mouse(int mx, int my, int buttons, int relx, int rely, int changed_buttons_mask);
 void wm_on_key(int scancode, int down);
+
+#ifdef __cplusplus
+};
+#endif
+
+#endif  // __WM_H__
