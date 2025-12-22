@@ -1,5 +1,7 @@
 # include "proto.h"
 # include "my_stdarg.h"
+# include "proto.h"
+# include "kheap.h"
 
 unsigned char  csr_x  = 0;
 unsigned char  csr_y  = 0;

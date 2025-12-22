@@ -43,7 +43,7 @@ int kmain()
     paging_init();
     kheap_init();
     
-    detect_memory();          // setzt max_mem
+    //detect_memory();          // setzt max_mem
     uint32_t reserved = (uint32_t)(&__end) + 0x00100000;
     page_init(reserved);
     

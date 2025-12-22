@@ -1,12 +1,12 @@
 // iso9660.c - Simple ISO9660 reader for WelcomeBackOS
 // (c) 2025 by Jens Kallup - paule32
 
-# include "iso9660.h"
-# include "kheap.h"   // für kmalloc/kfree
 # include "stdint.h"
+# include "kheap.h"   // für kmalloc/kfree
+# include "iso9660.h"
 # include "proto.h"
 
-extern void enter_usermode(void);
+extern "C" void enter_usermode(void);
 extern void enter_shell(void);
 
 // ----------------------------------------
@@ -88,7 +88,7 @@ static char to_upper(char c)
 // ----------------------------------------
 // init / mount
 // ----------------------------------------
-
+extern "C" int iso_mount(void);
 void iso_init(iso_read_sectors_t reader)
 {
     iso_read_sectors = reader;
@@ -102,7 +102,7 @@ void iso_init(iso_read_sectors_t reader)
     }
 }
 
-int iso_mount(void)
+extern "C" int iso_mount(void)
 {
     if (!iso_read_sectors)
     return -1;
@@ -169,8 +169,8 @@ static int iso_name_equals(const char* iso_name, uint8_t iso_len, const char* wa
         ++k;
     }
     wbuf[k] = 0;
-
-    return (kstrcmp(temp, wbuf) == 0);
+    int ret = kstrcmp(temp, wbuf);
+    return ret;
 }
 
 // Sucht ein Element (Datei oder Verzeichnis) in einem Directory-Block

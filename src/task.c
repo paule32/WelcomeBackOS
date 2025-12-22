@@ -8,8 +8,8 @@
 
 #define KERNEL_STACK_SIZE   4096
 
-static task_t* current_task = NULL;
-static task_t* task_list    = NULL;
+static task_t* current_task = (task_t*)NULL;
+static task_t* task_list    = (task_t*)NULL;
 static int     task_count   = 0;
 static int     tasking_started = 0;
 
@@ -47,7 +47,7 @@ void tasking_init(void)
     // Haupttask anlegen
     task_t* main_task = (task_t*)kmalloc(sizeof(task_t));
     kmemset(&main_task->regs, 0, sizeof(regs_t));
-    main_task->next = NULL;
+    main_task->next = (task_t*)NULL;
 
     task_append(main_task);
     current_task = main_task;
@@ -87,7 +87,7 @@ void task_create(void (*entry)(void))
     t->regs.fs = 0x10;
     t->regs.gs = 0x10;
 
-    t->next = NULL;
+    t->next = (task_t*)NULL;
     task_append(t);
 }
 

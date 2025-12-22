@@ -36,7 +36,7 @@ Linker script and memory map
                 0x00a00004                shell_main
  *fill*         0x00a006fc        0x4 
  .text          0x00a00700      0x310 ../obj/kheap.o
-                0x00a00726                detect_memory
+                0x00a00726                detect_memory()
                 0x00a00778                kmemcpy
                 0x00a007a5                kmemset
                 0x00a007ce                kmemsetw

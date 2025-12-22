@@ -1,8 +1,10 @@
 // iso9660.h - Simple ISO9660 reader for WelcomeBackOS
 // (c) 2025 by Jens Kallup - paule32
 
-#pragma once
-# include "kheap.h"
+#ifndef __ISO9660_H__
+#define __ISO9660_H__
+# pragma once
+
 # include "stdint.h"
 
 // Funktionspointer zum Lesen von Sektoren (LBA-basiert)
@@ -19,11 +21,16 @@ typedef struct iso_file {
 typedef ISO_FILE FILE;
 
 // Initialisiert die ISO-Schicht mit einer Funktion, die Sektoren liest.
-void iso_init(iso_read_sectors_t reader);
 
 // Liest den Primary Volume Descriptor, Root-Dir etc.
 // Muss nach iso_init() genau einmal aufgerufen werden.
+#ifdef __cplusplus
+extern "C" void iso_init(iso_read_sectors_t reader);
+extern "C" int  iso_mount(void);
+#else
+void iso_init(iso_read_sectors_t reader);
 int iso_mount(void);
+#endif
 
 // Sucht eine Datei über absoluten Pfad, z.B. "/SHELL.EXE" oder "/DIR/FILE.BIN"
 // Gibt 0 bei Erfolg zurück und setzt LBA + Größe.
@@ -47,3 +54,6 @@ int file_seek(FILE* f, uint32_t new_pos);
 
 // Schließt die Datei (gibt die Struktur frei)
 void file_close(FILE* f);
+ 
+#endif  // __ISO9660_H__
+ 

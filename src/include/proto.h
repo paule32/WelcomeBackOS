@@ -1,9 +1,10 @@
+#ifndef __PROTO_H__
+#define __PROTO_H__
 #pragma once
 
 # include "stdint.h"
 
 #pragma pack(push, 1)
-
 typedef struct {
     uint16_t e_magic;      // "MZ" = 0x5A4D
     uint16_t e_cblp;
@@ -163,17 +164,6 @@ extern void printformat (char *args, ...);
 };
 #endif
 
-// kheap.c
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern void*   kmemcpy(void* dst, const void* src, uint32_t n);
-extern void*   kmemset(void* dst, int value, uint32_t n);
-extern USHORT* kmemsetw(USHORT* dest, USHORT val, size_t count);
-#ifdef __cplusplus
-};
-#endif
-
 // util.c
 #ifdef __cplusplus
 extern "C" {
@@ -186,6 +176,9 @@ extern void *mmio_map(uint32_t phys, uint32_t size);
 };
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
 extern int check_atapi (void);
 extern int check_ahci  (void);
 
@@ -208,3 +201,7 @@ typedef struct {
 extern          mem_map_entry_t* mem_map;
 extern uint32_t mem_map_length; // Anzahl Einträge
 extern uint32_t max_mem;        // oberstes Ende des nutzbaren physikalischen RAMs
+#ifdef __cplusplus
+};
+#endif  // __cplusplus
+#endif  // __PROTO_H__

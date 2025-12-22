@@ -2,6 +2,8 @@
 # include "kheap.h"
 # include "proto.h"
 
+extern "C" void* kmemcpy   (void*,const void*,uint32_t);
+extern "C" void* kmemset   (void*,int        ,uint32_t);
 int pe_load_image(const uint8_t* file, uint32_t size, pe_image_t* out)
 {
     if (!file || size < sizeof(dos_header_t))

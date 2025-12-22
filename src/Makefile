@@ -47,7 +47,7 @@ BIN  := ../bin
 # -----------------------------------------------------------------------------
 # source files for the C-kernel ...
 # -----------------------------------------------------------------------------
-SRCC := $(SRC)/ckernel.c        \
+SRCC := $(SRC)/ckernel.cc       \
         $(SRC)/paging.c         \
         $(SRC)/idt.c            \
         $(SRC)/irqc.c           \
@@ -60,7 +60,8 @@ SRCC := $(SRC)/ckernel.c        \
         $(SRC)/math.c           \
         $(SRC)/iso9660.c        \
         $(SRC)/video.c          \
-        $(SRC)/vga.c            \
+        $(SRC)/vga.cc           \
+        $(SRC)/bitmap.cc        \
         $(SRC)/util.c           \
         $(SRC)/atapi.c          \
         $(SRC)/ahci.c           \
@@ -70,7 +71,7 @@ SRCC := $(SRC)/ckernel.c        \
         $(SRC)/int86.c          \
         $(SRC)/pe.c             \
         $(SRC)/wm.c             \
-        $(SRC)/kheap.c
+        $(SRC)/kheap.cc
 # -----------------------------------------------------------------------------
 # source files for the C-kernel ...
 # -----------------------------------------------------------------------------
@@ -100,6 +101,7 @@ OBJS := $(OBJ)/ckernel.o        \
         $(OBJ)/iso9660.o        \
         $(OBJ)/video.o          \
         $(OBJ)/vga.o            \
+        $(OBJ)/bitmap.o         \
         $(OBJ)/util.o           \
         $(OBJ)/atapi.o          \
         $(OBJ)/ahci.o           \

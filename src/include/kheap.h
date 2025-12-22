@@ -1,17 +1,27 @@
-#ifndef KHEAP_H
-#define KHEAP_H
+#ifndef __KHEAP_H__
+#define __KHEAP_H__
 
 # include "stdint.h"
 
-extern void  kheap_init(void);
-extern void* kmalloc   (uint32_t);
-extern void* krealloc  (void*,uint32_t);
-extern void  kfree     (void*);
-extern void* kmemcpy   (void*,const void*,uint32_t);
-extern void* kmemset   (void*,int        ,uint32_t);
+#ifdef __cplusplus
+extern "C" { 
+#endif  // __cplusplus
 
-extern size_t kstrlen  (const char*);
-extern char*  kstrcat  (      char*,const char*);
-extern int    kstrncmp (const char*,const char*,uint32_t);
-extern int    kstrcmp  (const char*,const char*);
-#endif
+void  kheap_init(void);
+void* kmalloc   (uint32_t);
+void* krealloc  (void*,uint32_t);
+void  kfree     (void*);
+void* kmemcpy   (void*,const void*,uint32_t);
+void* kmemset   (void*,int        ,uint32_t);
+
+size_t kstrlen  (const char*);
+char*  kstrcat  (      char*,const char*);
+int    kstrcmp  (const char*,const char*);
+int    kstrncmp (const char*,const char*,uint32_t);
+
+extern USHORT* kmemsetw(USHORT* dest, USHORT val, size_t count);
+
+#ifdef __cplusplus
+}; 
+#endif  // __cplusplus
+#endif  // __KHEAP_H__ 

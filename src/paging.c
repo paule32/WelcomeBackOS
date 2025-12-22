@@ -4,6 +4,8 @@
 # include "stdint.h"
 # include "proto.h"
 # include "paging.h"
+
+# define DESKTOP
 # include "vga.h"
 
 # define MMIO_BASE   0xF0000000

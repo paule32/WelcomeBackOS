@@ -19,7 +19,7 @@ typedef struct heap_block {
     struct heap_block* next;    // next block in list
 }   heap_block_t;
 
-static heap_block_t* heap_head = NULL;
+static heap_block_t* heap_head = (heap_block_t*)NULL;
 
          mem_map_entry_t* mem_map;
 uint32_t mem_map_length; // Anzahl Einträge
@@ -54,7 +54,7 @@ void detect_memory(void)
 }
 
 // simple memcpy, weil keine libc vorhanden ist
-void* kmemcpy(void* dst, const void* src, uint32_t n)
+extern "C" void* kmemcpy(void* dst, const void* src, uint32_t n)
 {
     uint8_t* d = (uint8_t*)dst;
     const uint8_t* s = (const uint8_t*)src;
@@ -65,7 +65,7 @@ void* kmemcpy(void* dst, const void* src, uint32_t n)
     return dst;
 }
 
-void* kmemset(void* dst, int value, uint32_t n)
+extern "C" void* kmemset(void* dst, int value, uint32_t n)
 {
     uint8_t* d = (uint8_t*)dst;
 
@@ -82,7 +82,7 @@ USHORT* kmemsetw(USHORT* dest, USHORT val, size_t count)
     return dest;
 }
 
-size_t kstrlen(const char* str)
+extern "C" size_t kstrlen(const char* str)
 {
     size_t retval;
 
@@ -92,7 +92,7 @@ size_t kstrlen(const char* str)
     return retval;
 }
 
-int kstrncmp(const char* a, const char* b, uint32_t n)
+extern "C" int kstrncmp(const char* a, const char* b, uint32_t n)
 {
     for (uint32_t i = 0; i < n; ++i) {
         if (a[i] != b[i]) return (int)((unsigned char)a[i] - (unsigned char)b[i]);
@@ -101,7 +101,7 @@ int kstrncmp(const char* a, const char* b, uint32_t n)
     return 0;
 }
 
-int kstrcmp(const char* a, const char* b)
+extern "C" int kstrcmp(const char* a, const char* b)
 {
     while (*a && *b && *a == *b) {
         ++a; ++b;
@@ -109,7 +109,7 @@ int kstrcmp(const char* a, const char* b)
     return (int)((unsigned char)*a - (unsigned char)*b);
 }
 
-char* kstrcat(char* dest, const char* src)
+extern "C" char* kstrcat(char* dest, const char* src)
 {
     char *d = dest;
 
@@ -145,7 +145,7 @@ void kheap_init(void)
     // total heap space = KHEAP_SIZE minus header
     heap_head->size = KHEAP_SIZE - sizeof(heap_block_t);
     heap_head->free = 1;
-    heap_head->next = NULL;
+    heap_head->next = (heap_block_t*)NULL;
 }
 
 // Split a block into "used block" + "remainder" if large enough
@@ -180,7 +180,7 @@ static void merge_free_blocks(void)
     }
 }
 
-void* kmalloc(uint32_t size)
+extern "C" void* kmalloc(uint32_t size)
 {
     if (size == 0) return NULL;
 
@@ -205,7 +205,7 @@ void* kmalloc(uint32_t size)
     return NULL;
 }
 
-void kfree(void* ptr)
+extern "C" void kfree(void* ptr)
 {
     if (!ptr) return;
 
@@ -219,7 +219,7 @@ void kfree(void* ptr)
     merge_free_blocks();
 }
 
-void* krealloc(void* ptr, uint32_t new_size)
+extern "C" void* krealloc(void* ptr, uint32_t new_size)
 {
     if (ptr == NULL) {
         // behaves like malloc

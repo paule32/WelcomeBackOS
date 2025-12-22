@@ -25,9 +25,9 @@ static uint32_t  g_lfb;
 static int       g_lfb_pitch;     // pixels
 static uint32_t *g_back;          // backbuffer sw*sh
 
-static window_t *g_z_bottom  = NULL;
-static window_t *g_z_top     = NULL;
-static window_t *g_focused   = NULL;
+static window_t *g_z_bottom  = (window_t *)NULL;
+static window_t *g_z_top     = (window_t *)NULL;
+static window_t *g_focused   = (window_t *)NULL;
 
 static int g_mouse_x = 20, g_mouse_y = 20;
 static int g_mouse_buttons = 0;
@@ -114,13 +114,13 @@ static void z_detach(window_t *w) {
     if (w->next) w->next->prev = w->prev;
     if (g_z_bottom == w) g_z_bottom = w->next;
     if (g_z_top == w) g_z_top = w->prev;
-    w->prev = w->next = NULL;
+    w->prev = w->next = (window_t *)NULL;
 }
 
 static void z_attach_top(window_t *w) {
     if (!w) return;
     w->prev = g_z_top;
-    w->next = NULL;
+    w->next = (window_t *)NULL;
     if (g_z_top) g_z_top->next = w;
     g_z_top = w;
     if (!g_z_bottom) g_z_bottom = w;
@@ -138,7 +138,7 @@ static window_t *wm_window_at(int x, int y) {
         if (!(w->flags & WIN_VISIBLE)) continue;
         if (pt_in_rect(x, y, w->x, w->y, w->w, w->h)) return w;
     }
-    return NULL;
+    return (window_t *)NULL;
 }
 
 static int hit_title(window_t *w, int mx, int my) {
@@ -175,7 +175,7 @@ window_t *wm_create_window(int x, int y, int w, int h, const char *title) {
     // find free slot
     int slot = -1;
     for (int i = 0; i < WM_MAX_WINS; ++i) if (!g_win_used[i]) { slot = i; break; }
-    if (slot < 0) return NULL;
+    if (slot < 0) return (window_t *)NULL;
     g_win_used[slot] = 1;
 
     window_t *win = &g_win_pool[slot];
@@ -212,7 +212,7 @@ window_t *wm_create_window(int x, int y, int w, int h, const char *title) {
 void wm_destroy_window(window_t *w) {
     if (!w) return;
     z_detach(w);
-    if (g_focused == w) g_focused = NULL;
+    if (g_focused == w) g_focused = (window_t *)NULL;
 
     // release pool slot
     for (int i = 0; i < WM_MAX_WINS; ++i) {
