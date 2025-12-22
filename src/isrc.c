@@ -63,6 +63,10 @@ static void putc_at(int pos, char c, uint8_t color)
     VGA[pos * 2 + 1] = color;
 }
 
+static inline void outb(uint16_t port, uint8_t val) {
+    __asm__ volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
+}
+
 // sehr simpler Handler
 void isr_handler(regs_t* r)
 {

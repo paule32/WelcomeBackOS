@@ -18,7 +18,6 @@
     -drive file=../bin/bootcd.iso,if=none,media=cdrom,id=cdrom0 \
     -device ich9-ahci,id=ahci0 \
     -device ide-cd,drive=cdrom0,bus=ahci0.0 \
-    -device i8042 \
-    -boot d -m 256 -machine q35
+    -boot d -m 256M -machine q35,i8042=on
 
 #-net nic,model=e1000 -net user

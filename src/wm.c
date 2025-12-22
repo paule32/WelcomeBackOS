@@ -1,15 +1,18 @@
-#include "wm.h"
+# include "stdint.h"
+# include "proto.h"
+# include "kheap.h"
+# include "wm.h"
 
 // ====== CONFIG ======
-#define WM_MAX_EVENTS   128
-#define TITLE_H         18
-#define BORDER          2
-#define RESIZE_GRIP     10
+# define WM_MAX_EVENTS   128
+# define TITLE_H         18
+# define BORDER          2
+# define RESIZE_GRIP     10
 
-#define WIN_VISIBLE     (1u<<0)
-#define WIN_DIRTY       (1u<<1)
-#define WIN_MOVING      (1u<<2)
-#define WIN_RESIZING    (1u<<3)
+# define WIN_VISIBLE     (1u<<0)
+# define WIN_DIRTY       (1u<<1)
+# define WIN_MOVING      (1u<<2)
+# define WIN_RESIZING    (1u<<3)
 
 // ====== EXTERNAL GFX HOOKS (anpassen!) ======
 // Du musst nur diese 3-5 Funktionen an deine gfx_* anpassen.
@@ -17,20 +20,20 @@ static inline void gfx_present_to_lfb(const uint32_t *src, int sw, int sh);
 static inline void gfx_text(int x, int y, uint32_t col, const char *s);
 
 // ====== INTERNAL DRAW (software in backbuffer) ======
-static int g_sw, g_sh;
+static int       g_sw, g_sh;
 static uint32_t  g_lfb;
-static int g_lfb_pitch;           // pixels
+static int       g_lfb_pitch;     // pixels
 static uint32_t *g_back;          // backbuffer sw*sh
 
-static window_t *g_z_bottom = NULL;
-static window_t *g_z_top = NULL;
-static window_t *g_focused = NULL;
+static window_t *g_z_bottom  = NULL;
+static window_t *g_z_top     = NULL;
+static window_t *g_focused   = NULL;
 
 static int g_mouse_x = 20, g_mouse_y = 20;
 static int g_mouse_buttons = 0;
 
-static int g_drag_off_x = 0, g_drag_off_y = 0;
-static int g_resize_start_w = 0, g_resize_start_h = 0;
+static int g_drag_off_x      = 0, g_drag_off_y      = 0;
+static int g_resize_start_w  = 0, g_resize_start_h  = 0;
 static int g_resize_anchor_x = 0, g_resize_anchor_y = 0;
 
 static uint16_t g_cursor_mask[16];
@@ -425,7 +428,7 @@ void wm_init(
 
     // simple static backbuffer (falls du malloc hast, nimm malloc)
     // WARN: 1024*768 passt so nicht als static auf kleinen Stacks -> global/heap nehmen!
-    static uint32_t backbuf_static[1024*768];
+    uint32_t* backbuf_static = (uint32_t*)kmalloc(1024*768);
     if (g_sw * g_sh <= (int)(sizeof(backbuf_static)/sizeof(backbuf_static[0]))) {
         g_back = backbuf_static;
     } else {
@@ -521,7 +524,8 @@ static inline void gfx_present_to_lfb(
     const uint32_t *src,
     int sw,
     int sh) {
-    gfx_present_to_lfb565(src,sw,sh);
+    
+    gfx_present_to_lfb_from32(src, sw, sh);
 }
 
 static inline void gfx_text(int x, int y, uint32_t col, const char *s) {

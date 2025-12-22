@@ -27,6 +27,8 @@ extern void printformat(char*, ...);
 extern void detect_memory(void);
 extern void enter_usermode(void);
 
+extern uint32_t __end;
+
 void test_task(void);
 
 uint32_t kernel_stack_top = 0x00180000;

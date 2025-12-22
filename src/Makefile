@@ -27,6 +27,7 @@ CFLAGS   := -m32 -O1 -ffreestanding -fno-stack-protector -fno-builtin   \
             -nostdlib -nostartfiles -fno-pic -Wall -Wextra              \
             -mno-ms-bitfields -Wno-unused-variable                      \
             -Wno-unused-value -Wno-unused-parameter -Wno-sign-compare   \
+            -Wno-missing-field-initializers                             \
             -I../src/include
 
 CPPFLAGS := -std=c++20 -Wno-write-strings -Wno-volatile
@@ -66,6 +67,7 @@ SRCC := $(SRC)/ckernel.c        \
         $(SRC)/ps2_mouse.cc     \
         $(SRC)/shell_loader.cc  \
         $(SRC)/shell.cc         \
+        $(SRC)/int86.c          \
         $(SRC)/pe.c             \
         $(SRC)/wm.c             \
         $(SRC)/kheap.c
@@ -104,6 +106,8 @@ OBJS := $(OBJ)/ckernel.o        \
         $(OBJ)/ps2_mouse.o      \
         $(OBJ)/shell_loader.o   \
         $(OBJ)/shell.o          \
+        $(OBJ)/int86_blob.o     \
+        $(OBJ)/int86.o          \
         $(OBJ)/pe.o             \
         $(OBJ)/wm.o             \
         $(OBJ)/kheap.o
@@ -250,9 +254,15 @@ $(OBJ)/shell.bin: $(SHOBJS) $(SRC)/shell.ld
 $(BIN)/shell.exe:  $(OBJ)/shell.bin
 	$(OBJCOPY) -O binary $(OBJ)/shell.bin $(BIN)/shell.exe
 
-$(BIN)/bootcd.iso: $(BIN)/boot1.bin $(BIN)/boot2.bin $(BIN)/kernel.bin $(BIN)/shell.exe
+$(BIN)/bootcd.iso: $(BIN)/boot1.bin $(BIN)/boot2.bin \
+    $(BIN)/int86_blob.bin \
+    $(BIN)/kernel.bin     \
+    $(BIN)/shell.exe
 	./create_iso.sh
 	$(MOD-LBA)
+
+$(BIN)/int86_blob.bin: $(SRC)/int86_switch.asm
+	nasm -f bin -o $@ $<
 
 # -----------------------------------------------------------------------------
 # prepare font ...

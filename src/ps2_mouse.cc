@@ -6,6 +6,8 @@
 # define DESKTOP 1
 # include "vga.h"
 
+# include "wm.h"
+
 // Ports
 #define PS2_DATA    0x60
 #define PS2_STATUS  0x64
@@ -311,9 +313,12 @@ extern "C" int mouse_install(void)
 
     // AUX (Port 2) aktivieren
     if (!ps2_send_cmd(0xA8)) { asm volatile("sti"); return 0; }
+    gfx_printf("PS2 Controller: Port 2 active.\n");
 
     // Config lesen
     if (!ps2_send_cmd(0x20)) { asm volatile("sti"); return 0; }
+    gfx_printf("PS2 Controller: Config read: ok.\n");
+    
     // hier NICHT "ps2_read_data" ohne Filter, wir lesen einfach das nächste Byte
     if (!ps2_wait_out_full(200000)) { asm volatile("sti"); return 0; }
     cfg = inb(0x60);
@@ -324,6 +329,7 @@ extern "C" int mouse_install(void)
     // Config schreiben
     if (!ps2_send_cmd(0x60)) { asm volatile("sti"); return 0; }
     if (!ps2_write_data(cfg)) { asm volatile("sti"); return 0; }
+    gfx_printf("PS2 Controller: Config write: ok.\n");
 
     ps2_flush_output();
 
@@ -332,15 +338,19 @@ extern "C" int mouse_install(void)
 
     // Data Reporting ON (wichtig!)
     if (!ps2_mouse_write(0xF4)) { asm volatile("sti"); return 0; }
-    if (!ps2_expect_mouse_ack()) { asm volatile("sti"); return 0; }
-
-    asm volatile("sti");
+    gfx_printf("PS2 Controller: Reporting: ok.\n");
     
+    if (!ps2_expect_mouse_ack()) { asm volatile("sti"); return 0; }
+    gfx_printf("PS2 Controller: ACK: ok.\n");
+
+    //asm volatile("sti");
     return 1;
 }
 
 extern "C" void mouse_poll(void)
 {
+    //wm_on_mouse(mx, my, buttons, relx, rely, changed_mask);
+    
     uint8_t st, d;
     if (!ps2_try_read_any(&st, &d))
     return;

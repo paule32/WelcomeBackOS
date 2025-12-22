@@ -3,29 +3,8 @@
 
 # include "stdint.h"
 # include "proto.h"
+# include "paging.h"
 # include "vga.h"
-
-# define PAGE_SIZE       4096
-# define PAGE_ENTRIES    1024
-
-# define PAGE_MASK       0xFFFFF000
-
-# define PD_INDEX(v)     (((v) >> 22) & 0x3FF)
-# define PT_INDEX(v)     (((v) >> 12) & 0x3FF)
-
-// Page-Flags
-# define PG_PRESENT      0x001
-# define PG_RW           0x002
-# define PG_USER         0x004  // für Kernel eher 0
-# define PG_GLOBAL       0x100
-
-# define NUM_MAPPED_MB   16
-# define NUM_PAGES       ((NUM_MAPPED_MB * 1024 * 1024) / PAGE_SIZE)
-# define NUM_TABLES      ((NUM_PAGES + PAGE_ENTRIES - 1) / PAGE_ENTRIES)
-
-# define PAGE_PRESENT    0x001
-# define PAGE_WRITE      0x002
-# define PAGE_USER       0x004
 
 # define MMIO_BASE   0xF0000000
 static uint32_t next_mmio = MMIO_BASE;
@@ -37,6 +16,8 @@ extern void* kmalloc(uint32_t);
 // 4 KiB aligned
 static uint32_t page_directory[PAGE_ENTRIES]                __attribute__((aligned(4096)));
 static uint32_t page_tables   [PAGE_ENTRIES][PAGE_ENTRIES]  __attribute__((aligned(4096)));
+static uint32_t page_table_next_free;
+
 static uint32_t* first_page_table;
 
 static uint32_t free_pages[PAGE_ENTRIES];
@@ -46,17 +27,17 @@ static size_t   free_page_count = 0;
 # define MAX_PAGES            (MANAGED_MEMORY_BYTES / PAGE_SIZE)
 # define BITMAP_SIZE_BYTES    (MAX_PAGES / 8)
 
+static uint8_t page_bitmap[BITMAP_SIZE_BYTES] __attribute__((aligned(16)));
+
 // Bitmap helpers
 static inline void set_bit(uint32_t idx) {
-    page_directory[idx >> 3] |=  (1u << (idx & 7));
+    page_bitmap[idx >> 3] |=  (1u << (idx & 7));
 }
-
 static inline void clear_bit(uint32_t idx) {
-    page_directory[idx >> 3] &= ~(1u << (idx & 7));
+    page_bitmap[idx >> 3] &= ~(1u << (idx & 7));
 }
-
-static inline uint8_t test_bit(uint32_t idx) {
-    return (page_directory[idx >> 3] >> (idx & 7)) & 1u;
+static inline int test_bit(uint32_t idx) {
+    return (page_bitmap[idx >> 3] >> (idx & 7)) & 1u;
 }
 
 // Hilfsfunktionen, um CR3 zu lesen/schreiben
@@ -73,6 +54,46 @@ static inline void write_cr3(uint32_t val) {
 // phys == virt für Bereiche, in denen das Page Directory liegt.
 static inline uint32_t *get_page_directory(void) {
     return (uint32_t *)page_directory;
+}
+
+static inline void invlpg(void *addr) {
+    __asm__ volatile("invlpg (%0)" :: "r"(addr) : "memory");
+}
+static uint32_t* alloc_page_table(void) {
+    uint32_t t = page_table_next_free++;
+    // Tabelle leeren
+    for (uint32_t i = 0; i < 1024; ++i) page_tables[t][i] = 0;
+    return page_tables[t];
+}
+static void map_page(uint32_t virt, uint32_t phys, uint32_t flags)
+{
+    virt &= PAGE_MASK;
+    phys &= PAGE_MASK;
+
+    uint32_t pdi = PD_INDEX(virt);
+    uint32_t pti = PT_INDEX(virt);
+
+    if (!(page_directory[pdi] & PG_PRESENT)) {
+        uint32_t *pt = alloc_page_table();
+        page_directory[pdi] = ((uint32_t)pt & PAGE_MASK) | PG_PRESENT | PG_RW;
+    }
+
+    uint32_t *pt = (uint32_t *)(page_directory[pdi] & PAGE_MASK);
+    pt[pti] = phys | (flags & 0xFFF) | PG_PRESENT;
+
+    invlpg((void*)virt);
+}
+void map_range_identity(
+    uint32_t phys_start,
+    uint32_t size_bytes,
+    uint32_t flags) {
+        
+    uint32_t start = phys_start & PAGE_MASK;
+    uint32_t end   = (phys_start + size_bytes + PAGE_SIZE - 1) & PAGE_MASK;
+
+    for (uint32_t p = start; p < end; p += PAGE_SIZE) {
+        map_page(p, p, flags);
+    }
 }
 
 void page_allocator_add_page(uint32_t phys_addr)
@@ -191,34 +212,43 @@ void *mmio_map(uint32_t phys, uint32_t size)
 
 void paging_init(void)
 {
-    // 1. Alles erstmal "nicht present"
+    for (uint32_t i = 0; i < BITMAP_SIZE_BYTES; ++i)
+        page_bitmap[i] = 0;
+
+    // 0) first_page_table muss auf echte Page-Table zeigen
+    first_page_table = page_tables[0];
+
+    // 1) Page Directory erstmal leer (not present, aber RW gesetzt ist ok)
     for (uint32_t i = 0; i < PAGE_ENTRIES; ++i) {
-        page_directory[i] = 0x00000002;   // RW, aber not present
+        page_directory[i] = 0x00000002; // RW, not present
     }
 
-    // Erste Page Table füllen: identity mapping 0x00000000–0x003FFFFF
+    // 2) Identity-Mapping für NUM_MAPPED_MB (z.B. 16 MiB)
+    //    Jede Page-Table mappt 4 MiB => Anzahl Tabellen:
+    const uint32_t tables_needed = (NUM_MAPPED_MB + 3) / 4; // aufrunden
+
     uint32_t phys = 0x00000000;
-    for (int i = 0; i < PAGE_ENTRIES; ++i) {
-        first_page_table[i] = (phys & 0xFFFFF000) | PAGE_PRESENT | PAGE_WRITE;
-        phys += PAGE_SIZE;   // nächste physische Seite
+
+    for (uint32_t t = 0; t < tables_needed; ++t) {
+        // Page Table t füllen
+        for (uint32_t i = 0; i < PAGE_ENTRIES; ++i) {
+            page_tables[t][i] = (phys & PAGE_MASK) | PAGE_PRESENT | PAGE_WRITE;
+            phys += PAGE_SIZE;
+        }
+
+        // PDE[t] zeigt auf die Page Table t
+        page_directory[t] = ((uint32_t)page_tables[t] & PAGE_MASK) | PAGE_PRESENT | PAGE_WRITE;
     }
-    
-    // PDE[0] zeigt auf first_page_table
-    uint32_t pt_phys = (uint32_t)first_page_table;
-    page_directory[0] = (pt_phys & 0xFFFFF000) | PAGE_PRESENT | PAGE_WRITE;
-    
-    // 3. CR3 = physische Adresse des Page Directory
+
+    // 3) CR3 laden
     asm volatile("mov %0, %%cr3" :: "r"(page_directory));
-    
-    // 4. Paging-Bit in CR0 setzen
+
+    // 4) Paging aktivieren (CR0.PG)
     uint32_t cr0;
     asm volatile("mov %%cr0, %0" : "=r"(cr0));
     cr0 |= 0x80000000;
     asm volatile("mov %0, %%cr0" :: "r"(cr0));
-    
-    // kleine Pipeline-Flush
+
+    // kleiner Flush
     asm volatile("jmp .+2");
-    
-    // Ab hier ist Paging aktiv, aber mit Identity-Mapping,
-    // d.h. deine Adressen unter 4 MiB bleiben gleich.
 }

@@ -74,5 +74,5 @@ extern "C" void shell_main(void)
     
     gfx_drawCircle(260, 200, 50, red);
     
-    gfx_printf("Hello World!");
+    gfx_printf("Hello World!\n");
 }
