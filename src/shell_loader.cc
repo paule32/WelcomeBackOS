@@ -57,7 +57,7 @@ extern "C" void enter_shell(void)
     bmp_show_from_iso_16bpp565(
         "/lo.bmp",
         (uint8_t*)lfb_base, lfb_pitch,
-        lfb_xres, lfb_yres, 100, 100);
+        lfb_xres, lfb_yres, 0, 0);
     
     ps2_polling_enable();
     //asm volatile("sti");      // Timer/Rest läuft weiter    

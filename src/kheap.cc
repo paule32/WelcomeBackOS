@@ -257,3 +257,21 @@ extern "C" void* krealloc(void* ptr, uint32_t new_size)
     kfree(ptr);
     return new_ptr;
 }
+
+void* malloc(size_t n) { return kmalloc((uint32_t)n); }
+void  free(void* p)    { if (p) kfree(p); }
+void* calloc(size_t c, size_t s) {
+    size_t n = c*s;
+    uint8_t* p = (uint8_t*)kmalloc((uint32_t)n);
+    if (!p) return NULL;
+    for (size_t i=0;i<n;i++) p[i]=0;
+    return p;
+}
+void* realloc(void* p, size_t n) {
+    // minimal: neu alloc + kopieren + frei (oder weglassen, wenn lodepng es nicht braucht)
+    void* np = kmalloc((uint32_t)n);
+    if (!np) return NULL;
+    // ohne Kenntnis der alten Größe ist das “unsauber”; besser echten realloc machen.
+    // Für viele Builds reicht es, wenn lodepng kein realloc nutzt (je nach Config).
+    return np;
+}

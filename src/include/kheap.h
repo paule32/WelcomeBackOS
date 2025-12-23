@@ -21,6 +21,12 @@ int    kstrncmp (const char*,const char*,uint32_t);
 
 extern USHORT* kmemsetw(USHORT* dest, USHORT val, size_t count);
 
+void* malloc (size_t);
+void  free   (void* );
+
+void* calloc (size_t,size_t);
+void* realloc(void* ,size_t);
+
 #ifdef __cplusplus
 }; 
 #endif  // __cplusplus

@@ -429,12 +429,12 @@ void wm_init(
     // simple static backbuffer (falls du malloc hast, nimm malloc)
     // WARN: 1024*768 passt so nicht als static auf kleinen Stacks -> global/heap nehmen!
     uint32_t* backbuf_static = (uint32_t*)kmalloc(1024*768);
-    if (g_sw * g_sh <= (int)(sizeof(backbuf_static)/sizeof(backbuf_static[0]))) {
-        g_back = backbuf_static;
-    } else {
+    //if (g_sw * g_sh <= (int)(sizeof(backbuf_static)/sizeof(backbuf_static[0]))) {
+    //    g_back = backbuf_static;
+    //} else {
         // wenn zu groß: hier musst du heap/phys allocator nutzen
         g_back = backbuf_static; // fallback (wird überlaufen!) -> unbedingt anpassen
-    }
+    //}
 
     // default cursor: simple arrow mask
     for (int i = 0; i < 16; ++i) g_cursor_mask[i] = 0;

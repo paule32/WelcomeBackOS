@@ -99,10 +99,12 @@ int iso_init(iso_read_sectors_t reader)
     
     if (iso_mount() != 0) {
         gfx_printf("ISO mount Error.\n");
+        return -1;
     }   else {
         gfx_printf("ISO mount successfully.\n");
         enter_usermode();
     }
+    return 0;
 }
 
 extern "C" int iso_mount(void)
@@ -312,7 +314,6 @@ uint32_t file_read(FILE* file, void* buf, uint32_t len)
         return 0;
 
     ISO_FILE* f = (ISO_FILE*)file;
-    gfx_printf(">> size: %d\n",f->size);
     
     if (f->pos >= f->size)
         return 0;

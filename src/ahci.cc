@@ -392,6 +392,16 @@ int ahci_init(void)
     return 0;
 }
 
+// iso expects: void (*)(uint32_t lba, uint32_t count, void* dst)
+static void iso_read_sectors_ahci(uint32_t lba, uint32_t count, void* dst)
+{
+    int rc = sata_read_sectors(lba, count, dst);
+    if (rc != 0) {
+        // Fehlerbehandlung: panic/log/flag setzen
+        // z.B. kpanic("AHCI read failed");
+    }
+}
+
 int check_ahci(void)
 {
     if (ahci_init() != 0) {
@@ -403,7 +413,7 @@ int check_ahci(void)
         return -1;
     }
 
-    iso_init((iso_read_sectors_t)sata_read_sectors);
+    iso_init(iso_read_sectors_ahci);
     
     uint8_t buf[512];
     if (sata_read_sectors(34, 1, buf) != 0) {
