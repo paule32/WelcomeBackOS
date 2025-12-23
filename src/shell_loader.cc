@@ -6,6 +6,7 @@
 # define DESKTOP
 # include "vga.h"
 # include "wm.h"
+# include "bitmap.h"
 
 extern int  gfx_init(void);
 extern "C" void shell_main(void);
@@ -13,6 +14,13 @@ extern "C" void mouse_poll(void);
 extern "C"  int mouse_install(void);
 //extern void wm_init(int,int,uint32_t,int);
 
+extern "C" bool bmp_show_from_iso_16bpp565(
+    const char* path,
+    uint8_t* lfb,
+    uint32_t pitch,
+    int screen_w, int screen_h,
+    int dst_x, int dst_y);
+                               
 typedef void (*app_entry_t)(void);
 
 static inline void io_wait(void) { outb(0x80, 0); }
@@ -35,12 +43,6 @@ extern "C" void enter_shell(void)
     mouse_install();
     shell_main();
 
-REGS16 in = {0}, out = {0};
-in.ax = 0x0003;
-gfx_printf("before\n");
-//int rc = int86(0x10, &in, &out);
-gfx_printf("after\n");
-
     /*
     wm_init(
     lfb_xres, lfb_yres,
@@ -51,6 +53,11 @@ gfx_printf("after\n");
 
     // einmal initial zeichnen
     //wm_tick();
+    
+    bmp_show_from_iso_16bpp565(
+        "/lo.bmp",
+        (uint8_t*)lfb_base, lfb_pitch,
+        lfb_xres, lfb_yres, 100, 100);
     
     ps2_polling_enable();
     //asm volatile("sti");      // Timer/Rest läuft weiter    

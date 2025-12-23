@@ -6,16 +6,18 @@
 # include "iso9660.h"
 # include "proto.h"
 
+# define DESKTOP
+# include "vga.h"
+
 extern "C" void enter_usermode(void);
 extern void enter_shell(void);
 
 // ----------------------------------------
 // interne Helper
 // ----------------------------------------
-#pragma pack(push, 1)
 
 // Primary Volume Descriptor (nur relevante Teile)
-typedef struct {
+typedef struct __attribute__((packed)) {
     uint8_t  type;          // 1 = Primary Volume Descriptor
     char     id[5];         // "CD001"
     uint8_t  version;
@@ -43,7 +45,7 @@ typedef struct {
 } iso_pvd_t;
 
 // Directory Record (vereinfachte Sicht)
-typedef struct {
+typedef struct __attribute__((packed)) {
     uint8_t  length;           // Länge dieses Records
     uint8_t  ext_attr_length;
     uint32_t extent_le;        // LBA (little endian)
@@ -59,8 +61,6 @@ typedef struct {
     uint8_t  name_len;
     char     name[];           // direkt anschließend, nicht 0-terminiert
 } iso_dir_record_t;
-
-#pragma pack(pop)
 
 // ----------------------------------------
 // globale ISO-Infos
@@ -88,16 +88,19 @@ static char to_upper(char c)
 // ----------------------------------------
 // init / mount
 // ----------------------------------------
-extern "C" int iso_mount(void);
-void iso_init(iso_read_sectors_t reader)
+int iso_init(iso_read_sectors_t reader)
 {
+    if (!reader) {
+        gfx_printf("ISO9660: reader error.\n");
+        return -1;
+    }
     iso_read_sectors = reader;
     iso_is_mounted = 0;
     
     if (iso_mount() != 0) {
-        printformat("ISO mount Error.\n");
+        gfx_printf("ISO mount Error.\n");
     }   else {
-        printformat("ISO mount successfully.\n");
+        gfx_printf("ISO mount successfully.\n");
         enter_usermode();
     }
 }
@@ -114,7 +117,6 @@ extern "C" int iso_mount(void)
     iso_read_sectors(16, 1, buf);
 
     iso_pvd_t* pvd = (iso_pvd_t*)buf;
-
     if (pvd->type != 1 ||
         pvd->id[0] != 'C' ||
         pvd->id[1] != 'D' ||
@@ -200,7 +202,7 @@ static int iso_find_in_dir(uint8_t* dir_data, uint32_t dir_size,
 
         // "." und ".." überspringen (0x00, 0x01)
         if (!(name_len == 1 && (name[0] == 0 || name[0] == 1))) {
-            if (iso_name_equals(name, name_len, wanted)) {
+            if (iso_name_equals(name, name_len, wanted) == 0) {
                 if (out_lba)  *out_lba  = rec->extent_le;
                 if (out_size) *out_size = rec->size_le;
                 if (is_dir_out)
@@ -310,7 +312,8 @@ uint32_t file_read(FILE* file, void* buf, uint32_t len)
         return 0;
 
     ISO_FILE* f = (ISO_FILE*)file;
-
+    gfx_printf(">> size: %d\n",f->size);
+    
     if (f->pos >= f->size)
         return 0;
 

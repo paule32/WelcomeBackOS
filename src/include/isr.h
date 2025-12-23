@@ -9,5 +9,5 @@ typedef struct regs {
     uint32_t eip, cs, eflags, useresp, ss;
 }   regs_t;
 
-extern void isr_init(void);
+//extern void isr_init(void);
 extern void isr_handler(regs_t* r);

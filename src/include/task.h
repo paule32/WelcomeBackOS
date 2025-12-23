@@ -13,7 +13,7 @@ typedef struct task {
 } task_t;
 
 // Initialisiert das Tasking-System (muss im Kernel aufgerufen werden)
-extern void tasking_init(void);
+//extern void tasking_init(void);
 
 // Erzeugt einen neuen Kernel-Task, der bei 'entry' beginnt
 extern void task_create(void (*entry)(void));

@@ -17,5 +17,5 @@ typedef struct {
     uint32_t base;
 }   __attribute__((packed)) idt_ptr_t;
 
-extern void idt_init(void);
+//extern void idt_init(void);
 extern void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags);

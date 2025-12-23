@@ -34,7 +34,7 @@ int bmp_show_from_iso(
     const char *path,
     int dst_x,
     int dst_y);
-    
+
 #ifdef __cplusplus
 };
 #endif  // __cplusplus

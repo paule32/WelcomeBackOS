@@ -19,4 +19,10 @@ typedef unsigned char   uint8_t;
 typedef uint32_t* uintptr_t;
 typedef uint32_t  size_t;
 
+# undef false
+# undef true
+
+# define false 0
+# define true  1
+
 # define NULL (void*)0

@@ -15,17 +15,26 @@
 # include "iso9660.h"
 # include "proto.h"
 
+# define DESKTOP
+# include "vga.h"
+
 extern void* krealloc(void* ptr, uint32_t new_size);
-extern void gdt_init(uint32_t);
-extern void irq_init(void);
-extern int  gfx_init(void);
+//extern void gdt_init(uint32_t);
+//extern void irq_init(void);
 
 extern int atapi_read_sectors(uint32_t lba, uint32_t count, void *buffer);
 extern int  sata_read_sectors(uint32_t lba, uint32_t count, void *buffer);
 
-extern void printformat(char*, ...);
-extern void detect_memory(void);
-extern void enter_usermode(void);
+extern "C" void printformat(char*, ...);
+extern "C" void detect_memory(void);
+extern "C" void enter_usermode(void);
+extern "C" void irq_init(void);
+extern "C" void idt_init(void);
+extern "C" void isr_init(void);
+extern "C" void gdt_init(uint32_t);
+extern "C" void syscall_init(void);
+extern "C" void tasking_init(void);
+extern "C" void gfx_init(void);
 
 extern uint32_t __end;
 
@@ -33,7 +42,7 @@ void test_task(void);
 
 uint32_t kernel_stack_top = 0x00180000;
 
-int kmain()
+extern "C" int kmain()
 {
     /*
     volatile char *vga = (volatile char*)0xB8000;
@@ -64,16 +73,16 @@ int kmain()
     
     if (check_atapi() == 0) {
         // ATAPI (IDE) gefunden
-        printformat("OK ATAPI\n");
+        gfx_printf("OK ATAPI\n");
     }   else {
-        printformat("NO ATAPI\n");
+        gfx_printf("NO ATAPI\n");
         check_ahci();
     }
 
     if (iso_mount() != 0) {
-        printformat("ISO mount Error.\n");
+        gfx_printf("ISO mount Error.\n");
     }   else {
-        printformat("ISO mount successfully.\n");
+        gfx_printf("ISO mount successfully.\n");
     }
 
     __asm__ volatile("sti");

@@ -2,6 +2,9 @@
 # include "proto.h"
 # include "iso9660.h"
 
+# define DESKTOP
+# include "vga.h"
+
 #define HBA_PxCMD_ST   (1  <<  0)
 #define HBA_PxCMD_FRE  (1  <<  4)
 #define HBA_PxCMD_FR   (1  << 14)
@@ -152,22 +155,22 @@ int ahci_find_controller(void)
                 continue; // kein Device
 
             uint32_t class_regs = pci_config_read32(bus, slot, 0, 0x08);
-            uint8_t class    = (class_regs >> 24) & 0xFF;
-            uint8_t subclass = (class_regs >> 16) & 0xFF;
-            uint8_t prog_if  = (class_regs >> 8)  & 0xFF;
+            uint8_t _class      = (class_regs >> 24) & 0xFF;
+            uint8_t subclass    = (class_regs >> 16) & 0xFF;
+            uint8_t prog_if     = (class_regs >> 8)  & 0xFF;
 
-            if (class == 0x01 && subclass == 0x06 && prog_if == 0x01) {
-                printformat("AHCI-Controller gefunden: bus=0x%x slot=0x%x\n", bus, slot);
+            if (_class == 0x01 && subclass == 0x06 && prog_if == 0x01) {
+                gfx_printf("AHCI-Controller gefunden: bus=0x%x slot=0x%x\n", bus, slot);
 
                 uint32_t bar5 = pci_config_read32(bus, slot, 0, 0x24);
                 g_ahci.abar = bar5 & ~0x0F; // untere Bits sind Flags
 
-                printformat("ABAR (BAR5) = 0x%x\n", g_ahci.abar);
+                gfx_printf("ABAR (BAR5) = 0x%x\n", g_ahci.abar);
                 return 0;
             }
         }
     }
-    printformat("Kein AHCI-Controller gefunden.\n");
+    gfx_printf("Kein AHCI-Controller gefunden.\n");
     return -1;
 }
 
@@ -279,15 +282,15 @@ static int satapi_read(hba_port_t *p, uint32_t lba, uint32_t count, void *buffer
 
         // Fehler?
         if (p->is & HBA_PxIS_TFES) { // Task File Error
-            printformat("satapi_read: Task File Error (p->is=0x%x)\n", p->is);
-            printformat("TFES: tfd=0x%x, serr=0x%x, ssts=0x%x\n",
+            gfx_printf("satapi_read: Task File Error (p->is=0x%x)\n", p->is);
+            gfx_printf("TFES: tfd=0x%x, serr=0x%x, ssts=0x%x\n",
                         p->tfd, p->serr, p->ssts);
             return -1;
         }
     }
 
     if (p->is & HBA_PxIS_TFES) {
-        printformat("satapi_read: TFES nach Abschluss, tfd=0x%x, serr=0x%x, ssts=0x%x\n",
+        gfx_printf("satapi_read: TFES nach Abschluss, tfd=0x%x, serr=0x%x, ssts=0x%x\n",
                 p->tfd, p->serr, p->ssts);
         return -1;
     }
@@ -298,7 +301,7 @@ static int satapi_read(hba_port_t *p, uint32_t lba, uint32_t count, void *buffer
 int ahci_probe_ports(void)
 {
     uint32_t pi = g_hba->pi;
-    printformat("ahci_probe_ports: pi=0x%x\n", pi);
+    gfx_printf("ahci_probe_ports: pi=0x%x\n", pi);
 
     for (int i = 0; i < 32; ++i) {
         if (!(pi & (1U << i)))
@@ -308,12 +311,12 @@ int ahci_probe_ports(void)
         int type = ahci_check_port(p);
 
         if (type == AHCI_DEV_SATA) {
-            printformat("Port %d: SATA-Device\n", i);
+            gfx_printf("Port %d: SATA-Device\n", i);
             g_sata_dev.port = p;
             g_sata_dev.dev_type = type;
             return 0;
         } else if (type == AHCI_DEV_SATAPI) {
-            printformat("Port %d: SATAPI-Device (CD/DVD)\n", i);
+            gfx_printf("Port %d: SATAPI-Device (CD/DVD)\n", i);
             // hier könntest du später AHCI+PACKET (CD) implementieren
             g_sata_dev.port = p;
             g_sata_dev.dev_type = type;
@@ -321,7 +324,7 @@ int ahci_probe_ports(void)
         }
     }
 
-    printformat("Kein SATA/SATAPI-Gerät gefunden.\n");
+    gfx_printf("Kein SATA/SATAPI-Gerät gefunden.\n");
     return -1;
 }
 
@@ -331,7 +334,7 @@ int sata_read_sectors(uint32_t lba, uint32_t count, void *buffer)
         return -1;
 
     if (g_sata_dev.dev_type != AHCI_DEV_SATAPI) {
-        printformat("cd_read_sectors: Device ist nicht SATAPI (Typ=%d)\n",
+        gfx_printf("cd_read_sectors: Device ist nicht SATAPI (Typ=%d)\n",
                 g_sata_dev.dev_type);
         return -1;
     }
@@ -343,9 +346,9 @@ int sata_test_iso9660(void)
 {
     uint8_t sector[ATAPI_SECTOR_SIZE];
 
-    printformat("cd_test_iso9660: lese LBA 16...\n");
+    gfx_printf("cd_test_iso9660: lese LBA 16...\n");
     if (sata_read_sectors(16, 1, sector) != 0) {
-        printformat("cd_test_iso9660: lesen fehlgeschlagen\n");
+        gfx_printf("cd_test_iso9660: lesen fehlgeschlagen\n");
         return -1;
     }
 
@@ -356,16 +359,16 @@ int sata_test_iso9660(void)
     id[i] = sector[1 + i];
     id[5] = '\0';
 
-    printformat("cd_test_iso9660: type=%u id=\"%s\"\n", (unsigned)type, id);
+    gfx_printf("cd_test_iso9660: type=%u id=\"%s\"\n", (unsigned)type, id);
 
     if (type == 1 &&
         id[0]=='C' && id[1]=='D' && id[2]=='0' &&
         id[3]=='0' && id[4]=='1') {
-        printformat("cd_test_iso9660: ISO9660-CD erkannt!\n");
+        gfx_printf("cd_test_iso9660: ISO9660-CD erkannt!\n");
         return 0;
     }
 
-    printformat("cd_test_iso9660: kein ISO9660 Primary Descriptor\n");
+    gfx_printf("cd_test_iso9660: kein ISO9660 Primary Descriptor\n");
     return -1;
 }
 
@@ -376,13 +379,11 @@ int ahci_init(void)
 // A
     //printformat("ABAR phys: 0x%x\n", g_ahci.abar);
     
-    printformat("oooo\n");
     g_hba = (hba_mem_t *)mmio_map(g_ahci.abar, 4096); // mind. 4KB
 //  g_hba = (hba_mem_t *)(uintptr_t)g_ahci.abar;
-printformat("oaaaa\n");
     
     //printformat("g_hba Pointer (virt): 0x%x\n", (uint32_t)g_hba);
-    printformat("AHCI-Version: 0x%x, Ports Implemented: 0x%x\n",
+    gfx_printf("AHCI-Version: 0x%x, Ports Implemented: 0x%x\n",
             g_hba->vs, g_hba->pi);
 // B
     // HBA einschalten (GHC.AE = 1)
@@ -394,22 +395,23 @@ printformat("oaaaa\n");
 int check_ahci(void)
 {
     if (ahci_init() != 0) {
-        printformat("AHCI init failed\n");
+        gfx_printf("AHCI init failed\n");
         return -1;
     }
     if (ahci_probe_ports() != 0) {
-        printformat("AHCI probe failed\n");
+        gfx_printf("AHCI probe failed\n");
         return -1;
     }
 
+    iso_init((iso_read_sectors_t)sata_read_sectors);
+    
     uint8_t buf[512];
     if (sata_read_sectors(34, 1, buf) != 0) {
-        printformat("sata_read_sectors failed\n");
+        gfx_printf("sata_read_sectors failed\n");
         return -1;
     }
 
-    printformat("Erstes Byte von LBA 0: 0x%x\n", buf[0]);
-    iso_init((void*)sata_read_sectors);
-    
+    gfx_printf("Erstes Byte von LBA 0: 0x%x\n", buf[0]);
+        
     return 0;
 }

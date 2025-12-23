@@ -7,6 +7,9 @@
 
 # include "stdint.h"
 
+# define ISO_LE16(x) ((uint16_t)(x))
+# define ISO_LE32(x) ((uint32_t)(x))
+
 // Funktionspointer zum Lesen von Sektoren (LBA-basiert)
 typedef void (*iso_read_sectors_t)(uint32_t lba, uint32_t count, void* buffer);
 
@@ -25,10 +28,10 @@ typedef ISO_FILE FILE;
 // Liest den Primary Volume Descriptor, Root-Dir etc.
 // Muss nach iso_init() genau einmal aufgerufen werden.
 #ifdef __cplusplus
-extern "C" void iso_init(iso_read_sectors_t reader);
-extern "C" int  iso_mount(void);
+extern "C" int iso_init(iso_read_sectors_t reader);
+extern "C" int iso_mount(void);
 #else
-void iso_init(iso_read_sectors_t reader);
+int iso_init(iso_read_sectors_t reader);
 int iso_mount(void);
 #endif
 
