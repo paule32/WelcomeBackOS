@@ -13,10 +13,10 @@ permissions:
 env:
   SRC_DIR: src
   ISO_PATH: bin/bootcd.iso
-  ARTIFACT_NAME: bootcd-iso-windows-mingw32
+  ARTIFACT_NAME: bootcd-iso
 
 jobs:
-  build:
+  BootISO:
     runs-on: windows-latest
 
     steps:
