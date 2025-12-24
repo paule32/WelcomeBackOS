@@ -65,11 +65,10 @@ jobs:
       - name: Build (make clean + make) in src/
         shell: msys2 {0}
         run: |
+          mkdir bin
+
           set -euxo pipefail
           cd "${SRC_DIR}"
-
-          # optional: falls content/ nicht im Repo ist, aber gebraucht wird
-          mkdir -p content
 
           make clean
           make
@@ -78,8 +77,9 @@ jobs:
         shell: msys2 {0}
         run: |
           set -euxo pipefail
-          test -f "/${ISO_PATH}"
-          ls  -la "/${ISO_PATH}"
+          ls -la bin
+          test -f "${ISO_PATH}"
+          ls  -la "${ISO_PATH}"
 
       - name: Upload Artifact (bootcd.iso)
         uses: actions/upload-artifact@v4
