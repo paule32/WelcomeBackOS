@@ -9,14 +9,18 @@
 # include "wm.h"
 
 // Ports
-#define PS2_DATA    0x60
-#define PS2_STATUS  0x64
-#define PS2_CMD     0x64
+#define PS2_DATA      0x60
+#define PS2_STATUS    0x64
+#define PS2_CMD       0x64
 
 // Status bits
-#define ST_OUT_FULL 0x01
-#define ST_IN_FULL  0x02
-#define ST_AUX      0x20   // 1 = Daten von Maus (AUX), 0 = Keyboard
+#define ST_OUT_FULL   0x01
+#define ST_IN_FULL    0x02
+#define ST_AUX        0x20   // 1 = Daten von Maus (AUX), 0 = Keyboard
+
+#define MOUSE_LEFT    0x01
+#define MOUSE_RIGHT   0x02
+#define MOUSE_MIDDLE  0x04
 
 #define CUR_W 16
 #define CUR_H 16
@@ -48,6 +52,9 @@ uint16_t mouse_y = 0;
 
 static int mx = 0;
 static int my = 0;
+
+static uint8_t mouse_buttons      = 0;
+static uint8_t mouse_buttons_last = 0;
 
 typedef struct {
     int old_x, old_y;
@@ -192,9 +199,11 @@ void cursor_update(int x, int y)
 volatile uint32_t seen_out = 0;
 volatile uint32_t seen_aux = 0;
 
-static inline int ps2_try_read_any(uint8_t *st_out, uint8_t *data_out)
-{
+static inline int ps2_try_read_any(
+    uint8_t *st_out,
+    uint8_t *data_out) {
     uint8_t st = inb(0x64);
+    
     if (!(st & ST_OUT_FULL)) return 0;
     
     uint8_t d = inb(0x60);
@@ -202,6 +211,16 @@ static inline int ps2_try_read_any(uint8_t *st_out, uint8_t *data_out)
     *data_out = d;
     
     return 1;
+}
+
+static bool mouse_poll_packet(uint8_t packet[3])
+{
+    uint8_t st;
+    for (int i = 0; i < 3; i++) {
+        if (!ps2_try_read_any(&st, &packet[i]))
+            return false;
+    }
+    return true;
 }
 
 static void ps2_flush_output(void) {
@@ -273,6 +292,40 @@ static int ps2_mouse_write(uint8_t v) {
     return 1;
 }
 
+// --- Keyboard: Set 1 Scancode (raw) ---
+static void kbd_process_byte(uint8_t sc)
+{
+    // Optional: nur Make-Codes anzeigen (Key-Down). Break hat Bit7 gesetzt.
+    if (sc & 0x80) return;
+
+    gfx_printf("key: %d  ", (int)sc);
+}
+
+static inline bool mouse_in_rect_xy(int px, int py, int x, int y, int w, int h) {
+    return(
+    px >= x    &&
+    py >= y    &&
+    
+    px < x + w &&
+    py < y + h );
+}
+
+static void mouse_handle_clicks(int px, int py, uint8_t buttons)
+{
+    bool left_now  = (buttons & MOUSE_LEFT) != 0;
+    bool left_prev = (mouse_buttons_last & MOUSE_LEFT) != 0;
+
+    if (left_now && !left_prev) {
+        if (mouse_in_rect_xy(px, py, 100, 100, 200, 40))
+            gfx_printf("Button bei (100,100) geklickt!\n");
+
+        if (mouse_in_rect_xy(px, py, 60, 60, 320, 200))
+            gfx_printf("Fenster angeklickt!\n");
+    }
+
+    mouse_buttons_last = buttons;
+}
+
 static void mouse_process_byte(uint8_t b)
 {
     // Sync-Bit (Bit3) muss beim ersten Byte gesetzt sein
@@ -282,25 +335,22 @@ static void mouse_process_byte(uint8_t b)
     if (mouse_cycle < 3) return;
     mouse_cycle = 0;
 
-    int8_t dx = (int8_t)mouse_byte[1];
-    int8_t dy = (int8_t)mouse_byte[2];
+    uint8_t b0 = (uint8_t)mouse_byte[0];
+    int8_t  dx = (int8_t )mouse_byte[1];
+    int8_t  dy = (int8_t )mouse_byte[2];
+
+    mouse_buttons = b0 & (MOUSE_LEFT | MOUSE_RIGHT | MOUSE_MIDDLE);
 
     mx += dx;
-    my -= dy;
+    my -= dy; // Y invertiert
 
     mx = clampi(mx, 0, (int)lfb_xres - 1);
     my = clampi(my, 0, (int)lfb_yres - 1);
 
     cursor_overlay_move(mx, my);
-}
 
-// --- Keyboard: Set 1 Scancode (raw) ---
-static void kbd_process_byte(uint8_t sc)
-{
-    // Optional: nur Make-Codes anzeigen (Key-Down). Break hat Bit7 gesetzt.
-    if (sc & 0x80) return;
-
-    gfx_printf("key: %d  ", (int)sc);
+    // Klicks auf Basis der echten Cursor-Pos
+    mouse_handle_clicks(mx, my, mouse_buttons);
 }
 
 extern "C" int mouse_install(void)

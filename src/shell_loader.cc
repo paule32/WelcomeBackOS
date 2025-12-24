@@ -129,6 +129,9 @@ extern "C" void enter_shell(void)
         kfree(flag->pixels);
     }
     
+    gfx_rectFill(100, 100, 200, 40, gfx_rgbColor(200,100,200));
+    
+    
     ps2_polling_enable();
     //asm volatile("sti");      // Timer/Rest läuft weiter    
 
