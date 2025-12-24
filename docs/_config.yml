@@ -1,0 +1,12 @@
+title: WelcomeBackOS
+description: Projektseite
+theme: jekyll-theme-primer
+
+# Wichtig für dein Problem:
+# Wenn das drinsteht, erwartet Jekyll den Site-Quellordner "docs/"
+source: docs
+destination: docs/_site
+
+# Häufig auch:
+baseurl: "/WelcomeBackOS"   # bei Projektseiten wichtig
+url: "https://<username>.github.io"
