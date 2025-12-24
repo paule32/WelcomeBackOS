@@ -67,9 +67,9 @@ Linker script and memory map
                 0x00a00dce                paging_init
  .text          0x00a00ec0      0x620 ../obj/ps2_mouse.o
                 0x00a00eee                cursor_overlay_move(int, int)
-                0x00a01218                cursor_update(int, int)
-                0x00a01235                mouse_install
-                0x00a01373                mouse_poll
+                0x00a01219                cursor_update(int, int)
+                0x00a01236                mouse_install
+                0x00a01374                mouse_poll
  .text          0x00a014e0      0xae0 ../obj/vga.o
                 0x00a014e0                gfx_init
                 0x00a01590                gfx_clear(unsigned short)
@@ -118,22 +118,22 @@ Linker script and memory map
                 0x00a0264a                ki2hex
                 0x00a026b1                float2string
 
-.rdata          0x00a03000      0x600
+.rdata          0x00a03000      0x800
  .rdata         0x00a03000       0x10 ../obj/shell.o
  .rdata         0x00a03010        0x4 ../obj/math.o
  *fill*         0x00a03014        0xc 
- .rdata         0x00a03020      0x120 ../obj/ps2_mouse.o
- .rdata         0x00a03140       0xb0 ../obj/vga.o
- .rdata         0x00a031f0       0x84 ../obj/video.o
- .rdata         0x00a03274       0x44 ../obj/util.o
- .rdata$zzz     0x00a032b8       0x2c ../obj/shell.o
- .rdata$zzz     0x00a032e4       0x2c ../obj/kheap.o
- .rdata$zzz     0x00a03310       0x2c ../obj/math.o
- .rdata$zzz     0x00a0333c       0x2c ../obj/paging.o
- .rdata$zzz     0x00a03368       0x2c ../obj/ps2_mouse.o
- .rdata$zzz     0x00a03394       0x2c ../obj/vga.o
- .rdata$zzz     0x00a033c0       0x2c ../obj/video.o
- .rdata$zzz     0x00a033ec       0x2c ../obj/util.o
+ .rdata         0x00a03020      0x360 ../obj/ps2_mouse.o
+ .rdata         0x00a03380       0xb0 ../obj/vga.o
+ .rdata         0x00a03430       0x84 ../obj/video.o
+ .rdata         0x00a034b4       0x44 ../obj/util.o
+ .rdata$zzz     0x00a034f8       0x2c ../obj/shell.o
+ .rdata$zzz     0x00a03524       0x2c ../obj/kheap.o
+ .rdata$zzz     0x00a03550       0x2c ../obj/math.o
+ .rdata$zzz     0x00a0357c       0x2c ../obj/paging.o
+ .rdata$zzz     0x00a035a8       0x2c ../obj/ps2_mouse.o
+ .rdata$zzz     0x00a035d4       0x2c ../obj/vga.o
+ .rdata$zzz     0x00a03600       0x2c ../obj/video.o
+ .rdata$zzz     0x00a0362c       0x2c ../obj/util.o
 
 .eh_frame       0x00a04000      0xc00
  .eh_frame      0x00a04000       0x58 ../obj/shell.o
@@ -148,24 +148,24 @@ Linker script and memory map
 .rodata
  *(.rodata*)
 
-.data           0x00a04b40      0xc00
+.data           0x00a04b40     0x1200
  *(.data*)
  .data          0x00a04b40        0x0 ../obj/shell.o
  .data          0x00a04b40        0x0 ../obj/kheap.o
  .data          0x00a04b40        0x0 ../obj/math.o
  .data          0x00a04b40        0x4 ../obj/paging.o
  *fill*         0x00a04b44       0x1c 
- .data          0x00a04b60      0x620 ../obj/ps2_mouse.o
- .data          0x00a05180      0x420 ../obj/vga.o
-                0x00a051a0                font8x8
- .data          0x00a055a0        0x8 ../obj/video.o
-                0x00a055a0                tui_vidmem
-                0x00a055a4                attrib
- .data          0x00a055a8        0x4 ../obj/util.o
-                0x00a055a8                INT_MAX
+ .data          0x00a04b60      0xc00 ../obj/ps2_mouse.o
+ .data          0x00a05760      0x420 ../obj/vga.o
+                0x00a05780                font8x8
+ .data          0x00a05b80        0x8 ../obj/video.o
+                0x00a05b80                tui_vidmem
+                0x00a05b84                attrib
+ .data          0x00a05b88        0x4 ../obj/util.o
+                0x00a05b88                INT_MAX
 
 .reloc          0x00a06000      0x400
- .reloc         0x00a06000      0x244 dll stuff
+ .reloc         0x00a06000      0x27c dll stuff
 
 .bss            0x00a07000   0x40302c
  *(.bss*)

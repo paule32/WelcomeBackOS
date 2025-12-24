@@ -5,7 +5,6 @@
 
 # define DESKTOP 1
 # include "vga.h"
-
 # include "wm.h"
 
 // Ports
@@ -22,10 +21,36 @@
 #define MOUSE_RIGHT   0x02
 #define MOUSE_MIDDLE  0x04
 
-#define CUR_W 16
-#define CUR_H 16
+#define CUR_W 21
+#define CUR_H 24
 
-static const uint16_t cursor_mask[CUR_H] = {
+static const char* cursor_mask[CUR_H] = {
+    "011000000000000000000",
+    "011100000000000000000",
+    "011110000000000000000",
+    "011211000000000000000",
+    "011221100000000000000",
+    "011222110000000000000",
+    "011222211000000000000",
+    "011222221100000000000",
+    "011222222110000000000",
+    "011222222211000000000",
+    "011222222221100000000",
+    "011222222222110000000",
+    "011222222222211000000",
+    "011222222222221100000",
+    "011222222222222110000",
+    "011222222222222211000",
+    "011222222221111111100",
+    "011221112222100000000",
+    "011211001222210000000",
+    "011100000122210000000",
+    "011000000112221000000",
+    "010000000012221000000",
+    "000000000011210000000",
+    "000000000001100000000"
+
+/*
     0b1000000000000000,
     0b1100000000000000,
     0b1110000000000000,
@@ -42,6 +67,7 @@ static const uint16_t cursor_mask[CUR_H] = {
     0b1000001110000000,
     0b0000000111000000,
     0b0000000011000000,
+*/
 };
 
 signed char mouse_cycle = 0;
@@ -71,13 +97,6 @@ static cursor_overlay_t g_cur = {
     .old_x = -9999, .old_y = -9999,
     .has_saved = false
 };
-
-static inline uint16_t fb_get16(int x, int y) {
-    return gfx_getPixel(x,y);
-}
-static inline void fb_put16(int x, int y, uint16_t c) {
-    gfx_putPixel(x,y,c);
-}
 
 static inline int clampi(int v, int lo, int hi) {
     if (v < lo) return lo;
@@ -142,7 +161,7 @@ static void cursor_restore_bg(void)
     if (lfb_bpp == 16) {
         for (int yy = 0; yy < sh; yy++) {
             for (int xx = 0; xx < sw; xx++) {
-                fb_put16(sx + xx, sy + yy, g_cur.bg16[yy * CUR_W + xx]);
+                gfx_putPixel(sx + xx, sy + yy, g_cur.bg16[yy * CUR_W + xx]);
             }
         }
     }
@@ -152,25 +171,28 @@ static void cursor_restore_bg(void)
 
 static void cursor_draw(int x, int y)
 {
+    const uint16_t col_black  = gfx_rgbColor(  0,   0, 0);
+    const uint16_t col_yellow = gfx_rgbColor(255, 255, 0);
+    
     int sx, sy, sw, sh;
     cursor_clip_rect(x, y, &sx, &sy, &sw, &sh);
     if (sw <= 0 || sh <= 0) return;
 
-    // Offset, falls Cursor links/oben aus dem Screen raussteht
-    int offx = sx - x;
-    int offy = sy - y;
-
     if (lfb_bpp == 16) {
-        const uint16_t col = gfx_rgbColor(255,255,255);
-        for (int yy = 0; yy < sh; yy++) {
-            uint16_t rowmask = cursor_mask[offy + yy];
-            for (int xx = 0; xx < sw; xx++) {
-                int bit = 15 - (offx + xx);
-                if (bit >= 0 && bit < 16) {
-                    if (rowmask & (1u << bit)) {
-                        fb_put16(sx + xx, sy + yy, col);
-                    }
-                }
+        for (int cy = 0; cy < CUR_H; cy++) {
+            int py = y + cy;
+            if ((unsigned)py >= (unsigned)lfb_yres) continue;
+
+            uint16_t *row = (uint16_t *)(lfb_base + py * lfb_pitch);
+
+            for (int cx = 0; cx < CUR_W; cx++) {
+                int px = x + cx;
+                if ((unsigned)px >= (unsigned)lfb_xres) continue;
+
+                char v = cursor_mask[cy][cx];
+                if (v == '0') continue;               // transparent
+                row[px] = (v == '1') ? col_black      // Rand
+                                     : col_yellow;    // Füllung ('2')
             }
         }
     }

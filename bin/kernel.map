@@ -202,9 +202,9 @@ Linker script and memory map
                 0x00014198                check_ahci
  .text          0x00014240      0x620 ../obj/ps2_mouse.o
                 0x0001426e                cursor_overlay_move(int, int)
-                0x00014598                cursor_update(int, int)
-                0x000145b5                mouse_install
-                0x000146f3                mouse_poll
+                0x00014599                cursor_update(int, int)
+                0x000145b6                mouse_install
+                0x000146f4                mouse_poll
  .text          0x00014860      0x364 ../obj/shell_loader.o
                 0x00014860                ps2_polling_enable()
                 0x0001486f                enter_shell
@@ -242,7 +242,7 @@ Linker script and memory map
                 0x0001676c                calloc
                 0x0001679f                realloc
 
-.rodata         0x000167c0      0xe00
+.rodata         0x000167c0     0x1000
                 0x000167c0                        __rodata_start = .
  *(.rodata)
  .rodata        0x000167c0      0x12e ../obj/int86_blob.o
@@ -261,11 +261,11 @@ Linker script and memory map
  .rdata         0x00016c70      0x368 ../obj/atapi.o
  .rdata         0x00016fd8      0x304 ../obj/ahci.o
  *fill*         0x000172dc        0x4 
- .rdata         0x000172e0      0x120 ../obj/ps2_mouse.o
- .rdata         0x00017400       0x40 ../obj/shell_loader.o
- .rdata         0x00017440       0x10 ../obj/shell.o
- .rdata         0x00017450       0x2c ../obj/pe.o
- .rdata         0x0001747c       0x20 ../obj/wm.o
+ .rdata         0x000172e0      0x360 ../obj/ps2_mouse.o
+ .rdata         0x00017640       0x40 ../obj/shell_loader.o
+ .rdata         0x00017680       0x10 ../obj/shell.o
+ .rdata         0x00017690       0x2c ../obj/pe.o
+ .rdata         0x000176bc       0x20 ../obj/wm.o
 
 .rdata          0x00018000      0x600
  .rdata$zzz     0x00018000       0x2c ../obj/ckernel.o
@@ -321,7 +321,7 @@ Linker script and memory map
  .eh_frame      0x0001a224      0x1dc ../obj/wm.o
  .eh_frame      0x0001a400      0x1f4 ../obj/kheap.o
 
-.data           0x0001a600      0xc00
+.data           0x0001a600     0x1200
                 0x0001a600                        __data_start = .
  *(.data)
  .data          0x0001a600        0x4 ../obj/ckernel.o
@@ -350,13 +350,13 @@ Linker script and memory map
  .data          0x0001aa44        0x8 ../obj/atapi.o
  .data          0x0001aa4c        0x0 ../obj/ahci.o
  *fill*         0x0001aa4c       0x14 
- .data          0x0001aa60      0x620 ../obj/ps2_mouse.o
- .data          0x0001b080        0x0 ../obj/shell_loader.o
- .data          0x0001b080        0x0 ../obj/shell.o
- .data          0x0001b080        0x0 ../obj/int86.o
- .data          0x0001b080        0x0 ../obj/pe.o
- .data          0x0001b080       0x14 ../obj/wm.o
- .data          0x0001b094        0x0 ../obj/kheap.o
+ .data          0x0001aa60      0xc00 ../obj/ps2_mouse.o
+ .data          0x0001b660        0x0 ../obj/shell_loader.o
+ .data          0x0001b660        0x0 ../obj/shell.o
+ .data          0x0001b660        0x0 ../obj/int86.o
+ .data          0x0001b660        0x0 ../obj/pe.o
+ .data          0x0001b660       0x14 ../obj/wm.o
+ .data          0x0001b674        0x0 ../obj/kheap.o
 
 .bss            0x0001c000   0x7ed4b0
                 0x0001c000                        __bss_start = .
