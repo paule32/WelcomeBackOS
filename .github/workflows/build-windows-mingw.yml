@@ -1,0 +1,96 @@
+name: Build Boot ISO (Windows / MSYS2 MinGW32)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  SRC_DIR: src
+  ISO_PATH: bin/bootcd.iso
+  ARTIFACT_NAME: bootcd-iso-windows-mingw32
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup MSYS2 (MinGW32 toolchain + required tools)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW32
+          update: true
+          install: >
+            mingw-w64-i686-gcc
+            mingw-w64-i686-binutils
+            mingw-w64-i686-gdb
+            make
+            nasm
+            xorriso
+            python
+            wget
+            gzip
+            gawk
+            coreutils
+            diffutils
+            file
+            git
+
+      - name: Show tool versions
+        shell: msys2 {0}
+        run: |
+          set -euxo pipefail
+          gcc --version
+          g++ --version
+          ld --version || true
+          objcopy --version
+          make --version
+          nasm -v
+          xorriso -version
+          python3 --version
+          wget --version | head -n 1
+          dd --version | head -n 1
+          awk --version | head -n 1
+
+      - name: Build (make clean + make) in src/
+        shell: msys2 {0}
+        run: |
+          set -euxo pipefail
+          cd "${SRC_DIR}"
+
+          # optional: falls content/ nicht im Repo ist, aber gebraucht wird
+          mkdir -p content
+
+          make clean
+          make
+
+      - name: Verify ISO exists
+        shell: msys2 {0}
+        run: |
+          set -euxo pipefail
+          test -f "../${ISO_PATH}"
+          ls -la "../${ISO_PATH}"
+
+      - name: Upload Artifact (bootcd.iso)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.ISO_PATH }}
+          if-no-files-found: error
+
+      - name: Release (only for tags v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ISO_PATH }}
+          generate_release_notes: true
