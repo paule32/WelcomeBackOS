@@ -71,7 +71,7 @@ jobs:
           cd "${SRC_DIR}"
 
           make clean
-          make
+          make AUTO_YES=1
 
       - name: Verify ISO exists
         shell: msys2 {0}

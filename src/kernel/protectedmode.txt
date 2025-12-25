@@ -1,0 +1,33 @@
+
+=========================================
+ Protected Mode Transition Diagram
+=========================================
+
+    Real Mode
+       |
+       |  Enable A20
+       v
+    +--------------------+
+    |   Load GDT         |
+    +--------------------+
+       |
+       | mov eax, cr0
+       | or  eax, 1      ; PE bit
+       | mov cr0, eax
+       v
+    +--------------------+
+    |  PE active (PM)    |
+    +--------------------+
+       |
+       | Far jump to selector:offset
+       | jmp 0x08:pm_entry
+       v
+    +---------------------------+
+    |  pm_entry (32-bit code)   |
+    +---------------------------+
+       |
+       | Jump to kernel entry
+       v
+    +---------------------------+
+    |   KernelStart @ 0x10000   |
+    +---------------------------+
