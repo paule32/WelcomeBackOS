@@ -12,7 +12,7 @@ permissions:
 
 env:
   SRC_DIR: src
-  ISO_PATH: bin/bootcd.iso
+  ISO_PATH: build/bin/bootcd.iso
   ARTIFACT_NAME: bootcd-iso
 
 jobs:
@@ -73,7 +73,7 @@ jobs:
         shell: msys2 {0}
         run: |
           set -euxo pipefail
-          ls -la bin
+          ls -la build/bin
           test -f "${ISO_PATH}"
           ls  -la "${ISO_PATH}"
 
