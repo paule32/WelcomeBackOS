@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------
-// \file   vga.h
+// \file   Graphics.h
 // \author Jens Kallup - paule32
 // \note   (c) 2025 all rights reserved.
 // --------------------------------------------------------------------------
@@ -57,28 +57,59 @@ typedef struct
 
 extern volatile uint32_t lfb_base;
 
-extern USHORT  lfb_pitch;
-extern USHORT  lfb_xres ;
-extern USHORT  lfb_yres ;
-extern UCHAR   lfb_bpp  ;
+extern USHORT lfb_pitch;
+extern USHORT lfb_xres ;
+extern USHORT lfb_yres ;
+extern UCHAR  lfb_bpp  ;
 
 #ifdef DESKTOP
-extern   void gfx_clear          (                    USHORT);
+struct TPoint {
+    uint16_t x,y;
+};
+struct TRect {
+    uint16_t Top,Left,Right,Bottom;
+    uint16_t Width,Height;
+    TPoint   pos;
+};
+// --------------------------------------------------------------------------
+// TColor constant's ...
+// --------------------------------------------------------------------------
+struct TColor { uint8_t r,g,b; };
+
+inline constexpr TColor clBlack  {0,0,0};
+inline constexpr TColor clGreen  {0,200,0};
+inline constexpr TColor clRed    {255,0,0};
+inline constexpr TColor clBlue   {0,0,200};
+inline constexpr TColor clYellow {255,255,0};
+inline constexpr TColor clWhite  {255,255,255};
+
+extern   void gfx_clear          (                     USHORT);
 #ifdef __cplusplus
-extern   void gfx_drawCircle     (int,int,int,int,    USHORT);
+extern   void gfx_drawCircle     (int,int,int,int,     USHORT);
 #endif
-extern   void gfx_drawCircle     (int,int,int,        USHORT);
-extern   void gfx_drawCircleFill (int,int,int,        USHORT);
-extern   void gfx_drawLine       (int,int,int,int,int,USHORT);
-extern   void gfx_drawChar       (int,int,uint8_t,    USHORT,USHORT);
-extern   void gfx_hLine          (int,int,int,        USHORT);
+extern   void gfx_drawCircle     (int,int,int,         USHORT);
+extern   void gfx_drawCircleFill (int,int,int,         USHORT);
+#ifdef __cplusplus
+extern   void gfx_drawLine       (int,int,int,int,int, USHORT);
+extern   void gfx_drawLine       (uint8_t*,int,int,int,int,int,USHORT);
+#else
+extern   void gfx_drawLine       (int,int,int,int,int, USHORT);
+#endif
+extern   void gfx_drawChar       (int,int,uint8_t,     USHORT ,USHORT);
+extern   void gfx_hLine          (int,int,int,         USHORT);
 extern USHORT gfx_getPixel       (int,int);
-extern   void gfx_putPixel       (int,int,            USHORT);
 #ifdef __cplusplus
-extern   void gfx_putPixel       (int,int,int,        USHORT);
+extern   void gfx_putPixel       (int,int,int,         USHORT);
+extern   void gfx_putPixel       (uint8_t*,int,int,int,USHORT);
+#else
+extern   void gfx_putPixel       (int,int,             USHORT);
 #endif
-extern   void gfx_rectFill       (int,int,int,int,    USHORT);
-extern   void gfx_rectFrame      (int,int,int,int,int,USHORT);
+extern   void gfx_rectFill       (int,int,int,int,     USHORT);
+extern   void gfx_rectFill       (int,int,int,int,     TColor);
+extern   void gfx_rectFill       (int,int,             TColor);
+extern   void gfx_rectFill       (TRect& ,             TColor);
+
+extern   void gfx_rectFrame      (int,int,int,int,int, USHORT);
 extern   void gfx_print          (const char*);
 extern   void gfx_printf         (char*, ... );
 extern   void gfx_putChar        (char);

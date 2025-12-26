@@ -135,8 +135,16 @@ extern "C" void enter_shell(void)
     ps2_polling_enable();
     //asm volatile("sti");      // Timer/Rest läuft weiter    
 
+    wm_init(
+    lfb_xres, lfb_yres,
+    lfb_base, lfb_pitch);
+
+    wm_create_window( 60,  60, 320, 200, "Console");
+    //wm_create_window(120, 120, 280, 160, "Test"   );
+    
+    wm_tick();
     for (;;) {
-        mouse_poll();
+        //mouse_poll();
         
         //wm_tick();
         io_wait();

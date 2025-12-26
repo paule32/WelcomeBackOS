@@ -267,7 +267,7 @@ SRC_MATH        :=\
 
 SRC_VIDEO       :=\
         $(COR_DIR)/video.c          \
-        $(COR_DIR)/vga.cc           \
+        $(COR_DIR)/video/vga.cc     \
         $(COR_DIR)/bitmap.cc
 
 SRCC := $(COR_DIR)/ckernel.cc       \
@@ -291,7 +291,7 @@ SRCC := $(COR_DIR)/ckernel.cc       \
         $(COR_DIR)/ps2_mouse.cc     \
         $(COR_DIR)/int86.c          \
         $(COR_DIR)/pe.c             \
-        $(COR_DIR)/wm.c             \
+        $(COR_DIR)/wm.cc            \
         $(COR_DIR)/kheap.cc         \
         \
         $(SRC_SHELL)
@@ -435,7 +435,9 @@ $(OBJ_DIR)/coff/%.o: $(COR_DIR)/%.c
 $(OBJ_DIR)/coff/%.o: $(COR_DIR)/fs/iso9660/%.c
 	$(GCC) $(CFLAGS) -c $< -o $@
 $(OBJ_DIR)/coff/%.o: $(COR_DIR)/fs/iso9660/%.cc
-	$(GCC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+	$(CPP) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+$(OBJ_DIR)/coff/%.o: $(COR_DIR)/video/%.cc
+	$(CPP) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 $(OBJ_DIR)/coff/%.o: $(COR_DIR)/%.cc
 	$(CPP) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 $(OBJ_DIR)/coff/%.o: $(COR_DIR)/%.asm
@@ -443,7 +445,7 @@ $(OBJ_DIR)/coff/%.o: $(COR_DIR)/%.asm
 $(OBJ_DIR)/coff/%.o: $(SRC_DIR)/user32/shell32/%.c
 	$(GCC) $(CFLAGS) -c $< -o $@
 $(OBJ_DIR)/coff/%.o: $(SRC_DIR)/user32/shell32/%.cc
-	$(GCC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+	$(CPP) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 # -----------------------------------------------------------------------------
 # link C-kernel to finaly output binary image ...
 # -----------------------------------------------------------------------------

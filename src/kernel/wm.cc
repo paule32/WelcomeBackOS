@@ -3,10 +3,14 @@
 # include "kheap.h"
 # include "wm.h"
 
+# define DESKTOP
+# include "vga.h"
+
 // ====== CONFIG ======
 # define WM_MAX_EVENTS   128
 # define TITLE_H         18
-# define BORDER          2
+# define STATUSBAR_H     26
+# define BORDER          4
 # define RESIZE_GRIP     10
 
 # define WIN_VISIBLE     (1u<<0)
@@ -17,13 +21,14 @@
 // ====== EXTERNAL GFX HOOKS (anpassen!) ======
 // Du musst nur diese 3-5 Funktionen an deine gfx_* anpassen.
 static inline void gfx_present_to_lfb(const uint32_t *src, int sw, int sh);
+static inline void gfx_present_to_lfb_from32(const uint32_t *src, int sw, int sh);
 static inline void gfx_text(int x, int y, uint32_t col, const char *s);
 
 // ====== INTERNAL DRAW (software in backbuffer) ======
 static int       g_sw, g_sh;
 static uint32_t  g_lfb;
 static int       g_lfb_pitch;     // pixels
-static uint32_t *g_back;          // backbuffer sw*sh
+static uint32_t  g_back[ 800 * 600 ]; // backbuffer sw*sh
 
 static window_t *g_z_bottom  = (window_t *)NULL;
 static window_t *g_z_top     = (window_t *)NULL;
@@ -48,6 +53,7 @@ static volatile int g_evq_r = 0;
 static volatile int g_evq_w = 0;
 
 static int evq_next(int i) { return (i + 1) % WM_MAX_EVENTS; }
+static void wm_compose(void);
 
 void wm_push_event(event_t e) {
     int nw = evq_next(g_evq_w);
@@ -70,7 +76,7 @@ static inline int pt_in_rect(int px, int py, int x, int y, int w, int h) {
     return (px >= x && py >= y && px < x + w && py < y + h);
 }
 
-static inline rect_t rect_intersect(rect_t a, rect_t b) {
+static rect_t rect_intersect(rect_t a, rect_t b) {
     int x1 = (a.x > b.x) ? a.x : b.x;
     int y1 = (a.y > b.y) ? a.y : b.y;
     int x2 = ((a.x + a.w) < (b.x + b.w)) ? (a.x + a.w) : (b.x + b.w);
@@ -166,6 +172,8 @@ static void str_copy(char *dst, const char *src, int cap) {
 }
 
 window_t *wm_create_window(int x, int y, int w, int h, const char *title) {
+    //wm_compose();
+    //return (window_t*)NULL;
     // client height = h - TITLE_H - BORDER
     int ch = h - TITLE_H - BORDER;
     if (w < 64) w = 64;
@@ -188,7 +196,8 @@ window_t *wm_create_window(int x, int y, int w, int h, const char *title) {
 
     // client surface
     win->client.w = w - 2*BORDER;
-    win->client.h = h - TITLE_H - BORDER;
+    win->client.h = h - STATUSBAR_H - BORDER;
+
     if (win->client.w < 16) win->client.w = 16;
     if (win->client.h < 16) win->client.h = 16;
 
@@ -196,16 +205,28 @@ window_t *wm_create_window(int x, int y, int w, int h, const char *title) {
     if (win->client.w > 320) win->client.w = 320;
     if (win->client.h > 200) win->client.h = 200;
 
-    win->client.pitch = win->client.w;
-    win->client.pixels = g_client_mem[slot];
-
+    // backgriund = border
+    gfx_rectFill(
+        win->x, win->y,
+        win->w, win->h, clRed);
     // clear client
-    for (int i = 0; i < win->client.w * win->client.h; ++i)
-        win->client.pixels[i] = 0xFF202020;
+    gfx_rectFill(
+        win->x + BORDER,
+        win->y + BORDER,
+        win->client.w, win->client.h, clGreen);
+    // title bar
+    gfx_rectFill(
+        win->x + 2 * BORDER,
+        win->y + 2 * BORDER,
+        win->client.w - 2 * BORDER,
+        STATUSBAR_H   + 2 * BORDER, clBlue);
+        
+//    for (int i = 0; i < win->client.w * win->client.h; ++i)
+//        win->client.pixels[i] = 0xFF202020;
 
     // attach to top + focus
-    z_attach_top(win);
-    wm_focus(win);
+//    z_attach_top(win);
+//    wm_focus(win);
     return win;
 }
 
@@ -234,8 +255,19 @@ static void default_paint(window_t *w) {
 // ====== DRAW WINDOW FRAME ======
 static void draw_window(window_t *w, rect_t clip) {
     // frame rect
-    rect_t R = { w->x, w->y, w->w, w->h };
-    if (rect_intersect(R, clip).w <= 0) return;
+    TRect R;
+    R.Left   = w->x;
+    R.Top    = w->y;
+    R.Width  = w->w;
+    R.Height = w->h;
+    
+    //gfx_rectFill(R, clGreen);
+    //R   = rect_intersect(R, clip);
+    //if (R.w <= 0) return;
+
+    gfx_printf("Wx: %d, Wy: %d\n", w->x, w->y);
+    return;
+
 
     // border
     uint32_t border_col = w->focused ? 0xFF3A8DFF : 0xFF404040;
@@ -369,25 +401,50 @@ static void handle_key(int key, int down) {
 // ====== COMPOSE ======
 static void wm_compose(void) {
     // desktop background
-    fill_rect((rect_t){0,0,g_sw,g_sh}, 0xFF101020);
+    //gfx_rectFill(0,0,g_sw,g_sh, gfx_rgbColor(0,200,0));
 
+    gfx_printf("gW: %d, gH: &d\n",g_sw,g_sh);
     // draw windows bottom->top
     rect_t clip = {0,0,g_sw,g_sh};
-    for (window_t *w = g_z_bottom; w; w = w->next) {
-        if (!(w->flags & WIN_VISIBLE)) continue;
-        draw_window(w, clip);
+    gfx_printf("utz\n");
+    
+    window_t *w = (window_t*)kmalloc(sizeof(window_t));
+    if (!w) {
+        gfx_printf("MEMORY PANIC !!!\n");
+        return;
     }
+    gfx_printf("MEM OK\n");
+    w->x = 20;
+    w->y = 20;
+    w->w = 100;
+    w->h = 100;
+    draw_window(w, clip);
+    
+    ///for (window_t *w = g_z_bottom; w; w = w->next) {
+        //if (!(w->flags & WIN_VISIBLE)) continue;
+    //    draw_window(w, clip);
+    //}
 
     // draw cursor last
-    draw_cursor();
+    //draw_cursor();
 
     // present
-    gfx_present_to_lfb(g_back, g_sw, g_sh);
+    //gfx_present_to_lfb_from32(g_back, g_sw, g_sh);
 }
 
+static inline void lfb_fill565(uint16_t c)
+{
+    uint16_t *dst = (uint16_t*)(uintptr_t)lfb_base;
+    int pitch_px = (int)lfb_pitch / 2;
+
+    for (int y=0; y<600; y++) {
+        uint16_t *row = dst + y*pitch_px;
+        for (int x=0; x<800; x++) row[x] = c;   // z.B. rot
+    }
+}
 void wm_tick(void) {
     // dispatch queued events
-    event_t e;
+    /*event_t e;
     while (wm_pop_event(&e)) {
         switch (e.type) {
             case EVT_MOUSE_MOVE:
@@ -410,7 +467,7 @@ void wm_tick(void) {
                 break;
             default: break;
         }
-    }
+    }*/
 
     wm_compose();
 }
@@ -422,35 +479,18 @@ void wm_init(
     uint32_t lfb,
     int lfb_pitch_pixels) {
         
-    g_sw = screen_w; g_sh = screen_h;
-    g_lfb = lfb;
-    g_lfb_pitch = lfb_pitch_pixels;
+    g_sw = screen_w = lfb_xres;
+    g_sh = screen_h = lfb_yres;
+    
+    g_lfb       = lfb_base;
+    g_lfb_pitch = lfb_pitch;
 
-    // simple static backbuffer (falls du malloc hast, nimm malloc)
-    // WARN: 1024*768 passt so nicht als static auf kleinen Stacks -> global/heap nehmen!
-    uint32_t* backbuf_static = (uint32_t*)kmalloc(1024*768);
-    //if (g_sw * g_sh <= (int)(sizeof(backbuf_static)/sizeof(backbuf_static[0]))) {
-    //    g_back = backbuf_static;
-    //} else {
-        // wenn zu groß: hier musst du heap/phys allocator nutzen
-        g_back = backbuf_static; // fallback (wird überlaufen!) -> unbedingt anpassen
-    //}
-
-    // default cursor: simple arrow mask
-    for (int i = 0; i < 16; ++i) g_cursor_mask[i] = 0;
-    g_cursor_mask[0]  = 0b1000000000000000;
-    g_cursor_mask[1]  = 0b1100000000000000;
-    g_cursor_mask[2]  = 0b1110000000000000;
-    g_cursor_mask[3]  = 0b1111000000000000;
-    g_cursor_mask[4]  = 0b1111100000000000;
-    g_cursor_mask[5]  = 0b1111110000000000;
-    g_cursor_mask[6]  = 0b1111111000000000;
-    g_cursor_mask[7]  = 0b1111111100000000;
-    g_cursor_mask[8]  = 0b1111111110000000;
-    g_cursor_mask[9]  = 0b1111110000000000;
-    g_cursor_mask[10] = 0b1110110000000000;
-    g_cursor_mask[11] = 0b1100011000000000;
-    g_cursor_mask[12] = 0b1000001100000000;
+    gfx_printf("sw: %d, sh: %d\n", (size_t)g_sw,(size_t)g_sh);
+    /*g_back = (uint32_t*)kmalloc((size_t)g_sw * (size_t)g_sh);
+    if (!g_back) {
+        gfx_printf("MEMORY PANIC !!!\n");
+        return;
+    }*/
 }
 
 void wm_set_cursor(int w, int h, const uint16_t *mask_bits) {
@@ -497,8 +537,8 @@ static inline void gfx_present_to_lfb_from32(const uint32_t *src, int sw, int sh
     int dst_pitch_pixels = (int)lfb_pitch / 2;
 
     for (int y = 0; y < sh; ++y) {
-        const uint32_t *s = &src[y * sw];
-        uint16_t *d = &dst[y * dst_pitch_pixels];
+        const uint32_t *s = src + (y * sw);
+        uint16_t *d = dst + (y * dst_pitch_pixels);
         for (int x = 0; x < sw; ++x) {
             d[x] = xrgb8888_to_rgb565(s[x]);
         }
