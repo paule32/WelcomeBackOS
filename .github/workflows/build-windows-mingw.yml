@@ -66,10 +66,7 @@ jobs:
         shell: msys2 {0}
         run: |
           ls
-
           set -euxo pipefail
-          cd "${SRC_DIR}"
-
           make AUTO_YES=1
 
       - name: Verify ISO exists
