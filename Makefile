@@ -216,7 +216,7 @@ confirm:
 # -----------------------------------------------------------------------------
 CFLAGS   := -m32 -O1 -ffreestanding -fno-stack-protector -fno-builtin   \
             -nostdlib -nostartfiles -fno-pic -Wall -Wextra              \
-            -mno-ms-bitfields -Wno-unused-variable                      \
+            -mno-ms-bitfields -Wno-unused-variable  -Wunused-function   \
             -Wno-unused-value -Wno-unused-parameter -Wno-sign-compare   \
             -Wno-missing-field-initializers                             \
             -D__BUILD_DATE__=\"$(DATE_YMD)\" \

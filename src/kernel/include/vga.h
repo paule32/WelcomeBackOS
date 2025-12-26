@@ -98,12 +98,11 @@ extern   void gfx_drawLine       (int,int,int,int,int, USHORT);
 extern   void gfx_drawChar       (int,int,uint8_t,     USHORT ,USHORT);
 extern   void gfx_hLine          (int,int,int,         USHORT);
 extern USHORT gfx_getPixel       (int,int);
-#ifdef __cplusplus
+
 extern   void gfx_putPixel       (int,int,int,         USHORT);
 extern   void gfx_putPixel       (uint8_t*,int,int,int,USHORT);
-#else
 extern   void gfx_putPixel       (int,int,             USHORT);
-#endif
+
 extern   void gfx_rectFill       (int,int,int,int,     USHORT);
 extern   void gfx_rectFill       (int,int,int,int,     TColor);
 extern   void gfx_rectFill       (int,int,             TColor);
