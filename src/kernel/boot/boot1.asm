@@ -3,7 +3,7 @@
 ; \note  (c) 2025 by Jens Kallup - paule32
 ;        all rights reserved.
 ; ---------------------------------------------------------------------------
-%include 'lba.inc'
+%include LBA_FILE
 
 BITS 16
 ORG 0x7C00

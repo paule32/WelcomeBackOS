@@ -4,5 +4,5 @@ global __int86_blob_end
 
 section .rodata
 __int86_blob_start:
-    incbin "../bin/int86_blob.bin"
+    incbin SWITCH_BLOB
 __int86_blob_end:

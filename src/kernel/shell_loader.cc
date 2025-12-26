@@ -73,12 +73,12 @@ extern "C" void enter_shell(void)
     //wm_tick();
     
     bmp_show_from_iso_16bpp565(
-        "/lo.bmp",
+        "/img/lo.bmp",
         (uint8_t*)lfb_base, lfb_pitch,
         lfb_xres, lfb_yres, 0, 0);
     
     sprite565_t* flag = (sprite565_t*)kmalloc(sizeof(sprite565_t));
-    if (bmp_load_16bpp565_to_sprite("/flag_us.bmp", flag)) {
+    if (bmp_load_16bpp565_to_sprite("/img/flag_us.bmp", flag)) {
         blit565_colorkey(
         (uint8_t*)lfb_base, lfb_pitch,
         lfb_xres,lfb_yres,
@@ -90,7 +90,7 @@ extern "C" void enter_shell(void)
         gfx_rgbColor(0,0,0));
         kfree(flag->pixels);
     }
-    if (bmp_load_16bpp565_to_sprite("/sel_us_1.bmp", flag)) {
+    if (bmp_load_16bpp565_to_sprite("/img/sel_us_1.bmp", flag)) {
         blit565_colorkey(
         (uint8_t*)lfb_base, lfb_pitch,
         lfb_xres,lfb_yres,
@@ -104,7 +104,7 @@ extern "C" void enter_shell(void)
     }
 
     
-    if (bmp_load_16bpp565_to_sprite("/flag_de.bmp", flag)) {
+    if (bmp_load_16bpp565_to_sprite("/img/flag_de.bmp", flag)) {
         blit565_colorkey(
         (uint8_t*)lfb_base, lfb_pitch,
         lfb_xres,lfb_yres,
@@ -116,7 +116,7 @@ extern "C" void enter_shell(void)
         gfx_rgbColor(255,255,255));
         kfree(flag->pixels);
     }
-    if (bmp_load_16bpp565_to_sprite("/sel_de_1.bmp", flag)) {
+    if (bmp_load_16bpp565_to_sprite("/img/sel_de_1.bmp", flag)) {
         blit565_colorkey(
         (uint8_t*)lfb_base, lfb_pitch,
         lfb_xres,lfb_yres,

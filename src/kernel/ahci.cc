@@ -407,14 +407,14 @@ static void iso_read_sectors_ahci(uint32_t lba, uint32_t count, void* dst)
 int check_ahci(void)
 {
     if (ahci_init() != 0) {
-        #ifdef (ISOGUI == 0)
-            #ifdef (ISOLANG == LANG_ENU)
+        #if (ISOGUI == 0)
+            #if (ISOLANG == LANG_ENU)
                 printformat("AHCI init: failed.\n");
             #else
                 printformat("AHCI init: Fehler.\n");
             #endif
         #else
-            #ifdef (ISOLANG == LANG_ENU)
+            #if (ISOLANG == LANG_ENU)
                 gfx_printf("AHCI init: failed.\n");
             #else
                 gfx_printf("AHCI init: Fehler.\n");
@@ -423,14 +423,14 @@ int check_ahci(void)
         return -1;
     }
     if (ahci_probe_ports() != 0) {
-        #ifdef (ISOGUI == 0)
-            #ifdef (ISOLANG == LANG_ENU)
+        #if (ISOGUI == 0)
+            #if (ISOLANG == LANG_ENU)
                 printformat("AHCI probe: failed.\n");
             #else
                 printformat("AHCI probe: Fehler.\n");
             #endif
         #else
-            #ifdef (ISOLANG == LANG_ENU)
+            #if (ISOLANG == LANG_ENU)
                 gfx_printf("AHCI probe failed\n");
             #else
                 gfx_printf("AHCI probe: Fehler.\n");
@@ -443,14 +443,14 @@ int check_ahci(void)
     
     uint8_t buf[512];
     if (sata_read_sectors(34, 1, buf) != 0) {
-        #ifdef (ISOGUI == 0)
-            #ifdef (ISOLANG == LANG_ENU)
+        #if (ISOGUI == 0)
+            #if (ISOLANG == LANG_ENU)
                 printformat("sata_read_sectors: failed.\n");
             #else
                 printformat("sata_read_sectors: Fehler.\n");
             #endif
         #else
-            #ifdef (ISOLANG == LANG_ENU)
+            #if (ISOLANG == LANG_ENU)
                 gfx_printf("sata_read_sectors: failed.\n");
             #else
                 gfx_printf("sata_read_sectors: Fehler.\n");
@@ -459,14 +459,14 @@ int check_ahci(void)
         return -1;
     }
 
-    #ifdef (ISOGUI == 0)
-        #ifdef (ISOLANG == LANG_ENU)
+    #if (ISOGUI == 0)
+        #if (ISOLANG == LANG_ENU)
             printformat("First Byte of LBA 0: 0x%x\n", buf[0]);
         #else
             printformat("Erstes Byte von LBA 0: 0x%x\n", buf[0]);
         #endif
     #else
-        #ifdef (ISOLANG == LANG_ENU)
+        #if (ISOLANG == LANG_ENU)
             gfx_printf("First Byte of LBA 0: 0x%x\n", buf[0]);
         #else
             gfx_printf("Erstes Byte von LBA 0: 0x%x\n", buf[0]);

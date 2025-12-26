@@ -9,4 +9,11 @@
 # define LANG_ENU 1         // English US
 # define LANG_DEU 2         // German
 
+#ifndef ISOGUI
+# define ISOGUI 1
+#endif
+#ifndef ISOLANG
+# define ISOLANG LANG_ENU
+#endif
+
 #endif  // __CONFIG_H__

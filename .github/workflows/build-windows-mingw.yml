@@ -70,7 +70,6 @@ jobs:
           set -euxo pipefail
           cd "${SRC_DIR}"
 
-          make clean
           make AUTO_YES=1
 
       - name: Verify ISO exists

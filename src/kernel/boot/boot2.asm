@@ -4,7 +4,11 @@
 ;        all rights reserved.
 ; ---------------------------------------------------------------------------
 ; boot2.asm – Minimaler Stage2
-%include 'lba.inc'
+%include LBA_FILE
+
+%ifndef ISOGUI
+    %define ISOGUI 0    ; default text input
+%endif
 
 BITS 16
 ORG 0x0500          ; Stage1 springt nach 0000:0500
@@ -193,7 +197,7 @@ _out:
 ; -------------------------------------------------
 get_vesa_mode:
     %ifdef ISOGUI = 0
-    ret                   ; text interface verwenden
+    ;ret                   ; text interface verwenden
     %endif
     
     ; 1) Mode-Info holen

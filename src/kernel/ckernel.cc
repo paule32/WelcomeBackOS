@@ -66,33 +66,15 @@ extern "C" int kmain()
     syscall_init();
     tasking_init();
 
-    #if (ISOGUI == 1)
-        gfx_init();
-    #endif
+    gfx_init();
     
     settextcolor(14,0);
     
     if (check_atapi() == 0) {
         // ATAPI (IDE) gefunden
-        #if (ISOGUI == 0)
-            printformat("ATAPI: OK.\n")
-        #else
-            gfx_printf("ATAPI: OK.\n");
-        #endif
+        gfx_printf("ATAPI: OK.\n");
     }   else {
-        #if (ISOGUI == 0)
-            #if (ISOLANG == LANG_ENU)
-                printformat("ATAPI: NO.\n");
-            #else
-                printformat("ATAPI: NEIN.\n");
-            #endif
-        #else
-            #if (ISOLANG == LANG_ENU)
-                gfx_printf("ATAPI: NO\n");
-            #else
-                gfx_printf("ATAPI: NEIN\n");
-            #endif
-        #endif
+        gfx_printf("ATAPI: NO\n");
         check_ahci();
     }
 

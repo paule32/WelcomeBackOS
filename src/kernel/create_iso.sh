@@ -1,14 +1,20 @@
 #!/bin/bash
 echo "-------------------------"
-objcopy -O binary ../obj/kernel.o ../bin/kernel.bin
-ls -l ../bin
+COR_DIR=$__COR_DIR
+BIN_DIR=$__BIN_DIR
+OBJ_DIR=$__OBJ_DIR
+# ----------------
+AS=$__BIN_AS
 
-nasm -f bin ../src/boot1.asm -o ../bin/boot1.bin
-nasm -f bin ../src/boot2.asm -o ../bin/boot2.bin
+objcopy -O binary ${OBJ_DIR}/kernel.o ${BIN_DIR}/kernel.bin
+ls -l ${BIN_DIR}
 
-dd if=/dev/zero of=../bin/hdd.img bs=1M count=16
-dd if=../bin/boot1.bin of=../bin/hdd.img bs=512 count=1 conv=notrunc
-dd if=../bin/hdd.img bs=1 skip=510 count=2 2>/dev/null | od -An -t x1 | \
+${AS} -DLBA_FILE=\"${COR_DIR}/lba.inc\" -f bin ${COR_DIR}/boot/boot1.asm -o ${BIN_DIR}/content/boot1.bin
+${AS} -DLBA_FILE=\"${COR_DIR}/lba.inc\" -f bin ${COR_DIR}/boot/boot2.asm -o ${BIN_DIR}/content/boot2.bin
+
+dd if=/dev/zero of=${BIN_DIR}/hdd.img bs=1M count=16
+dd if=${BIN_DIR}/content/boot1.bin of=${BIN_DIR}/hdd.img bs=512 count=1 conv=notrunc
+dd if=${BIN_DIR}/hdd.img bs=1 skip=510 count=2 2>/dev/null | od -An -t x1 | \
     awk '{ if ($1 == "55" && $2 == "aa") {
         print"OK: Signature: "$1" "$2" found.";
     }   else {
@@ -16,17 +22,14 @@ dd if=../bin/hdd.img bs=1 skip=510 count=2 2>/dev/null | od -An -t x1 | \
         exit 1;
     }}'
 
-cp ../bin/boot1.bin  content/boot1.bin
-cp ../bin/boot2.bin  content/boot2.bin
-cp ../bin/kernel.bin content/kernel.bin
+cp ${BIN_DIR}/kernel.bin ${BIN_DIR}/content/kernel.bin
+cp ${BIN_DIR}/shell.exe  ${BIN_DIR}/content/shell.exe
 
-cp ../bin/shell.exe  content/shell.exe
-
-cd content
-xorriso -as mkisofs -o ../../bin/bootcd.iso \
+cd ${BIN_DIR}/content
+xorriso -as mkisofs -o ${BIN_DIR}/bootcd.iso \
     -b boot1.bin        \
     -no-emul-boot       \
     -boot-load-size 4   \
     .
 cd ..
-xorriso -indev ../bin/bootcd.iso -find / -exec report_lba --
+xorriso -indev ${BIN_DIR}/bootcd.iso -find / -exec report_lba --

@@ -89,7 +89,12 @@ BUI_DIR := $(BASEDIR)/build
 
 COR_DIR := $(SRC_DIR)/kernel
 HEX_DIR := $(SRC_DIR)/hexfnt
+IMG_DIR := $(SRC_DIR)/images
 
+U32_DIR := $(SRC_DIR)/user32
+A32_DIR := $(SRC_DIR)/admin0
+
+COB_DIR := $(BUI_DIR)/obj/coff
 OBJ_DIR := $(BUI_DIR)/obj
 BIN_DIR := $(BUI_DIR)/bin
 HEX_OUT := $(BUI_DIR)/hex
@@ -98,13 +103,13 @@ README_FILE := $(firstword $(wildcard $(BASEDIR)/README.md))
 # -----------------------------------------------------------------------------
 # src directory must exists ...
 # -----------------------------------------------------------------------------
-ifeq ($(strip $(wildcard $(SRC_DIR)/.)),)
+ifeq ($(strip $(wildcard $(SRC_DIR))),)
     $(error src directory not found: $(SRC_DIR))
 endif
 # -----------------------------------------------------------------------------
 # README.md optional (Warnung)
 # -----------------------------------------------------------------------------
-ifeq ($(strip $(README_FILE)),)
+ifeq ($(strip ../$(README_FILE)),)
     $(warning no README.md found in: $(BASEDIR))
 endif
 # -----------------------------------------------------------------------------
@@ -125,7 +130,7 @@ endif
 # GNU Toolchain binary avatar's ...
 # -----------------------------------------------------------------------------
 MAKE     := $(BLD_DIR)/make$(EXT)
-AS       := $(BLD_DIR)/nasm$(EXT)
+AS       := $(GCC_DIR)/nasm$(EXT)
 ECHO     := $(BLD_DIR)/echo$(EXT)
 EXPORT   := $(BLD_DIR)/export$(EXT)
 GZIP     := $(BLD_DIR)/gzip$(EXT)
@@ -147,10 +152,14 @@ OBJCOPY  := $(GCC_DIR)/$(CROSS)objcopy$(EXT)
 # With start of the compilation race, you agreed the license terms in file:
 # LICENSE in the root directory of this reporsitory.
 # -----------------------------------------------------------------------------
-.PHONY: confirm
+#.PHONY: confirm
+all: confirm clean setup $(BIN_DIR)/bootcd.iso
+setup:
+	$(MKDIR) -p $(BIN_DIR)/content/img
+	$(COPY) $(IMG_DIR)/*.bmp $(BIN_DIR)/content/img
+	$(GEN-LBA)
 confirm:
-	@bash -lc '\
-        $(ECHO) "ATTENTION" ;\
+	@(  $(ECHO) "ATTENTION" ;\
         $(ECHO) "----"      ;\
         $(ECHO) "With start of the compilation race, you agreed the license terms in file:" ;\
         $(ECHO) "LICENSE in the root directory of this reporsitory." ;\
@@ -182,12 +191,12 @@ confirm:
             [YyJj])                             exit 0 ;; \
             *) $(ECHO) "Please press Y or N." ; exit 1 ;; \
         esac \
-	'
-	@(  $(ECHO) "setup environment ..." ;\
-        mkdir -p $(HEX_DIR) ;\
-        mkdir -p $(BUI_DIR)/{bin,hex,obj/coff,obj/elf} ;\
-        if [ -f "$(HEX_OUT)/font8x16.h" ]; then \
-            echo "$(HEX_OUT)/font8x16.h: found."; \
+	)
+	(  $(ECHO) "setup environment ..."   ;\
+        $(MKDIR) -p $(HEX_DIR)           ;\
+        if [ -f "$(HEX_OUT)/font8x16.h" ]; then  \
+            echo "$(HEX_OUT)/font8x16.h: found.";\
+            exit 0 ;\
         else \
             echo "Update: font8x16.h" ; \
             cd $(HEX_DIR) ;\
@@ -216,8 +225,8 @@ CFLAGS   := -m32 -O1 -ffreestanding -fno-stack-protector -fno-builtin   \
 
 CPPFLAGS := -std=c++20 -Wno-write-strings -Wno-volatile
 
-LDFLAGS  := -nostdlib -T $(COR_DIR)/kernel.ld -Map ../bin/kernel.map
-LDSHFLGS := -nostdlib -T $(COR_DIR)/shell.ld  -Map ../bin/shell.map
+LDFLAGS  := -nostdlib -T $(COR_DIR)/kernel.ld -Map $(BIN_DIR)/kernel.map
+LDSHFLGS := -nostdlib -T $(U32_DIR)/shell32/shell.ld -Map $(BIN_DIR)/shell.map
 
 ASMFLAGS := -f win32 -O2 -DDOS_MODE=32
 ISOGUI   ?= 0
@@ -297,54 +306,54 @@ SHSRCC := \
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the C-kernel ...
 # -----------------------------------------------------------------------------
-OBJS := $(OBJ)/coff/ckernel.o        \
-        $(OBJ)/coff/paging.o         \
-        $(OBJ)/coff/flush.o          \
-        $(OBJ)/coff/idt.o            \
-        $(OBJ)/coff/isr.o            \
-        $(OBJ)/coff/irqc.o           \
-        $(OBJ)/coff/irq.o            \
-        $(OBJ)/coff/isrc.o           \
-        $(OBJ)/coff/gdt.o            \
-        $(OBJ)/coff/syscall.o        \
-        $(OBJ)/coff/timer.o          \
-        $(OBJ)/coff/math.o           \
-        $(OBJ)/coff/usermode.o       \
-        $(OBJ)/coff/usermodec.o      \
-        $(OBJ)/coff/task.o           \
-        $(OBJ)/coff/iso9660.o        \
-        $(OBJ)/coff/video.o          \
-        $(OBJ)/coff/vga.o            \
-        $(OBJ)/coff/bitmap.o         \
-        $(OBJ)/coff/util.o           \
-        $(OBJ)/coff/atapi.o          \
-        $(OBJ)/coff/ahci.o           \
-        $(OBJ)/coff/ps2_mouse.o      \
-        $(OBJ)/coff/shell_loader.o   \
-        $(OBJ)/coff/shell.o          \
-        $(OBJ)/coff/int86_blob.o     \
-        $(OBJ)/coff/int86.o          \
-        $(OBJ)/coff/pe.o             \
-        $(OBJ)/coff/wm.o             \
-        $(OBJ)/coff/kheap.o
+OBJS := $(OBJ_DIR)/coff/ckernel.o        \
+        $(OBJ_DIR)/coff/paging.o         \
+        $(OBJ_DIR)/coff/flush.o          \
+        $(OBJ_DIR)/coff/idt.o            \
+        $(OBJ_DIR)/coff/isr.o            \
+        $(OBJ_DIR)/coff/irqc.o           \
+        $(OBJ_DIR)/coff/irq.o            \
+        $(OBJ_DIR)/coff/isrc.o           \
+        $(OBJ_DIR)/coff/gdt.o            \
+        $(OBJ_DIR)/coff/syscall.o        \
+        $(OBJ_DIR)/coff/timer.o          \
+        $(OBJ_DIR)/coff/math.o           \
+        $(OBJ_DIR)/coff/usermode.o       \
+        $(OBJ_DIR)/coff/usermodec.o      \
+        $(OBJ_DIR)/coff/task.o           \
+        $(OBJ_DIR)/coff/iso9660.o        \
+        $(OBJ_DIR)/coff/video.o          \
+        $(OBJ_DIR)/coff/vga.o            \
+        $(OBJ_DIR)/coff/bitmap.o         \
+        $(OBJ_DIR)/coff/util.o           \
+        $(OBJ_DIR)/coff/atapi.o          \
+        $(OBJ_DIR)/coff/ahci.o           \
+        $(OBJ_DIR)/coff/ps2_mouse.o      \
+        $(OBJ_DIR)/coff/shell_loader.o   \
+        $(OBJ_DIR)/coff/shell.o          \
+        $(OBJ_DIR)/coff/int86_blob.o     \
+        $(OBJ_DIR)/coff/int86.o          \
+        $(OBJ_DIR)/coff/pe.o             \
+        $(OBJ_DIR)/coff/wm.o             \
+        $(OBJ_DIR)/coff/kheap.o
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the shell ...
 # -----------------------------------------------------------------------------
 SHOBJS := \
-        $(OBJ)/coff/shell.o          \
-        $(OBJ)/coff/kheap.o          \
-        $(OBJ)/coff/math.o           \
-        $(OBJ)/coff/paging.o         \
-        $(OBJ)/coff/ps2_mouse.o      \
-        $(OBJ)/coff/vga.o            \
-        $(OBJ)/coff/video.o          \
-        $(OBJ)/coff/util.o
+        $(OBJ_DIR)/coff/shell.o          \
+        $(OBJ_DIR)/coff/kheap.o          \
+        $(OBJ_DIR)/coff/math.o           \
+        $(OBJ_DIR)/coff/paging.o         \
+        $(OBJ_DIR)/coff/ps2_mouse.o      \
+        $(OBJ_DIR)/coff/vga.o            \
+        $(OBJ_DIR)/coff/video.o          \
+        $(OBJ_DIR)/coff/util.o
 
+ISO_FILES  := /boot2.bin /kernel.bin
 LBA        := $(COR_DIR)/lba.inc
 ISO        := $(BIN_DIR)/bootcd.iso
-ISO_FILES  := /boot2.bin /kernel.bin
 
-all: $(OBJ)/coff/data.o
+#all: $(OBJ)/coff/data.o
 #$(BIN)/bootcd.iso
 
 # -----------------------------------------------------------------------------
@@ -382,11 +391,10 @@ define MOD-LBA
 	@echo "; DONT CHANGE THIS FILE - all modifieds will be lost.  " >> $(LBA)
 	@echo "; -----------------------------------------------------" >> $(LBA)
 	@echo "TEST_LBA       equ 0" >> $(LBA)
-	@>> $(LBA)
-	@for f in $(ISO_FILES); do \
+	@(  for f in $(ISO_FILES); do \
         echo "search $$f";     \
-        xorriso -indev $(ISO) -find / -exec report_lba -- \
-        | awk -v iso="$$f" '/^File data lba:/ { \
+        xorriso -indev $(ISO) -find / -exec report_lba -- | \
+        awk -v iso="$$f" '/^File data lba:/ {\
             path = $$NF;       \
             gsub(/^'\''|'\''$$/, "", path);  \
             if (path == iso) {               \
@@ -397,57 +405,55 @@ define MOD-LBA
                 print name "_LBA     equ ", $$6 "   ; start LBA ", name; \
                 print name "_SECTORS equ ", $$8 "   ; 2048 * "   , $$8 ; \
                 print "; -----------------------------------------------------"; \
-            }      \
-	    }'  >> $(LBA); \
-    done
+            }   }'  >> $(LBA); \
+        done \
+	)    
 	@echo "VBE_INFO_ADDR   equ 0x0A00" >> $(LBA)
-	$(AS) -f bin $(SRC)/boot1.asm -o $(BIN)/boot1.bin
-	$(AS) -f bin $(SRC)/boot2.asm -o $(BIN)/boot2.bin
-	cp $(BIN)/boot1.bin content/boot1.bin
-	cp $(BIN)/boot2.bin content/boot2.bin
-	@cd content && \
-	xorriso -as mkisofs -o ../../bin/bootcd.iso \
-        -b boot1.bin        \
-        -no-emul-boot       \
-        -boot-load-size 4   \
-        . && \
+	$(AS) -DLBA_FILE=\"$(COR_DIR)/lba.inc\" -f bin $(COR_DIR)/boot/boot1.asm -o $(BIN_DIR)/content/boot1.bin
+	$(AS) -DLBA_FILE=\"$(COR_DIR)/lba.inc\" -f bin $(COR_DIR)/boot/boot2.asm -o $(BIN_DIR)/content/boot2.bin
+	@cd $(BIN_DIR)/content && \
+	xorriso -as mkisofs -o $(BIN_DIR)/bootcd.iso \
+        -b boot1.bin          \
+        -no-emul-boot         \
+        -boot-load-size 4     \
+        .
     cd ..
-	@echo "DONE"
+    @echo "DONE"
 endef
 # -----------------------------------------------------------------------------
 # loader to load the system from DOS console ...
 # -----------------------------------------------------------------------------
-$(BIN)/boot1.bin: $(SRC)/kernel/boot/boot1.asm
-	$(AS) -f bin  $< -o $@
-$(BIN)/boot2.bin: $(SRC)/kernel/boot/boot2.asm
-	$(AS) -f bin  $< -o $@
+$(BIN_DIR)/content/boot1.bin:  $(COR_DIR)/boot/boot1.asm
+	$(AS) -DLBA_FILE=\"$(COR_DIR)/lba.inc\" -f bin  $< -o $@
+$(BIN_DIR)/content/boot2.bin:  $(COR_DIR)/boot/boot2.asm
+	$(AS) -DLBA_FILE=\"$(COR_DIR)/lba.inc\" -f bin  $< -o $@
 # -----------------------------------------------------------------------------
-# compile all *.c files to *.o bject files ...
+# compile all *.c, *.cc, and *.asm files to *.o bject files ...
 # -----------------------------------------------------------------------------
-$(OBJ)/coff/%.o: $(SRC)/kernel/%.c
+$(OBJ_DIR)/coff/%.o: $(COR_DIR)/%.c
 	$(GCC) $(CFLAGS) -c $< -o $@
-$(OBJ)/coff/%.o: $(SRC)/kernel/fs/iso9660/%.c
+$(OBJ_DIR)/coff/%.o: $(COR_DIR)/fs/iso9660/%.c
 	$(GCC) $(CFLAGS) -c $< -o $@
-
-$(OBJ)/coff/%.o: $(SRC)/kernel/%.cc
+$(OBJ_DIR)/coff/%.o: $(COR_DIR)/fs/iso9660/%.cc
+	$(GCC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+$(OBJ_DIR)/coff/%.o: $(COR_DIR)/%.cc
 	$(CPP) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
-
-# -----------------------------------------------------------------------------
-# compile all *.asm files to *.o bject files ...
-# -----------------------------------------------------------------------------
-$(OBJ)/coff/%.o: $(SRC)/kernel/%.asm
+$(OBJ_DIR)/coff/%.o: $(COR_DIR)/%.asm
 	$(AS) $(ASMFLAGS) $< -o $@
-
+$(OBJ_DIR)/coff/%.o: $(SRC_DIR)/user32/shell32/%.c
+	$(GCC) $(CFLAGS) -c $< -o $@
+$(OBJ_DIR)/coff/%.o: $(SRC_DIR)/user32/shell32/%.cc
+	$(GCC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 # -----------------------------------------------------------------------------
 # link C-kernel to finaly output binary image ...
 # -----------------------------------------------------------------------------
-$(OBJ)/kernel.o: $(OBJS) $(SRC)/kernel.ld
-	$(LD) $(LDFLAGS) -o  $(OBJ)/kernel.o $(OBJS)
-
+$(OBJ_DIR)/coff/kernel.o: $(OBJS) $(COR_DIR)/kernel.ld
+	$(LD) $(LDFLAGS) -o $(OBJ_DIR)/coff/kernel.o $(OBJS)
+$(OBJ_DIR)/kernel.bin:  $(OBJ_DIR)/coff/kernel.o
+	$(OBJCOPY) -O binary $< $@
 # -----------------------------------------------------------------------------
 $(OBJ)/data.o: $(SRC)/initrd.dat $(SRC)/data.asm
 	$(AS) $(ASMFLAGS) $(SRC)/data.asm -o $(OBJ)/data.o
-    
 # -----------------------------------------------------------------------------
 # create the initial ram disk ...
 # -----------------------------------------------------------------------------
@@ -461,25 +467,28 @@ $(BIN)/INITRD.EXE: $(OBJ)/make_initrd.o
 	$(GCC) -m32 -mconsole -O2 -Wall -Wextra -o $@ $<
 	$(STRIP) $@
 
-$(BIN)/kernel.bin: $(OBJ)/kernel.o
-	$(OBJCOPY) -O binary $(OBJ)/kernel.o $(BIN)/kernel.bin
-
 $(OBJ)/shell.bin: $(SHOBJS) $(SRC)/shell.ld
 	$(LD) $(LDSHFLGS) -o    $(OBJ)/shell.bin $(SHOBJS)
 
 $(BIN)/shell.exe:  $(OBJ)/shell.bin
 	$(OBJCOPY) -O binary $(OBJ)/shell.bin $(BIN)/shell.exe
 
-$(BIN)/bootcd.iso: $(BIN)/boot1.bin $(BIN)/boot2.bin \
-    $(BIN)/int86_blob.bin \
-    $(BIN)/kernel.bin     \
-    $(BIN)/shell.exe
-	./create_iso.sh
+$(BIN_DIR)/bootcd.iso: \
+    $(BIN_DIR)/content/boot1.bin $(BIN_DIR)/content/boot2.bin \
+    $(OBJ_DIR)/coff/int86_blob.o \
+    $(OBJ_DIR)/kernel.bin
+	@(  export __BIN_DIR=$(BIN_DIR)          ;\
+        export __COR_DIR=$(COR_DIR)          ;\
+        export __OBJ_DIR=$(OBJ_DIR)/coff     ;\
+        export __BIN_AS=$(AS)                ;\
+        $(COR_DIR)/create_iso.sh             ;\
+	)
 	$(MOD-LBA)
 
-$(BIN)/int86_blob.bin: $(SRC)/int86_switch.asm
-	nasm -f bin -o $@ $<
-
+$(OBJ_DIR)/coff/int86_switch.bin: $(COR_DIR)/int86_switch.asm
+	$(AS) -f bin -o $(OBJ_DIR)/coff/int86_switch.bin $(COR_DIR)/int86_switch.asm
+$(OBJ_DIR)/coff/int86_blob.o: $(OBJ_DIR)/coff/int86_switch.bin
+	$(AS) -DSWITCH_BLOB=\"$(OBJ_DIR)/coff/int86_switch.bin\" -f win32 -o $(OBJ_DIR)/coff/int86_blob.o $(COR_DIR)/int86_blob.asm
 # -----------------------------------------------------------------------------
 # prepare font ...
 # -----------------------------------------------------------------------------
@@ -492,13 +501,16 @@ $(HEX_DIR)/unifont.hex:        \
 # before you compile, you can clean the source tree from old crap ...
 # -----------------------------------------------------------------------------
 clean:
-	$(RM) -rf $(OBJ_DIR)
+	$(RM)   -rf $(BUI_DIR)/bin
+	$(MKDIR) -p $(BUI_DIR)/bin/content
+	$(MKDIR) -p $(BUI_DIR)/{obj/coff,obj/elf}
 
-#	$(RM) -f  $(BIN)/*.BIN $(BIN)/*.COM $(BIN)/*.sys $(BIN)/kernel.map
-#	$(RM) -f  $(SRC)/content/*.sys $(SRC)/content/*.bin
-#	$(RM) -f  $(SRC)/unifont_all-15.1.05.hex
-#	$(RM) -f  $(BIN)/bootcd.iso
-#	$(RM) -f  $(SRC)/unifont.hex
-#	$(RM) -f  $(SRC)/initrd.dat
-#	$(RM) -f  $(BIN)/hdd.img $(BIN)/shell.exe
-#	$(RM) -rf $(OBJ)
+# -----------------------------------------------------------------------------
+# optional/bonus: QEMU boot for bootcd.iso ...
+# -----------------------------------------------------------------------------
+bootcd:
+	/mingw64/bin/qemu-system-x86_64.exe \
+    -drive file=$(BIN_DIR)/bootcd.iso,if=none,media=cdrom,id=cdrom0 \
+    -device ich9-ahci,id=ahci0 \
+    -device ide-cd,drive=cdrom0,bus=ahci0.0 \
+    -boot d -m 256M -machine q35,i8042=on
