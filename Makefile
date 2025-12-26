@@ -130,7 +130,7 @@ endif
 # GNU Toolchain binary avatar's ...
 # -----------------------------------------------------------------------------
 MAKE     := $(BLD_DIR)/make$(EXT)
-AS       := $(GCC_DIR)/nasm$(EXT)
+AS       := nasm
 ECHO     := $(BLD_DIR)/echo$(EXT)
 EXPORT   := $(BLD_DIR)/export$(EXT)
 GZIP     := $(BLD_DIR)/gzip$(EXT)
