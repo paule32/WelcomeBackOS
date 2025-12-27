@@ -144,7 +144,7 @@ extern "C" void enter_shell(void)
     
     wm_tick();
     for (;;) {
-        //mouse_poll();
+        mouse_poll();
         
         //wm_tick();
         io_wait();

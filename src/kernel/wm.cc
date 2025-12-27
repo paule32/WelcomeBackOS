@@ -8,7 +8,7 @@
 
 // ====== CONFIG ======
 # define WM_MAX_EVENTS   128
-# define TITLE_H         18
+# define TITLE_H         24
 # define STATUSBAR_H     26
 # define BORDER          4
 # define RESIZE_GRIP     10
@@ -207,19 +207,30 @@ window_t *wm_create_window(int x, int y, int w, int h, const char *title) {
 
     // backgriund = border
     gfx_rectFill(
+        win->surface->pixels,
         win->x, win->y,
         win->w, win->h, clRed);
     // clear client
     gfx_rectFill(
+        win->surface->pixels,
         win->x + BORDER,
         win->y + BORDER,
         win->client.w, win->client.h, clGreen);
     // title bar
     gfx_rectFill(
-        win->x + 2 * BORDER,
-        win->y + 2 * BORDER,
-        win->client.w - 2 * BORDER,
-        STATUSBAR_H   + 2 * BORDER, clBlue);
+        win->surface->pixels,
+        win->x           + (2 * BORDER),
+        win->y           + (2 * BORDER),
+        win->w           - (2 * BORDER) - 10,
+        TITLE_H          + (2 * BORDER), clBlue);
+    // client area
+    gfx_rectFill(
+        win->surface->pixels,
+        win->x           + (2 * BORDER),
+        win->y + TITLE_H + (2 * BORDER) + 10,
+        win->w           - (2 * BORDER) - 10,
+        win->h - TITLE_H - (2 * BORDER) - 12 - STATUSBAR_H,
+        clWhite);
         
 //    for (int i = 0; i < win->client.w * win->client.h; ++i)
 //        win->client.pixels[i] = 0xFF202020;
@@ -268,17 +279,6 @@ static void draw_window(window_t *w, rect_t clip) {
     gfx_printf("Wx: %d, Wy: %d\n", w->x, w->y);
     return;
 
-
-    // border
-    uint32_t border_col = w->focused ? 0xFF3A8DFF : 0xFF404040;
-    fill_rect((rect_t){w->x, w->y, w->w, BORDER}, border_col);
-    fill_rect((rect_t){w->x, w->y, BORDER, w->h}, border_col);
-    fill_rect((rect_t){w->x+w->w-BORDER, w->y, BORDER, w->h}, border_col);
-    fill_rect((rect_t){w->x, w->y+w->h-BORDER, w->w, BORDER}, border_col);
-
-    // titlebar
-    uint32_t title_col = w->focused ? 0xFF1E5AA8 : 0xFF2A2A2A;
-    fill_rect((rect_t){w->x+BORDER, w->y+BORDER, w->w-2*BORDER, TITLE_H-BORDER}, title_col);
 
     // client area background behind client surface
     fill_rect((rect_t){w->x+BORDER, w->y+TITLE_H, w->w-2*BORDER, w->h-TITLE_H-BORDER}, 0xFF202020);
@@ -414,10 +414,10 @@ static void wm_compose(void) {
         return;
     }
     gfx_printf("MEM OK\n");
-    w->x = 20;
+    /*w->x = 20;
     w->y = 20;
     w->w = 100;
-    w->h = 100;
+    w->h = 100;*/
     draw_window(w, clip);
     
     ///for (window_t *w = g_z_bottom; w; w = w->next) {
