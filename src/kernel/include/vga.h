@@ -103,15 +103,13 @@ extern   void gfx_putPixel       (int,int,int,         USHORT);
 extern   void gfx_putPixel       (uint8_t*,int,int,int,USHORT);
 extern   void gfx_putPixel       (int,int,             USHORT);
 
-extern   void gfx_rectFill       (int,int,int,int,     USHORT);
-extern   void gfx_rectFill       (int,int,int,int,int, USHORT);
-extern   void gfx_rectFill       (int,int,int,int,int, TColor);
-extern   void gfx_rectFill       (int,int,int,int,     TColor);
-extern   void gfx_rectFill       (int,int,             TColor);
-extern   void gfx_rectFill       (TPoint&,             TColor);
-extern   void gfx_rectFill       (TPoint&,int,         TColor);
-extern   void gfx_rectFill       (TRect& ,             TColor);
-extern   void gfx_rectFill       (TRect& ,int,         TColor);
+extern   void gfx_rectFill       (uint16_t*,int,int,int,int,int, TColor);
+extern   void gfx_rectFill       (int      ,int,int,int,         USHORT);
+extern   void gfx_rectFill       (int      ,int,int,int,         TColor);
+extern   void gfx_rectFill       (int      ,int,                 TColor);
+extern   void gfx_rectFill       (TPoint&  ,                     TColor);
+extern   void gfx_rectFill       (TPoint&  ,int*,                TColor);
+extern   void gfx_rectFill       (TRect&   ,                     TColor);
 
 extern   void gfx_rectFrame      (int,int,int,int,int, USHORT);
 extern   void gfx_print          (const char*);

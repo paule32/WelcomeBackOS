@@ -6,6 +6,7 @@
 # include "stdint.h"
 # include "my_stdarg.h"
 # include "proto.h"
+# include "kheap.h"
 
 # define DESKTOP
 # include "vga.h"
@@ -360,6 +361,39 @@ void gfx_rectFill(
     }
 }
 void gfx_rectFill(
+    uint16_t   *buf,
+    int       pitch,
+    int           x,
+    int           y,
+    int           w,
+    int           h,
+    const TColor  c) {
+        
+    uint32_t  back_pitch = 0;
+    uint16_t* buffer = (uint16_t*)buf;
+    
+    // kein screen-clipping hier, sondern buffer-clipping:
+    if (x < 0) { w += x; x = 0; }
+    if (y < 0) { h += y; y = 0; }
+    if (w <= 0 || h <= 0) return;
+
+    uint16_t color = gfx_rgbColor(c.r, c.g, c.b);    
+    
+    // --- Füllen ---
+    for (int yy = y; yy < y + h; ++yy) {
+        uint8_t * row = (uint8_t *) buf + (uint32_t)yy * (uint32_t)pitch;
+        uint16_t* p   = (uint16_t*)(row + (uint32_t)x * 2);
+        
+        for (int xx = 0; xx < w; ++xx)
+        *p++ = color;
+    }
+}
+void gfx_rectFill(
+    TPoint& pt,
+    TColor col) {
+    gfx_rectFill(pt.x, pt.y,col);
+}
+void gfx_rectFill(
     int x, int y,
     int w, int h,
     TColor c) {
@@ -371,9 +405,7 @@ void gfx_rectFill(
     int w,
     int h,
     TColor c) {
-    
-    gfx_rectFill(0,0,w,w,
-    gfx_rgbColor(c.r,c.g,c.b));
+    gfx_rectFill(0,0,w,w,gfx_rgbColor(c.r,c.g,c.b));
 }
 void gfx_rectFill(TRect& rect, TColor col) {
      gfx_rectFill(

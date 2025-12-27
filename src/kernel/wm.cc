@@ -98,21 +98,6 @@ static void fill_rect(rect_t r, uint32_t c) {
     }
 }
 
-static void blit_surface(const surface_t *s, int dx, int dy, rect_t clip) {
-    rect_t dst = { dx, dy, s->w, s->h };
-    dst = rect_intersect(dst, clip);
-    if (dst.w <= 0 || dst.h <= 0) return;
-
-    int sx0 = dst.x - dx;
-    int sy0 = dst.y - dy;
-
-    for (int y = 0; y < dst.h; ++y) {
-        const uint32_t *src = &s->pixels[(sy0 + y) * s->pitch + sx0];
-        uint32_t *dstp = &g_back[(dst.y + y) * g_sw + dst.x];
-        for (int x = 0; x < dst.w; ++x) dstp[x] = src[x];
-    }
-}
-
 // ====== WINDOW LIST ======
 static void z_detach(window_t *w) {
     if (!w) return;
@@ -171,67 +156,100 @@ static void str_copy(char *dst, const char *src, int cap) {
     dst[i] = 0;
 }
 
-window_t *wm_create_window(int x, int y, int w, int h, const char *title) {
-    //wm_compose();
-    //return (window_t*)NULL;
-    // client height = h - TITLE_H - BORDER
-    int ch = h - TITLE_H - BORDER;
-    if (w < 64) w = 64;
-    if (h < 48) h = 48;
-    if (ch < 16) ch = 16;
+static void blit_to_lfb(
+    const window_t* win,
+    uint8_t* lfb_base, uint32_t lfb_pitch,
+    int screen_w, int screen_h)
+{
+    int x = win->x, y = win->y;
+    int w = win->w, h = win->h;
 
-    // find free slot
-    int slot = -1;
-    for (int i = 0; i < WM_MAX_WINS; ++i) if (!g_win_used[i]) { slot = i; break; }
-    if (slot < 0) return (window_t *)NULL;
-    g_win_used[slot] = 1;
+    // clipping an screen
+    int src_x = 0, src_y = 0;
+    if (x < 0) { src_x = -x; w += x; x = 0; }
+    if (y < 0) { src_y = -y; h += y; y = 0; }
+    if (x + w > screen_w) w = screen_w - x;
+    if (y + h > screen_h) h = screen_h - y;
+    if (w <= 0 || h <= 0) return;
 
+    for (int row = 0; row < h; ++row) {
+        uint8_t* src = (uint8_t*)win->surface.pixels
+                     + (uint32_t)(src_y + row) * (uint32_t)win->surface.pitch
+                     + (uint32_t)src_x * 2u;
+
+        uint8_t* dst = (uint8_t*)lfb_base
+                     + (uint32_t)(y + row) * lfb_pitch
+                     + (uint32_t)x * 2u;
+
+        kmemcpy(dst, src, (size_t)w * 2u);
+    }
+}
+
+window_t *wm_create_window(
+    int x,
+    int y,
+    int w,
+    int h,
+    const char *title)
+{
+    int slot = 0;
     window_t *win = &g_win_pool[slot];
     *win = (window_t){0};
-
-    win->id = next_id++;
-    win->x = x; win->y = y; win->w = w; win->h = h;
-    win->flags = WIN_VISIBLE | WIN_DIRTY;
-    str_copy(win->title, title ? title : "Window", (int)sizeof(win->title));
 
     // client surface
     win->client.w = w - 2*BORDER;
     win->client.h = h - STATUSBAR_H - BORDER;
+    
+    win->surface.w = w;
+    win->surface.h = h;
+    
+    win->surface.pitch  = w * 2;
+    win->surface.pixels = (uint16_t*)kmalloc(win->surface.pitch * h);
+    
+    win->x = x;
+    win->y = y;
+    win->w = w;
+    win->h = h;
 
-    if (win->client.w < 16) win->client.w = 16;
-    if (win->client.h < 16) win->client.h = 16;
-
-    // fixed pool memory: clamp
-    if (win->client.w > 320) win->client.w = 320;
-    if (win->client.h > 200) win->client.h = 200;
-
+    // -------------------------------
+    // in den Hintergrund Buffer ...
     // backgriund = border
+    // -------------------------------
     gfx_rectFill(
-        win->surface->pixels,
-        win->x, win->y,
+        win->surface.pixels,
+        win->surface.pitch,
+        0,0,
         win->w, win->h, clRed);
     // clear client
     gfx_rectFill(
-        win->surface->pixels,
-        win->x + BORDER,
-        win->y + BORDER,
+        win->surface.pixels,
+        win->surface.pitch,
+        BORDER,
+        BORDER,
         win->client.w, win->client.h, clGreen);
     // title bar
     gfx_rectFill(
-        win->surface->pixels,
-        win->x           + (2 * BORDER),
-        win->y           + (2 * BORDER),
-        win->w           - (2 * BORDER) - 10,
-        TITLE_H          + (2 * BORDER), clBlue);
+        win->surface.pixels,
+        win->surface.pitch,
+        (2 * BORDER),
+        (2 * BORDER),
+        win->w   - (2 * BORDER) - 10,
+        TITLE_H  + (2 * BORDER), clBlue);
     // client area
     gfx_rectFill(
-        win->surface->pixels,
-        win->x           + (2 * BORDER),
-        win->y + TITLE_H + (2 * BORDER) + 10,
+        win->surface.pixels,
+        win->surface.pitch,
+        (2 * BORDER),
+        TITLE_H + (2 * BORDER) + 10,
         win->w           - (2 * BORDER) - 10,
         win->h - TITLE_H - (2 * BORDER) - 12 - STATUSBAR_H,
         clWhite);
-        
+    
+    // -------------------------------
+    // von Hintergrund Buffer in den
+    // Vordergrund zeichnen ...
+    // -------------------------------
+    blit_to_lfb(win, (uint8_t*)lfb_base, lfb_pitch, lfb_xres, lfb_yres);
 //    for (int i = 0; i < win->client.w * win->client.h; ++i)
 //        win->client.pixels[i] = 0xFF202020;
 
@@ -254,6 +272,7 @@ void wm_destroy_window(window_t *w) {
 
 // ====== DEFAULT PAINT (demo) ======
 static void default_paint(window_t *w) {
+    /*
     // simple gradient-ish stripes
     for (int y = 0; y < w->client.h; ++y) {
         uint32_t c = 0xFF202020 + ((y & 31) << 8);
@@ -261,6 +280,7 @@ static void default_paint(window_t *w) {
         for (int x = 0; x < w->client.w; ++x) row[x] = c;
     }
     // you can draw text using your own text routine into client if you have one
+    */
 }
 
 // ====== DRAW WINDOW FRAME ======
@@ -279,7 +299,7 @@ static void draw_window(window_t *w, rect_t clip) {
     gfx_printf("Wx: %d, Wy: %d\n", w->x, w->y);
     return;
 
-
+/*
     // client area background behind client surface
     fill_rect((rect_t){w->x+BORDER, w->y+TITLE_H, w->w-2*BORDER, w->h-TITLE_H-BORDER}, 0xFF202020);
 
@@ -297,7 +317,7 @@ static void draw_window(window_t *w, rect_t clip) {
 
     // resize grip visual
     fill_rect((rect_t){w->x+w->w-RESIZE_GRIP, w->y+w->h-RESIZE_GRIP, RESIZE_GRIP, RESIZE_GRIP},
-              0xFF606060);
+              0xFF606060);*/
 }
 
 // ====== CURSOR DRAW (mask bits) ======

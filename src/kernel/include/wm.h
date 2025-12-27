@@ -13,7 +13,7 @@ typedef struct { int x, y, w, h; } rect_t;
 typedef struct {
     int w, h;
     int pitch;          // in pixels
-    uint32_t *pixels;   // XRGB/ARGB
+    uint16_t *pixels;   // RGB565
 } surface_t;
 
 typedef enum {
@@ -43,7 +43,10 @@ struct window {
     int focused;
     uint32_t flags;
 
-    surface_t client;       // client surface (w x (h-title))
+    surface_t surface;
+    surface_t client;
+    surface_t titlebar;
+    
     char title[32];
 
     win_paint_fn on_paint;
