@@ -10,8 +10,8 @@
 
 # define DESKTOP
 # include "vga.h"
+# include "wm.h"
 # include "math.h"
-# include "font8x8.h"
 
 # define VBE_MODE_INFO_PTR ((const vbe_info_t*)0x00009000)
 
@@ -56,6 +56,109 @@ extern "C" int gfx_init(void)
     lfb_base = (uint32_t)lfb_virt;
 
     return  0;
+}
+
+static inline void put565(surface_t *dst, int x, int y, uint16_t c) {
+    if ((unsigned)x >= (unsigned)dst->w || (unsigned)y >= (unsigned)dst->h) return;
+    uint16_t *row = (uint16_t *)((uint8_t*)dst->pixels + y * dst->pitch);
+    row[x] = c;
+}
+
+void gfx_rectFill(
+    surface_t *dst,
+    int x, int y,
+    int w, int h,
+    uint16_t c) {
+        
+    if (w <= 0 || h <= 0) return;
+
+    int x0 = x < 0 ? 0 : x;
+    int y0 = y < 0 ? 0 : y;
+    
+    int x1 = x + w; if (x1 > dst->w) x1 = dst->w;
+    int y1 = y + h; if (y1 > dst->h) y1 = dst->h;
+
+    for (int yy = y0; yy < y1; yy++) {
+        uint16_t *row = (uint16_t *)((uint8_t*)dst->pixels + yy * dst->pitch);
+        for (int xx = x0; xx < x1; xx++) row[xx] = c;
+    }
+}
+
+// Zeichnet ein 8x16 Zeichen 1:1 (ohne Skalierung)
+void gfx_drawChar(
+    surface_t *dst,
+    int          x,
+    int          y,
+    uint8_t     ch,
+    uint16_t    fg) {
+    const uint8_t *g = corona8x16[ch];
+    
+    for (int row = 0; row < 16; row++) {
+        uint8_t bits = g[row];
+        for (int col = 0; col < 8; col++) {
+            if (bits & (1u << (7 - col))) {
+                put565(dst, x + col, y + row, fg);
+            }
+        }
+    }
+}
+
+// Zeichnet ein Zeichen skaliert (scale>=1)
+void gfx_drawCharScaled(
+    surface_t *dst, int x, int y,
+    unsigned char ch, int scale,
+    uint16_t fg, int opaque_bg,
+    uint16_t bg) {
+
+    if (scale < 1) scale = 1;
+
+    if (opaque_bg) {
+        gfx_rectFill(dst, x, y, 8*scale, 16*scale, bg);
+    }
+
+    const uint8_t *g = corona8x16[ch];
+    for (int row = 0; row < 16; row++) {
+        uint8_t bits = g[row];
+        for (int col = 0; col < 8; col++) {
+            if (bits & (1u << (7 - col))) {
+                // Block statt Pixel
+                gfx_rectFill(
+                    dst,
+                    x + col*scale,
+                    y + row*scale,
+                    scale, scale,
+                    fg);
+            }
+        }
+    }
+}
+
+// String zeichnen (mit \n Support)
+void gfx_drawTextScaled(
+    surface_t* dst,
+    int          x,
+    int          y,
+    const char*  s,
+    int      scale,
+    uint16_t    fg,
+    int  opaque_bg,
+    uint16_t    bg) {
+        
+    if (!s) return;
+    if (scale < 1) scale = 1;
+
+    int cx = x;
+    int cy = y;
+
+    for (const unsigned char *p = (const unsigned char*)s; *p; p++) {
+        if (*p == '\n') {
+            cx = x;
+            cy += 16 * scale;
+            continue;
+        }
+        gfx_drawCharScaled(dst, cx, cy, *p, scale, fg, opaque_bg, bg);
+        cx += 8 * scale;
+    }
 }
 
 void gfx_clear(uint16_t color)
@@ -435,7 +538,7 @@ void gfx_drawChar(
     USHORT    fg,
     USHORT    bg) {
         
-    uint8_t *glyph = font8x8[c];
+    /*uint8_t *glyph = font8x8[c];
 
     for (int row = 0; row < 8; row++) {
         uint8_t bits = glyph[row];
@@ -443,7 +546,7 @@ void gfx_drawChar(
             uint32_t color = (bits & (1 << (7 - col))) ? fg : bg;
             gfx_putPixel(x + col, y + row, color);
         }
-    }
+    }*/
 }
 
 void gfx_putChar(char c)

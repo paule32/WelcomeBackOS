@@ -99,6 +99,8 @@ OBJ_DIR := $(BUI_DIR)/obj
 BIN_DIR := $(BUI_DIR)/bin
 HEX_OUT := $(BUI_DIR)/hex
 
+FNT_DIR := $(SRC_DIR)/fntres
+
 README_FILE := $(firstword $(wildcard $(BASEDIR)/README.md))
 # -----------------------------------------------------------------------------
 # src directory must exists ...
@@ -214,14 +216,19 @@ confirm:
 # -----------------------------------------------------------------------------
 # compiler flags ...
 # -----------------------------------------------------------------------------
-CFLAGS   := -m32 -O1 -ffreestanding -fno-stack-protector -fno-builtin   \
-            -nostdlib -nostartfiles -fno-pic -Wall -Wextra              \
-            -mno-ms-bitfields -Wno-unused-variable  -Wunused-function   \
-            -Wno-unused-value -Wno-unused-parameter -Wno-sign-compare   \
-            -Wno-missing-field-initializers                             \
+CFLAGS   := -m32 -O1 -ffreestanding -fno-stack-protector -fno-builtin \
+            -nostdlib -nostartfiles -fno-pic -Wall -Wextra            \
+            -mno-ms-bitfields     \
+            -Wno-unused-variable  \
+            -Wno-unused-function  \
+            -Wno-unused-parameter \
+            -Wno-unused-value     \
+            -Wno-sign-compare     \
+            -Wno-missing-field-initializers  \
             -D__BUILD_DATE__=\"$(DATE_YMD)\" \
             -D__BUILD_TIME__=\"$(TIME_HMS)\" \
-            -I$(SRC_DIR)/kernel/include
+            -I$(SRC_DIR)/kernel/include \
+            -I$(SRC_DIR)/fntres
 
 CPPFLAGS := -std=c++20 -Wno-write-strings -Wno-volatile
 
@@ -259,6 +266,9 @@ SRC_SHELL       :=\
         $(SRC)/user32/shell32/shell_loader.cc  \
         $(SRC)/user32/shell32/shell.cc
 
+SRC_FONTS := \
+        $(SRC_DIR)/fntres/corona8x16.cc
+
 SRC_FS_ISO9660  :=\
         $(COR_DIR)/fs/iso9660/iso9660.c
 
@@ -293,6 +303,8 @@ SRCC := $(COR_DIR)/ckernel.cc       \
         $(COR_DIR)/pe.c             \
         $(COR_DIR)/wm.cc            \
         $(COR_DIR)/kheap.cc         \
+        \
+        $(SRC_FONTS) \
         \
         $(SRC_SHELL)
 # -----------------------------------------------------------------------------
@@ -335,7 +347,10 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
         $(OBJ_DIR)/coff/int86.o          \
         $(OBJ_DIR)/coff/pe.o             \
         $(OBJ_DIR)/coff/wm.o             \
-        $(OBJ_DIR)/coff/kheap.o
+        $(OBJ_DIR)/coff/kheap.o          \
+        \
+        $(OBJ_DIR)/coff/corona8x16.o
+
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the shell ...
 # -----------------------------------------------------------------------------
@@ -434,14 +449,22 @@ $(OBJ_DIR)/coff/%.o: $(COR_DIR)/%.c
 	$(GCC) $(CFLAGS) -c $< -o $@
 $(OBJ_DIR)/coff/%.o: $(COR_DIR)/fs/iso9660/%.c
 	$(GCC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/coff/%.o: $(SRC_DIR)/fntres/%.c
+	$(GCC) $(CFLAGS) -c $< -o $@
+$(OBJ_DIR)/coff/%.o: $(SRC_DIR)/fntres/%.cc
+	$(GCC) $(CFLAGS) -c $< -o $@
+
 $(OBJ_DIR)/coff/%.o: $(COR_DIR)/fs/iso9660/%.cc
 	$(CPP) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 $(OBJ_DIR)/coff/%.o: $(COR_DIR)/video/%.cc
 	$(CPP) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
 $(OBJ_DIR)/coff/%.o: $(COR_DIR)/%.cc
 	$(CPP) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 $(OBJ_DIR)/coff/%.o: $(COR_DIR)/%.asm
 	$(AS) $(ASMFLAGS) $< -o $@
+
 $(OBJ_DIR)/coff/%.o: $(SRC_DIR)/user32/shell32/%.c
 	$(GCC) $(CFLAGS) -c $< -o $@
 $(OBJ_DIR)/coff/%.o: $(SRC_DIR)/user32/shell32/%.cc
@@ -505,7 +528,7 @@ $(HEX_DIR)/unifont.hex:        \
 clean:
 	$(RM)   -rf $(BUI_DIR)/bin
 	$(MKDIR) -p $(BUI_DIR)/bin/content
-	$(MKDIR) -p $(BUI_DIR)/{obj/coff,obj/elf}
+	$(MKDIR) -p $(BUI_DIR)/{obj/coff,obj/elf,obj/inc}
 
 # -----------------------------------------------------------------------------
 # optional/bonus: QEMU boot for bootcd.iso ...

@@ -245,6 +245,11 @@ window_t *wm_create_window(
         win->h - TITLE_H - (2 * BORDER) - 12 - STATUSBAR_H,
         clWhite);
     
+    gfx_drawTextScaled(
+        &win->surface,
+        10, 10,
+        "Hello WM", 1, 0xFFFF, 0, 0);
+        
     // -------------------------------
     // von Hintergrund Buffer in den
     // Vordergrund zeichnen ...

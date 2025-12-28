@@ -7,12 +7,15 @@
 #define __VGA_H__
 
 # include "stdint.h"
+# include "wm.h"
 
 #ifndef DESKTOP
   #ifdef __cplusplus
   extern "C" {
   #endif // __cplusplus
 #endif
+
+extern const uint8_t corona8x16[256][16];
 
 typedef struct
 {
@@ -115,6 +118,16 @@ extern   void gfx_rectFrame      (int,int,int,int,int, USHORT);
 extern   void gfx_print          (const char*);
 extern   void gfx_printf         (char*, ... );
 extern   void gfx_putChar        (char);
+
+extern   void gfx_drawTextScaled(
+    surface_t* dst,
+    int          x,
+    int          y,
+    const char*  s,
+    int      scale,
+    uint16_t    fg,
+    int  opaque_bg,
+    uint16_t    bg);
 
 extern USHORT gfx_rgbColor(UCHAR,UCHAR,UCHAR);
 #else
