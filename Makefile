@@ -159,6 +159,10 @@ all: confirm clean setup $(BIN_DIR)/bootcd.iso
 setup:
 	$(MKDIR) -p $(BIN_DIR)/content/img
 	$(COPY) $(IMG_DIR)/*.bmp $(BIN_DIR)/content/img
+	(   cd $(SRC_DIR)/fntres        ;\
+        $(SRC_DIR)/fntres/build.sh  ;\
+        cd $(BASEDIR)               \
+	)
 	$(GEN-LBA)
 confirm:
 	@(  $(ECHO) "ATTENTION" ;\
@@ -267,7 +271,8 @@ SRC_SHELL       :=\
         $(SRC)/user32/shell32/shell.cc
 
 SRC_FONTS := \
-        $(SRC_DIR)/fntres/corona8x16.cc
+        $(SRC_DIR)/roboto12x16.cc \
+        $(SRC_DIR)/testfont.cc
 
 SRC_FS_ISO9660  :=\
         $(COR_DIR)/fs/iso9660/iso9660.c
@@ -349,7 +354,8 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
         $(OBJ_DIR)/coff/wm.o             \
         $(OBJ_DIR)/coff/kheap.o          \
         \
-        $(OBJ_DIR)/coff/corona8x16.o
+        $(OBJ_DIR)/coff/roboto12x16.o   \
+        $(OBJ_DIR)/coff/testfont.o
 
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the shell ...

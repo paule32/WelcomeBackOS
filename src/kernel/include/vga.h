@@ -15,7 +15,7 @@
   #endif // __cplusplus
 #endif
 
-extern const uint8_t corona8x16[256][16];
+extern const uint8_t roboto12x16[256][16];
 
 typedef struct
 {
@@ -94,7 +94,7 @@ extern   void gfx_drawCircle     (int,int,int,         USHORT);
 extern   void gfx_drawCircleFill (int,int,int,         USHORT);
 #ifdef __cplusplus
 extern   void gfx_drawLine       (int,int,int,int,int, USHORT);
-extern   void gfx_drawLine       (uint8_t*,int,int,int,int,int,USHORT);
+extern   void gfx_drawLine       (uint16_t*,int,int,int,int,int,USHORT);
 #else
 extern   void gfx_drawLine       (int,int,int,int,int, USHORT);
 #endif
@@ -102,8 +102,8 @@ extern   void gfx_drawChar       (int,int,uint8_t,     USHORT ,USHORT);
 extern   void gfx_hLine          (int,int,int,         USHORT);
 extern USHORT gfx_getPixel       (int,int);
 
-extern   void gfx_putPixel       (int,int,int,         USHORT);
-extern   void gfx_putPixel       (uint8_t*,int,int,int,USHORT);
+extern   void gfx_putPixel       (uint16_t*,int,int,int,USHORT);
+extern   void gfx_putPixel2      (int,int,int,         USHORT);
 extern   void gfx_putPixel       (int,int,             USHORT);
 
 extern   void gfx_rectFill       (uint16_t*,int,int,int,int,int, TColor);
@@ -128,6 +128,13 @@ extern   void gfx_drawTextScaled(
     uint16_t    fg,
     int  opaque_bg,
     uint16_t    bg);
+void gfx_drawChar(
+    surface_t *dst,
+    int          x,
+    int          y,
+    uint8_t     ch,
+    uint16_t    fg);
+void draw_text_Hallo_565(surface_t *bg, int pitch_bytes, int x, int y);
 
 extern USHORT gfx_rgbColor(UCHAR,UCHAR,UCHAR);
 #else

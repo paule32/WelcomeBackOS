@@ -13,6 +13,12 @@
 # include "wm.h"
 # include "math.h"
 
+# include "font12x12_italic_letters.h"
+# include "font12x12_italic_extra.h"
+
+# include "font16x16_italic_letters.h"
+# include "font16x16_italic_extra.h"
+
 # define VBE_MODE_INFO_PTR ((const vbe_info_t*)0x00009000)
 
 static vbe_info_t* _vga = (vbe_info_t*)0x00009000;
@@ -26,6 +32,222 @@ UCHAR   lfb_bpp   = 0;
 
 static int cur_x = 1;
 static int cur_y = 1;
+
+static const uint8_t GLYPH_H[64] = {
+  0,0,0,0,0,0,0,0,
+  0,1,1,0,0,1,1,0,
+  0,1,1,0,0,1,1,0,
+  0,1,1,1,1,1,1,0,
+  0,1,1,1,1,1,1,0,
+  0,1,1,0,0,1,1,0,
+  0,1,1,0,0,1,1,0,
+  0,0,0,0,0,0,0,0,
+};
+
+static const uint8_t GLYPH_a[64] = {
+  0,0,0,0,0,0,0,0,
+  0,0,1,1,1,0,0,0,
+  0,0,0,0,1,1,0,0,
+  0,0,1,1,1,1,0,0,
+  0,1,1,0,0,1,1,0,
+  0,1,1,0,0,1,1,0,
+  0,0,1,1,1,1,0,0,
+  0,0,0,0,0,0,0,0,
+};
+
+static const uint8_t GLYPH_l[64] = {
+  0,0,0,0,0,0,0,0,
+  0,0,1,1,0,0,0,0,
+  0,0,1,1,0,0,0,0,
+  0,0,1,1,0,0,0,0,
+  0,0,1,1,0,0,0,0,
+  0,0,1,1,0,0,0,0,
+  0,0,1,1,0,0,0,0,
+  0,0,0,0,0,0,0,0,
+};
+
+static const uint8_t GLYPH_o[64] = {
+  0,0,0,0,0,0,0,0,
+  0,0,1,1,1,0,0,0,
+  0,1,1,0,0,1,1,0,
+  0,1,1,0,0,1,1,0,
+  0,1,1,0,0,1,1,0,
+  0,1,1,0,0,1,1,0,
+  0,0,1,1,1,0,0,0,
+  0,0,0,0,0,0,0,0,
+};
+static inline void put565(surface_t *dst, int x, int y, uint16_t c) {
+    if ((unsigned)x >= (unsigned)dst->w || (unsigned)y >= (unsigned)dst->h) return;
+    uint16_t *row = (uint16_t *)((uint8_t*)dst->pixels + y * dst->pitch);
+    row[x] = c;
+}
+void gfx_drawGlyph12x12(surface_t *dst, int x0, int y0, const uint16_t glyph[16], uint16_t fg)
+{
+    for (int row = 0; row < 12; row++) {
+        uint16_t bits = glyph[row];
+        for (int col = 0; col < 12; col++) {
+            if (bits & (1u << (15 - col))) {
+                put565(dst, x0 + col, y0 + row, fg);
+            }
+        }
+    }
+}
+void gfx_drawGlyph16x16(surface_t *dst, int x0, int y0, const uint16_t glyph[16], uint16_t fg)
+{
+    for (int row = 0; row < 16; row++) {
+        uint16_t bits = glyph[row];
+        for (int col = 0; col < 16; col++) {
+            if (bits & (1u << (15 - col))) {
+                put565(dst, x0 + col, y0 + row, fg);
+            }
+        }
+    }
+}
+static inline uint32_t utf8_next_cp(const char **s)
+{
+    const unsigned char *p = (const unsigned char*)*s;
+    if (!*p) return 0;
+
+    // 1-byte ASCII
+    if (p[0] < 0x80) {
+        (*s) += 1;
+        return p[0];
+    }
+
+    // 2-byte
+    if ((p[0] & 0xE0) == 0xC0 && (p[1] & 0xC0) == 0x80) {
+        uint32_t cp = ((p[0] & 0x1F) << 6) | (p[1] & 0x3F);
+        (*s) += 2;
+        return cp;
+    }
+
+    // 3-byte
+    if ((p[0] & 0xF0) == 0xE0 && (p[1] & 0xC0) == 0x80 && (p[2] & 0xC0) == 0x80) {
+        uint32_t cp = ((p[0] & 0x0F) << 12) | ((p[1] & 0x3F) << 6) | (p[2] & 0x3F);
+        (*s) += 3;
+        return cp;
+    }
+
+    // Fallback: ungültig -> überspringe 1 Byte
+    (*s) += 1;
+    return 0xFFFD; // replacement char
+}
+// Gibt 0 zurück, wenn kein Glyph verfügbar
+static inline const uint16_t* font12x12_get_glyph(uint32_t cp)
+{
+    // ASCII letters
+    if (cp < 128) {
+        int li = font12x12_italic_letters_letter_index((char)cp);
+        if (li >= 0) return font12x12_italic_letters[li];
+
+        // digits/punct/space etc.
+        int ei = font12x12_italic_extra_index(cp);
+        if (ei >= 0) return font12x12_italic_extra[ei];
+
+        return 0;
+    }
+
+    // Umlaute / ß / € / typografische Zeichen etc. (liegen in extra)
+    int ei = font12x12_italic_extra_index(cp);
+    if (ei >= 0) return font12x12_italic_extra[ei];
+
+    return 0;
+}
+static inline const uint16_t* font16x16_get_glyph(uint32_t cp)
+{
+    // ASCII letters
+    if (cp < 128) {
+        int li = font16x16_italic_letters_letter_index((char)cp);
+        if (li >= 0) return font16x16_italic_letters[li];
+
+        // digits/punct/space etc.
+        int ei = font16x16_italic_extra_index(cp);
+        if (ei >= 0) return font16x16_italic_extra[ei];
+
+        return 0;
+    }
+
+    // Umlaute / ß / € / typografische Zeichen etc. (liegen in extra)
+    int ei = font16x16_italic_extra_index(cp);
+    if (ei >= 0) return font16x16_italic_extra[ei];
+
+    return 0;
+}
+void gfx_drawText12x12(surface_t *dst, int x, int y, const char *utf8,
+                       uint16_t fg, int spacing_px)
+{
+    if (!utf8) return;
+    if (spacing_px < 0) spacing_px = 0;
+
+    int cx = x;
+    int cy = y;
+
+    while (*utf8) {
+        if (*utf8 == '\n') {
+            utf8++;
+            cx = x;
+            cy += 12 + spacing_px;
+            continue;
+        }
+
+        uint32_t cp = utf8_next_cp(&utf8);
+        const uint16_t *g = font12x12_get_glyph(cp);
+
+        if (g) {
+            gfx_drawGlyph12x12(dst, cx, cy, g, fg);
+        }
+        // auch wenn unbekannt: Cursor weiter (Platzhalter)
+        cx += 12 + spacing_px;
+    }
+}
+void gfx_drawText16x16(surface_t *dst, int x, int y, const char *utf8,
+                       uint16_t fg, int spacing_px)
+{
+    if (!utf8) return;
+    if (spacing_px < 0) spacing_px = 0;
+
+    int cx = x;
+    int cy = y;
+
+    while (*utf8) {
+        if (*utf8 == '\n') {
+            utf8++;
+            cx = x;
+            cy += 16 + spacing_px;
+            continue;
+        }
+
+        uint32_t cp = utf8_next_cp(&utf8);
+        const uint16_t *g = font16x16_get_glyph(cp);
+
+        if (g) {
+            gfx_drawGlyph16x16(dst, cx, cy, g, fg);
+        }
+        // auch wenn unbekannt: Cursor weiter (Platzhalter)
+        cx += 16 + spacing_px;
+    }
+}
+
+
+void draw_glyph8x8_mask_565(surface_t *dst, int pitch_bytes,
+                            int x0, int y0,
+                            const uint8_t mask64[64],
+                            uint16_t color565)
+{
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; x++) {
+            if (mask64[y * 8 + x]) {
+                put565(dst, x0 + x, y0 + y, color565);
+            }
+        }
+    }
+}
+void draw_text_Hallo_565(surface_t *bg, int pitch_bytes, int x, int y)
+{
+    //draw_glyph8x8_mask_565(bg, pitch_bytes, 20, 20, GLYPH_H,0xFFF);
+    
+    gfx_drawText16x16(bg, 10, 10, "Hallo äöü ÄÖÜ ß 123 !? €\nNeue Zeile", gfx_rgbColor(255,255,255), 0);
+}
 
 extern "C" int gfx_init(void)
 {
@@ -58,12 +280,6 @@ extern "C" int gfx_init(void)
     return  0;
 }
 
-static inline void put565(surface_t *dst, int x, int y, uint16_t c) {
-    if ((unsigned)x >= (unsigned)dst->w || (unsigned)y >= (unsigned)dst->h) return;
-    uint16_t *row = (uint16_t *)((uint8_t*)dst->pixels + y * dst->pitch);
-    row[x] = c;
-}
-
 void gfx_rectFill(
     surface_t *dst,
     int x, int y,
@@ -91,7 +307,7 @@ void gfx_drawChar(
     int          y,
     uint8_t     ch,
     uint16_t    fg) {
-    const uint8_t *g = corona8x16[ch];
+    const uint8_t *g = roboto12x16[ch];
     
     for (int row = 0; row < 16; row++) {
         uint8_t bits = g[row];
@@ -116,7 +332,7 @@ void gfx_drawCharScaled(
         gfx_rectFill(dst, x, y, 8*scale, 16*scale, bg);
     }
 
-    const uint8_t *g = corona8x16[ch];
+    const uint8_t *g = roboto12x16[ch];
     for (int row = 0; row < 16; row++) {
         uint8_t bits = g[row];
         for (int col = 0; col < 8; col++) {
@@ -235,7 +451,7 @@ void gfx_putPixel(
     row[x] = color;
 }
 
-void gfx_putPixel(
+void gfx_putPixel2(
     int x,
     int y,
     int thickness,
@@ -268,20 +484,20 @@ void gfx_putPixel(
 }
 
 void gfx_putPixel(
-    uint8_t* fb,
-    int   pitch,
-    int       x,
-    int       y,
-    USHORT    c) {
+    uint16_t* fb,
+    int    pitch,
+    int        x,
+    int        y,
+    USHORT     c) {
     uint16_t* p = (uint16_t*)(fb + y * pitch + x * 2);
     *p = c;
 }
 
 void gfx_drawLine(
-    uint8_t* fb,
-    int   pitch,
-    int      x0, int y0,
-    int      x1, int y1, USHORT c) {
+    uint16_t* fb,
+    int    pitch,
+    int       x0, int y0,
+    int       x1, int y1, USHORT c) {
         
     int dx = (x1 > x0) ? (x1 - x0) : (x0 - x1);
     int sx = (x0 < x1) ? 1 : -1;
@@ -321,7 +537,7 @@ void gfx_drawLine(
         // flache Linie
         err = dx / 2;
         for (int i = 0; i <= dx; ++i) {
-            gfx_putPixel(x0, y0, thickness, color);
+            gfx_putPixel2(x0, y0, thickness, color);
 
             x0 += sx;
             err -= dy;
@@ -334,7 +550,7 @@ void gfx_drawLine(
         // steile Linie
         err = dy / 2;
         for (int i = 0; i <= dy; ++i) {
-            gfx_putPixel(x0, y0, thickness, color);
+            gfx_putPixel2(x0, y0, thickness, color);
 
             y0 += sy;
             err -= dx;
