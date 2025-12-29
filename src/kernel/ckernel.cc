@@ -35,9 +35,10 @@ extern "C" void syscall_init(void);
 extern "C" void tasking_init(void);
 extern "C" void gfx_init(void);
 
-extern uint32_t __end;
+extern "C" void call_global_ctors(void);
 
-void test_task(void);
+extern "C" void* __gxx_personality_v0 = (void*)0;
+extern uint32_t __end;
 
 uint32_t kernel_stack_top = 0x00180000;
 
@@ -65,8 +66,33 @@ extern "C" int kmain()
     
     syscall_init();
     tasking_init();
-
+    
+    // ------------------------------
+    // vesa 0x114: 800 x 600 x 16bpp
+    // ------------------------------
     gfx_init();
+    
+    // -------------------
+    // global c++ objects
+    // -------------------
+    call_global_ctors();
+    
+    //try {
+        //gfx_printf("ctorflag = %d\n", 123);
+        /*extern TCanvas canvas_desktop;
+        extern "C" volatile int g_ctor_ran;
+        gfx_printf("ctorflag=%d\n", g_ctor_ran);*/
+    //}
+    //catch (...) {
+//        gfx_printf("xxxxxx\n");
+//        for(;;);
+//    }
+    
+    
+    /*TCanvas *foo = new TCanvas();
+    if (canvas_desktop.flag == 42) {
+        for (;;);
+    }*/
     
     settextcolor(14,0);
     

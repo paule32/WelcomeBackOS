@@ -1,0 +1,37 @@
+#include "kerror.hpp"
+#include "ktry.hpp"
+#include "kpanic_try.hpp"
+#include "kscope.hpp"
+
+extern "C" void* kmalloc(size_t);
+extern "C" void  kfree(void*);
+
+static kx::Result<void*> alloc(size_t n) {
+    if (n == 0) return KX_ERR(kx::Err::InvalidArg, "alloc size 0");
+    void* p = kmalloc(n);
+    if (!p) return KX_ERR(kx::Err::NoMem, "kmalloc failed");
+    return p;
+}
+
+static kx::Result<int> parse_u32(const char* s) {
+    KX_ENSURE(s != nullptr, kx::Err::InvalidArg, "null string");
+    int v = 0;
+    for (const char* p = s; *p; ++p) {
+        KX_ENSURE(*p >= '0' && *p <= '9', kx::Err::InvalidArg, "non-digit");
+        v = v * 10 + (*p - '0');
+    }
+    return v;
+}
+
+static kx::Result<void> do_work(const char* s) {
+    KX_TRY(mem, alloc(256));
+    auto free_mem = kx::scope_exit([&](){ kfree(mem); });
+
+    KX_TRY(n, parse_u32(s));
+    (void)n;
+
+    // wenn du ownership "übergeben" willst:
+    // free_mem.dismiss();
+
+    return {};
+}

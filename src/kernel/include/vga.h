@@ -88,6 +88,12 @@ inline constexpr TColor clWhite  {255,255,255};
 
 extern   void gfx_clear          (                     USHORT);
 #ifdef __cplusplus
+class TCanvas {
+public:
+     TCanvas(void);
+    ~TCanvas();
+    uint16_t flag;
+};
 extern   void gfx_drawCircle     (int,int,int,int,     USHORT);
 #endif
 extern   void gfx_drawCircle     (int,int,int,         USHORT);

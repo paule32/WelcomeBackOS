@@ -14,22 +14,29 @@ SECTIONS
     .text : {
         LONG(_kmain);
         __code_start = .;
-        *(.text)
+        *(.text .text.*)
     } 
     
     .rodata : {
         __rodata_start = .;
-        *(.rodata) *(.rdata)
+        *(.rodata .rodata.* .rdata .rdata.*)
+    }
+    
+    .init_array : ALIGN(4) {
+        __init_array_start = .;
+        KEEP(*(SORT_BY_INIT_PRIORITY(.init_array.*)))
+        KEEP(*(.init_array))
+        __init_array_end = .;
     }
     
     .data : {
         __data_start = .;
-        *(.data)
+        *(.data .data.*)
     }
     
     .bss (NOLOAD) : {
         __bss_start = .;
-        *(.bss) *(COMMON)
+        *(.bss .bss.*) *(COMMON)
         __bss_end = .;
     }
     
@@ -37,6 +44,9 @@ SECTIONS
     
     /* reject PE-relocations, we have a flat binary */
     /DISCARD/ : {
+        *(.eh_frame) *(.eh_frame_hdr)
+        *(.gcc_except_table)
         *(.reloc)
+        *(.comment) *(.note*) 
     }
 }

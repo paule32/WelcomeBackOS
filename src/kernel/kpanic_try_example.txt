@@ -1,0 +1,42 @@
+#include "kerror.hpp"
+#include "ktry.hpp"
+#include "kpanic_try.hpp"
+
+extern "C" void* kmalloc(size_t);
+extern "C" void  kfree(void*);
+
+static kx::Result<void*> alloc(size_t n) {
+    if (n == 0) return KX_ERR(kx::Err::InvalidArg, "alloc size 0");
+    void* p = kmalloc(n);
+    if (!p) return KX_ERR(kx::Err::NoMem, "kmalloc failed");
+    return p;
+}
+
+static kx::Result<int> parse_u32(const char* s) {
+    KX_ENSURE(s != nullptr, kx::Err::InvalidArg, "null string");
+    int v = 0;
+    for (const char* p = s; *p; ++p) {
+        KX_ENSURE(*p >= '0' && *p <= '9', kx::Err::InvalidArg, "non-digit");
+        v = v * 10 + (*p - '0');
+    }
+    return v;
+}
+
+static kx::Result<void> do_work(const char* s) {
+    KX_TRY(mem, alloc(128));
+    // ScopeExit (optional) – wenn du willst, sag Bescheid, dann pack ich es dazu.
+    KX_TRY(n, parse_u32(s));
+    (void)n;
+    kfree(mem);
+    return {};
+}
+
+extern "C" void demo() {
+    auto r = do_work("12x3");
+    if (!r) {
+        kx::log_error(r.error(), "CATCH");   // “catch”
+    }
+
+    // “ungefangene Exception = panic”
+    KX_PANIC_ON_ERROR(do_work("123"));
+}

@@ -220,8 +220,12 @@ confirm:
 # -----------------------------------------------------------------------------
 # compiler flags ...
 # -----------------------------------------------------------------------------
-CFLAGS   := -m32 -O1 -ffreestanding -fno-stack-protector -fno-builtin \
-            -nostdlib -nostartfiles -fno-pic -Wall -Wextra            \
+CFLAGS   := -m32 -O1 -ffreestanding -Wall -Wextra \
+            -nostdlib             \
+            -nostartfiles         \
+            -fno-stack-protector  \
+            -fno-builtin          \
+            -fno-pic              \
             -mno-ms-bitfields     \
             -Wno-unused-variable  \
             -Wno-unused-function  \
@@ -234,7 +238,12 @@ CFLAGS   := -m32 -O1 -ffreestanding -fno-stack-protector -fno-builtin \
             -I$(SRC_DIR)/kernel/include \
             -I$(SRC_DIR)/fntres
 
-CPPFLAGS := -std=c++20 -Wno-write-strings -Wno-volatile
+CPPFLAGS := -std=c++20  \
+            -fexceptions -frtti     \
+            -Wno-write-strings      \
+            -Wno-volatile           \
+            -fno-use-cxa-atexit     \
+            -fno-threadsafe-statics
 
 LDFLAGS  := -nostdlib -T $(COR_DIR)/kernel.ld -Map $(BIN_DIR)/kernel.map
 LDSHFLGS := -nostdlib -T $(U32_DIR)/shell32/shell.ld -Map $(BIN_DIR)/shell.map
@@ -270,15 +279,23 @@ SRC_SHELL       :=\
         $(SRC)/user32/shell32/shell_loader.cc  \
         $(SRC)/user32/shell32/shell.cc
 
+RUN_CPO := \
+        $(OBJ_DIR)/coff/cpp_runtime.o \
+        $(OBJ_DIR)/coff/ctor.o
+
 SRC_FONTS := \
-        $(SRC_DIR)/roboto12x16.cc \
-        $(SRC_DIR)/testfont.cc
+        $(SRC_DIR)/fntres/roboto12x16.cc \
+        $(SRC_DIR)/fntres/testfont.cc
 
 SRC_FS_ISO9660  :=\
         $(COR_DIR)/fs/iso9660/iso9660.c
 
 SRC_MATH        :=\
         $(COR_DIR)/math.c
+
+SRC_CPPRT       :=\
+        $(COR_DIR)/cpp_runtime.o \
+        $(COR_DIR)/ctors.cc
 
 SRC_VIDEO       :=\
         $(COR_DIR)/video.c          \
@@ -353,6 +370,8 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
         $(OBJ_DIR)/coff/pe.o             \
         $(OBJ_DIR)/coff/wm.o             \
         $(OBJ_DIR)/coff/kheap.o          \
+        \
+        $(RUN_CPO) \
         \
         $(OBJ_DIR)/coff/roboto12x16.o   \
         $(OBJ_DIR)/coff/testfont.o
@@ -459,7 +478,7 @@ $(OBJ_DIR)/coff/%.o: $(COR_DIR)/fs/iso9660/%.c
 $(OBJ_DIR)/coff/%.o: $(SRC_DIR)/fntres/%.c
 	$(GCC) $(CFLAGS) -c $< -o $@
 $(OBJ_DIR)/coff/%.o: $(SRC_DIR)/fntres/%.cc
-	$(GCC) $(CFLAGS) -c $< -o $@
+	$(CPP) $(CFLAGS) -c $< -o $@
 
 $(OBJ_DIR)/coff/%.o: $(COR_DIR)/fs/iso9660/%.cc
 	$(CPP) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
@@ -479,7 +498,11 @@ $(OBJ_DIR)/coff/%.o: $(SRC_DIR)/user32/shell32/%.cc
 # link C-kernel to finaly output binary image ...
 # -----------------------------------------------------------------------------
 $(OBJ_DIR)/coff/kernel.o: $(OBJS) $(COR_DIR)/kernel.ld
-	$(LD) $(LDFLAGS) -o $(OBJ_DIR)/coff/kernel.o $(OBJS)
+	$(CPP) -nostdlib -nodefaultlibs -nostartfiles \
+	  -Wl,-T,$(COR_DIR)/kernel.ld -Wl,-Map,$(BIN_DIR)/kernel.map \
+	  -o $@ $(OBJS)
+
+#	$(LD) $(LDFLAGS) -o $(OBJ_DIR)/coff/kernel.o $(OBJS)
 $(OBJ_DIR)/kernel.bin:  $(OBJ_DIR)/coff/kernel.o
 	$(OBJCOPY) -O binary $< $@
 # -----------------------------------------------------------------------------

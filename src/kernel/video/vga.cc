@@ -249,6 +249,16 @@ void draw_text_Hallo_565(surface_t *bg, int pitch_bytes, int x, int y)
     gfx_drawText16x16(bg, 10, 10, "Hallo äöü ÄÖÜ ß 123 !? €\nNeue Zeile", gfx_rgbColor(255,255,255), 0);
 }
 
+TCanvas canvas_desktop;
+
+TCanvas::TCanvas(void)
+{
+    gfx_printf("TCanvas ctor.\n");
+    flag = 42;
+}
+TCanvas::~TCanvas() {
+    
+}
 extern "C" int gfx_init(void)
 {
     const vbe_info_t* mi = VBE_MODE_INFO_PTR;

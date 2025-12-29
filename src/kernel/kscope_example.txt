@@ -1,0 +1,5 @@
+void* p = kmalloc(128);
+KX_PANIC_ON_NULL(p, "oom");
+KX_DEFER { kfree(p); } KX_DEFER_END;
+
+// ... egal wie du returnst: kfree(p) läuft.
