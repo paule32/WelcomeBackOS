@@ -10,6 +10,7 @@
 
 # define DESKTOP
 # include "vga.h"
+# include "ktry_block.h"
 
 // ====== CONFIG ======
 # define WM_MAX_EVENTS   128
@@ -190,6 +191,17 @@ static void blit_to_lfb(
     }
 }
 
+kx::Result<int> parse_u32(const char* s)
+{
+    // ... irgendwas braucht Speicher ...
+    void* p = kmalloc(16);
+    if (!p) return KX_ERR(kx::Err::NoMem, "Speicherfehler");
+
+    // ... parse ...
+    kfree(p);
+    return 123;
+}
+
 window_t *wm_create_window(
     int x,
     int y,
@@ -257,6 +269,30 @@ window_t *wm_create_window(
     // Vordergrund zeichnen ...
     // -------------------------------
     blit_to_lfb(win, (uint8_t*)lfb_base, lfb_pitch, lfb_xres, lfb_yres);
+    
+    
+    KX_TRY_BLOCK_VAL(n, parse_u32("123"))
+        // ------------------------------------
+        // CATCH: wird ausgeführt, wenn:
+        // parse_u32() Err::NoMem (oder irgendwas anderes)
+        // zurückgibt
+        // ------------------------------------
+        KX_IF_ERROR(kx::Err::NoMem)
+            gfx_rectFill(30,30,100,40,clRed);
+        KX_ELSE
+            gfx_rectFill(30,30,100,40,clYellow);
+        KX_ENDIF
+    KX_OK_VAL(n)
+        // ------------------------------------
+        // OK: wird ausgeführt, wenn parse_u32
+        // erfolgreich ist
+        //gfx_printf("n=%d\n", n);
+        // ------------------------------------
+        gfx_rectFill(30,30,100,40,clGreen);
+    KX_END_TRY    
+    
+    
+    
 //    for (int i = 0; i < win->client.w * win->client.h; ++i)
 //        win->client.pixels[i] = 0xFF202020;
 

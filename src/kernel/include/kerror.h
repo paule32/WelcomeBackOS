@@ -1,6 +1,10 @@
+// ----------------------------------------------------------------------------
+// \file  kerror.h
+// \note  (c) 2025 by Jens Kallup - paule32
+//        all rights reserved.
+// ----------------------------------------------------------------------------
 #pragma once
-#include <stdint.h>
-#include <stddef.h>
+# include "stdint.h"
 
 namespace kx {
 

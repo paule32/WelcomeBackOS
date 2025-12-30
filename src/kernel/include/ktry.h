@@ -1,6 +1,11 @@
+// ----------------------------------------------------------------------------
+// \file  ktry.h
+// \note  (c) 2025 by Jens Kallup - paule32
+//        all rights reserved.
+// ----------------------------------------------------------------------------
 #pragma once
-#include "kerror.hpp"
-#include "klog.hpp"
+#include "kerror.h"
+#include "klog.h"
 
 namespace kx {
 

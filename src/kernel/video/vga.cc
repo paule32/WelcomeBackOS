@@ -801,7 +801,7 @@ void gfx_print(const char *s) {
     while (*s)
     gfx_putChar(*s++);
 }
-void gfx_printf(char *args, ...)
+extern void gfx_printf(char *args, ...)
 {
 	va_list ap;
 	va_start (ap, args);

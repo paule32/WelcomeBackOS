@@ -1,7 +1,10 @@
+// ----------------------------------------------------------------------------
+// \file  klog.h
+// \note  (c) 2025 by Jens Kallup - paule32
+//        all rights reserved.
+// ----------------------------------------------------------------------------
 #pragma once
-#include "kerror.hpp"
-
-extern "C" void gfx_printf(const char*, ...);
+# include "kerror.h"
 
 namespace kx {
 
