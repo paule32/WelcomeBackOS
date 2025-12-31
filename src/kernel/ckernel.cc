@@ -33,11 +33,10 @@ extern "C" void isr_init(void);
 extern "C" void gdt_init(uint32_t);
 extern "C" void syscall_init(void);
 extern "C" void tasking_init(void);
-extern "C" void gfx_init(void);
 
 extern "C" void call_global_ctors(void);
 
-extern "C" void* __gxx_personality_v0 = (void*)0;
+extern "C" void* __gxx_personality_v0(){return (void*)0;}
 extern uint32_t __end;
 
 uint32_t kernel_stack_top = 0x00180000;

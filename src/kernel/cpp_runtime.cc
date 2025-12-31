@@ -37,4 +37,4 @@ extern "C" void __cxa_pure_virtual() { __builtin_trap(); }
 
 // atexit (weil wir keine Destruktoren beim Shutdown fahren)
 extern "C" int __cxa_atexit(void (*)(void*), void*, void*) { return 0; }
-extern "C" void* __dso_handle = (void*)0;
+extern "C" void* __dso_handle() { return (void*)0; }

@@ -259,7 +259,7 @@ TCanvas::TCanvas(void)
 TCanvas::~TCanvas() {
     
 }
-extern "C" int gfx_init(void)
+int gfx_init(void)
 {
     const vbe_info_t* mi = VBE_MODE_INFO_PTR;
 

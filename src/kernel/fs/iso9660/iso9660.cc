@@ -12,6 +12,9 @@
 extern "C" void enter_usermode(void);
 extern void enter_shell(void);
 
+extern "C" void* kmalloc(uint32_t size);
+extern "C" void kfree(void* ptr);
+
 // ----------------------------------------
 // interne Helper
 // ----------------------------------------

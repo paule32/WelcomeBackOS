@@ -85,6 +85,7 @@ export BASEDIR
 # checks:
 # -----------------------------------------------------------------------------
 SRC_DIR := $(BASEDIR)/src
+DEP_DIR := $(BASEDIR)/build/dep
 BUI_DIR := $(BASEDIR)/build
 
 COR_DIR := $(SRC_DIR)/kernel
@@ -220,7 +221,7 @@ confirm:
 # -----------------------------------------------------------------------------
 # compiler flags ...
 # -----------------------------------------------------------------------------
-CFLAGS   := -m32 -O1 -ffreestanding -Wall -Wextra \
+CFLAGS_C := -m32 -O1 -ffreestanding -Wall -Wextra \
             -nostdlib             \
             -nostartfiles         \
             -fno-stack-protector  \
@@ -238,7 +239,7 @@ CFLAGS   := -m32 -O1 -ffreestanding -Wall -Wextra \
             -I$(SRC_DIR)/kernel/include \
             -I$(SRC_DIR)/fntres
 
-CPPFLAGS := -std=c++20  \
+CFLAGS_CC:= -std=c++20  $(CFLAGS_C) \
             -fexceptions -frtti     \
             -Wno-write-strings      \
             -Wno-volatile           \
@@ -255,13 +256,13 @@ ISOGUI   ?= 0
 # we support 2 modes: text and/or gui ...
 # -----------------------------------------------------------------------------
 ifeq ($(ISOGUI),1)
-ASMFLAGS += -DISOGUI=1
-CFLAGS   += -DISOGUI=1
-CPPFLAGS += -DISOGUI=1
+ASMFLAGS  += -DISOGUI=1
+CFLAGS_C  += -DISOGUI=1
+CFLAGS_CC += -DISOGUI=1
 else
-ASMFLAGS += -DISOGUI=0
-CFLAGS   += -DISOGUI=0
-CPPFLAGS += -DISOGUI=0
+ASMFLAGS  += -DISOGUI=0
+CFLAGS_C  += -DISOGUI=0
+CFLAGS_CC += -DISOGUI=0
 endif
 
 # -----------------------------------------------------------------------------
@@ -476,10 +477,20 @@ $(BIN_DIR)/content/boot2.bin:  $(COR_DIR)/boot/boot2.asm
 # -----------------------------------------------------------------------------
 define compile_rule
 $(OBJ_DIR)/coff/%.o: $(1)/%.c
-	$(GCC) $(CFLAGS) -c $$< -o $$@
+	$(MKDIR) -p $(dir $$@) $(DEP_DIR)/coff/$(dir $$*)
+	$(GCC) $(CFLAGS_C) -MMD -MP \
+		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
+		-c $$< -o $$@
 
 $(OBJ_DIR)/coff/%.o: $(1)/%.cc
-	$(CPP) $(CFLAGS) -c $$< -o $$@
+	$(MKDIR) -p $(dir $$@) $(DEP_DIR)/coff/$(dir $$*)
+	$(CPP) $(CFLAGS_CC) -MMD -MP \
+		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
+		-c $$< -o $$@
+
+$(OBJ_DIR)/coff/%.o: $(1)/%.asm
+	$(MKDIR) -p $(dir $$@)
+	$(AS) $(ASMFLAGS) $$< -o $$@
 endef
 
 $(eval $(call compile_rule,$(COR_DIR)))
@@ -488,10 +499,13 @@ $(eval $(call compile_rule,$(COR_DIR)/video))
 $(eval $(call compile_rule,$(COR_DIR)/loader/elf))
 $(eval $(call compile_rule,$(SRC_DIR)/fntres))
 
+DEPS := $(patsubst $(OBJ_DIR)/coff/%.o,$(DEP_DIR)/coff/%.d,$(OBJS))
+-include $(DEPS)
+
 $(OBJ_DIR)/coff/%.o: $(SRC_DIR)/user32/shell32/%.c
-	$(GCC) $(CFLAGS) -c $< -o $@
+	$(GCC) $(CFLAGS_C)  -c $< -o $@
 $(OBJ_DIR)/coff/%.o: $(SRC_DIR)/user32/shell32/%.cc
-	$(CPP) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+	$(CPP) $(CFLAGS_CC) -c $< -o $@
 # -----------------------------------------------------------------------------
 # link C-kernel to finaly output binary image ...
 # -----------------------------------------------------------------------------

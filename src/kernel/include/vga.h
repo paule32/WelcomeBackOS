@@ -9,12 +9,6 @@
 # include "stdint.h"
 # include "wm.h"
 
-#ifndef DESKTOP
-  #ifdef __cplusplus
-  extern "C" {
-  #endif // __cplusplus
-#endif
-
 extern const uint8_t roboto12x16[256][16];
 
 typedef struct
@@ -65,7 +59,6 @@ extern USHORT lfb_xres ;
 extern USHORT lfb_yres ;
 extern UCHAR  lfb_bpp  ;
 
-#ifdef DESKTOP
 struct TPoint {
     uint16_t x,y;
 };
@@ -87,7 +80,7 @@ inline constexpr TColor clYellow {255,255,0};
 inline constexpr TColor clWhite  {255,255,255};
 
 extern   void gfx_clear          (                     USHORT);
-#ifdef __cplusplus
+
 class TCanvas {
 public:
      TCanvas(void);
@@ -95,17 +88,16 @@ public:
     uint16_t flag;
 };
 extern   void gfx_drawCircle     (int,int,int,int,     USHORT);
-#endif
+
 extern   void gfx_drawCircle     (int,int,int,         USHORT);
 extern   void gfx_drawCircleFill (int,int,int,         USHORT);
-#ifdef __cplusplus
+
 extern   void gfx_drawLine       (int,int,int,int,int, USHORT);
 extern   void gfx_drawLine       (uint16_t*,int,int,int,int,int,USHORT);
-#else
-extern   void gfx_drawLine       (int,int,int,int,int, USHORT);
-#endif
+
 extern   void gfx_drawChar       (int,int,uint8_t,     USHORT ,USHORT);
 extern   void gfx_hLine          (int,int,int,         USHORT);
+
 extern USHORT gfx_getPixel       (int,int);
 
 extern   void gfx_putPixel       (uint16_t*,int,int,int,USHORT);
@@ -140,17 +132,11 @@ void gfx_drawChar(
     int          y,
     uint8_t     ch,
     uint16_t    fg);
+
 void draw_text_Hallo_565(surface_t *bg, int pitch_bytes, int x, int y);
 
 extern USHORT gfx_rgbColor(UCHAR,UCHAR,UCHAR);
-#else
 extern    int gfx_init(void);
-#endif // __cplusplus
 
-#ifndef DESKTOP
-  #ifdef __cplusplus
-  };
-  #endif // __cplusplus
-#endif   // DESKTOP
 
 #endif   // __VGA_H__

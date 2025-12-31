@@ -4,7 +4,7 @@
 //        all rights reserved.
 // ----------------------------------------------------------------------------
 
-extern "C" volatile int g_ctor_ran = 0;
+volatile int g_ctor_ran = 0;
 
 extern "C" {
     typedef void (*ctor_t)();

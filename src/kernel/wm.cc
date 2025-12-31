@@ -329,11 +329,11 @@ static void default_paint(window_t *w) {
 // ====== DRAW WINDOW FRAME ======
 static void draw_window(window_t *w, rect_t clip) {
     // frame rect
-    TRect R;
+/*    TRect R;
     R.Left   = w->x;
     R.Top    = w->y;
     R.Width  = w->w;
-    R.Height = w->h;
+    R.Height = w->h;*/
     
     //gfx_rectFill(R, clGreen);
     //R   = rect_intersect(R, clip);
