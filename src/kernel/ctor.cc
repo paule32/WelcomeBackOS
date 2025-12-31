@@ -8,6 +8,7 @@ extern "C" volatile int g_ctor_ran = 0;
 
 extern "C" {
     typedef void (*ctor_t)();
+    
     extern ctor_t _init_array_start[];
     extern ctor_t _init_array_end[];
 }

@@ -198,7 +198,7 @@ confirm:
             *) $(ECHO) "Please press Y or N." ; exit 1 ;; \
         esac \
 	)
-	(  $(ECHO) "setup environment ..."   ;\
+	@(  $(ECHO) "setup environment ..."   ;\
         $(MKDIR) -p $(HEX_DIR)           ;\
         if [ -f "$(HEX_OUT)/font8x16.h" ]; then  \
             echo "$(HEX_OUT)/font8x16.h: found.";\
@@ -292,6 +292,8 @@ SRC_FS_ISO9660  :=\
 
 SRC_MATH        :=\
         $(COR_DIR)/math.c
+        
+SRC_KXSTL := $(COR_DIR)kstl.cc
 
 SRC_CPPRT       :=\
         $(COR_DIR)/cpp_runtime.o \
@@ -327,6 +329,7 @@ SRCC := $(COR_DIR)/ckernel.cc       \
         $(COR_DIR)/kheap.cc         \
         \
         $(SRC_FONTS) \
+        $(SRC_KXSTL) \
         \
         $(SRC_SHELL)
 # -----------------------------------------------------------------------------
@@ -372,6 +375,7 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
         $(OBJ_DIR)/coff/kheap.o          \
         \
         $(RUN_CPO) \
+        $(OBJ_DIR)/coff/kstl.o \
         \
         $(OBJ_DIR)/coff/roboto12x16.o   \
         $(OBJ_DIR)/coff/testfont.o
@@ -470,25 +474,19 @@ $(BIN_DIR)/content/boot2.bin:  $(COR_DIR)/boot/boot2.asm
 # -----------------------------------------------------------------------------
 # compile all *.c, *.cc, and *.asm files to *.o bject files ...
 # -----------------------------------------------------------------------------
-$(OBJ_DIR)/coff/%.o: $(COR_DIR)/%.c
-	$(GCC) $(CFLAGS) -c $< -o $@
-$(OBJ_DIR)/coff/%.o: $(COR_DIR)/fs/iso9660/%.c
-	$(GCC) $(CFLAGS) -c $< -o $@
+define compile_rule
+$(OBJ_DIR)/coff/%.o: $(1)/%.c
+	$(GCC) $(CFLAGS) -c $$< -o $$@
 
-$(OBJ_DIR)/coff/%.o: $(SRC_DIR)/fntres/%.c
-	$(GCC) $(CFLAGS) -c $< -o $@
-$(OBJ_DIR)/coff/%.o: $(SRC_DIR)/fntres/%.cc
-	$(CPP) $(CFLAGS) -c $< -o $@
+$(OBJ_DIR)/coff/%.o: $(1)/%.cc
+	$(CPP) $(CFLAGS) -c $$< -o $$@
+endef
 
-$(OBJ_DIR)/coff/%.o: $(COR_DIR)/fs/iso9660/%.cc
-	$(CPP) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
-$(OBJ_DIR)/coff/%.o: $(COR_DIR)/video/%.cc
-	$(CPP) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
-
-$(OBJ_DIR)/coff/%.o: $(COR_DIR)/%.cc
-	$(CPP) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
-$(OBJ_DIR)/coff/%.o: $(COR_DIR)/%.asm
-	$(AS) $(ASMFLAGS) $< -o $@
+$(eval $(call compile_rule,$(COR_DIR)))
+$(eval $(call compile_rule,$(COR_DIR)/fs/iso9660))
+$(eval $(call compile_rule,$(COR_DIR)/video))
+$(eval $(call compile_rule,$(COR_DIR)/loader/elf))
+$(eval $(call compile_rule,$(SRC_DIR)/fntres))
 
 $(OBJ_DIR)/coff/%.o: $(SRC_DIR)/user32/shell32/%.c
 	$(GCC) $(CFLAGS) -c $< -o $@

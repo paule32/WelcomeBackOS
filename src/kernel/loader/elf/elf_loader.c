@@ -17,20 +17,18 @@ typedef struct {
     uint32_t load_bias;  // 0 für ET_EXEC, sonst base-bias
 } elf_user_image_t;
 
-
-static bool read_exact(FILE* f, uint32_t off, void* dst, uint32_t len) {
-    // passe das an deinen file_read an:
-    // z.B. file_read(f, off, len, dst) -> return == len
-    return file_read(f, off, len, (uint8_t*)dst) == len;
-}
-
 // ------------------------------------------------------------
 // Helpers
 // ------------------------------------------------------------
 static bool read_exact(FILE* f, uint32_t off, void* dst, uint32_t len) {
-    return file_read(f, off, len, (uint8_t*)dst) == len;
+    // passe das an deinen file_read an:
+    // z.B. file_read(f, off, len, dst) -> return == len
+    file_seek(f, off);
+    uint32_t l = file_read(f, (uint8_t*)dst, len);
+    if (l == len) {
+        return true;
+    }   return false;
 }
-
 static inline uint32_t align_down(uint32_t x, uint32_t a) { return x & ~(a - 1u); }
 
 // Optional: sehr einfache Range-Checks (an dein Layout anpassen)
@@ -108,7 +106,7 @@ bool elf32_load_nomap(FILE* f, uint32_t base_for_dyn, elf_user_image_t* out) {
 
         // BSS -> 0
         if (memsz > filesz) {
-            memset((void*)(dst_va + filesz), 0, memsz - filesz);
+            kmemset((void*)(dst_va + filesz), 0, memsz - filesz);
         }
     }
 

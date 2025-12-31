@@ -1,0 +1,22 @@
+T:/a/WelcomeBackOS/build/obj/coff/T/a/WelcomeBackOS/src/kernel/shell_loader.o: \
+ T:/a/WelcomeBackOS/src/kernel/shell_loader.cc \
+ T:/a/WelcomeBackOS/src/kernel/include/stdint.h \
+ T:/a/WelcomeBackOS/src/kernel/include/proto.h \
+ T:/a/WelcomeBackOS/src/kernel/include/stdint.h \
+ T:/a/WelcomeBackOS/src/kernel/include/kheap.h \
+ T:/a/WelcomeBackOS/src/kernel/include/int86.h \
+ T:/a/WelcomeBackOS/src/kernel/include/iso9660.h \
+ T:/a/WelcomeBackOS/src/kernel/include/vga.h \
+ T:/a/WelcomeBackOS/src/kernel/include/wm.h \
+ T:/a/WelcomeBackOS/src/kernel/include/wm.h \
+ T:/a/WelcomeBackOS/src/kernel/include/bitmap.h
+T:/a/WelcomeBackOS/src/kernel/include/stdint.h:
+T:/a/WelcomeBackOS/src/kernel/include/proto.h:
+T:/a/WelcomeBackOS/src/kernel/include/stdint.h:
+T:/a/WelcomeBackOS/src/kernel/include/kheap.h:
+T:/a/WelcomeBackOS/src/kernel/include/int86.h:
+T:/a/WelcomeBackOS/src/kernel/include/iso9660.h:
+T:/a/WelcomeBackOS/src/kernel/include/vga.h:
+T:/a/WelcomeBackOS/src/kernel/include/wm.h:
+T:/a/WelcomeBackOS/src/kernel/include/wm.h:
+T:/a/WelcomeBackOS/src/kernel/include/bitmap.h:

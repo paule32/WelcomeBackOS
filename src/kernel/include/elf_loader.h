@@ -75,13 +75,6 @@ extern const ksym_t __ksymtab_end[];
 
 uint32_t ksym_resolve(const char* name);
 
-enum {
-  SYS_exit  = 1,
-  SYS_write = 2,
-  SYS_open  = 3,
-  // ...
-};
-
 #ifdef __cplusplus
 };
 #endif  // __cplusplus
