@@ -1,7 +1,8 @@
 # WelcomeBackOS – Bootloader & 32-Bit Kernel Build from Scratch
-(c) 2025 Jens Kallup – paule32  
+(c) 2025, 2026 Jens Kallup – paule32
 Alle Rechte vorbehalten.
 
+![preview](docs/assets/img/dbase_tui.png)
 ## Current System Status: 2025-12-14
 
 ## 1️ Bootprozess: Stage 1 & Stage 2 erfolgreich implementiert

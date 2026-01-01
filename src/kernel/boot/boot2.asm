@@ -1,6 +1,6 @@
 ; ---------------------------------------------------------------------------
 ; \file  boot2.asm
-; \note  (c) 2025 by Jens Kallup - paule32
+; \note  (c) 2025, 2026 by Jens Kallup - paule32
 ;        all rights reserved.
 ; ---------------------------------------------------------------------------
 ; boot2.asm – Minimaler Stage2
@@ -31,7 +31,14 @@ start_boot2:
 
     mov si, msgB2Start
     call print_string
-
+    
+    ; -------------------------------------------------
+    ; Text-Interface für Benutzer-Desktop text or gui
+    ; -------------------------------------------------
+    %include 'src/kernel/boot/boot_menu.asm'
+    call boot_menu
+    next_part:
+    
     ; -------------------------------------------------
     ; Kernel per LBA nach 0x8000:0000 laden
     ; -------------------------------------------------
@@ -346,6 +353,10 @@ dap_offset      dw 0
 dap_segment     dw 0
 dap_lba_low     dd 0
 dap_lba_high    dd 0
+
+; ------------------------------------------------------------
+; Data / BSS
+; ------------------------------------------------------------
 
 ; Puffer für VBE Mode Info (256 Byte reichen)
 vesa_mode_info:

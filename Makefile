@@ -592,8 +592,9 @@ clean:
 # optional/bonus: QEMU boot for bootCD.iso ...
 # -----------------------------------------------------------------------------
 bootcd:
-	/mingw64/bin/qemu-system-x86_64.exe \
+	/mingw64/bin/qemu-system-i386.exe \
     -drive file=$(BIN_DIR)/bootcd.iso,if=none,media=cdrom,id=cdrom0 \
+    -machine q35,i8042=on -cpu pentium \
     -device ich9-ahci,id=ahci0 \
     -device ide-cd,drive=cdrom0,bus=ahci0.0 \
-    -boot d -m 128M -machine q35,i8042=on
+    -boot d -m 128M
