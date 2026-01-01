@@ -1,0 +1,59 @@
+function Get-IsoHdpfx {
+    [CmdletBinding()]
+    param(
+        # Zielpfad für die MBR-Template-Datei
+        [Parameter(Mandatory=$true)]
+        [string]$OutFile,
+
+        # Syslinux-Version (kernel.org listet bis 6.03 als stabile Version)
+        [string]$Version = "6.03",
+
+        # Download-Quelle (ZIP ist am einfachsten für Windows)
+        [string]$BaseUrl = "https://www.kernel.org/pub/linux/utils/boot/syslinux",
+
+        # Arbeitsverzeichnis (Temp)
+        [string]$WorkDir = (Join-Path $env:TEMP ("syslinux-" + [guid]::NewGuid().ToString("N")))
+    )
+
+    $ErrorActionPreference = "Stop"
+    New-Item -ItemType Directory -Force -Path $WorkDir | Out-Null
+
+    try {
+        $zipName = "syslinux-$Version.zip"
+        $zipUrl  = "$BaseUrl/$zipName"
+        $zipPath = Join-Path $WorkDir $zipName
+
+        Write-Host "[Get-IsoHdpfx] Download: $zipUrl"
+        Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath -UseBasicParsing
+
+        $extractDir = Join-Path $WorkDir "src"
+        New-Item -ItemType Directory -Force -Path $extractDir | Out-Null
+
+        Write-Host "[Get-IsoHdpfx] Extract: $zipPath"
+        Expand-Archive -Path $zipPath -DestinationPath $extractDir -Force
+
+        # Rekursiv nach isohdpfx*.bin suchen (Pfad kann je nach Paket variieren)
+        $candidates = Get-ChildItem -Path $extractDir -Recurse -File -Filter "isohdpfx*.bin" `
+                      | Sort-Object FullName
+
+        if (-not $candidates -or $candidates.Count -eq 0) {
+            throw "Keine Datei 'isohdpfx*.bin' im Syslinux-Archiv gefunden."
+        }
+
+        # Bevorzugt exakt isohdpfx.bin, sonst ersten Treffer nehmen
+        $best = $candidates | Where-Object { $_.Name -ieq "isohdpfx.bin" } | Select-Object -First 1
+        if (-not $best) { $best = $candidates | Select-Object -First 1 }
+
+        $outDir = Split-Path -Parent $OutFile
+        if ($outDir) { New-Item -ItemType Directory -Force -Path $outDir | Out-Null }
+
+        Copy-Item -Force -Path $best.FullName -Destination $OutFile
+
+        Write-Host "[Get-IsoHdpfx] OK: $($best.FullName) -> $OutFile"
+        return $OutFile
+    }
+    finally {
+        # Cleanup (optional: auskommentieren, falls du debuggen willst)
+        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $WorkDir
+    }
+}

@@ -7,10 +7,10 @@
 # include "kheap.h"
 
 // Symbol from linker script: first free byte after kernel + bss
-extern uint32_t __end;
+extern "C" uint32_t __end; 
 
 // 1 MiB heap size (can be adjusted)
-#define KHEAP_SIZE   (0x00100000)   // 1 MiB
+# define KHEAP_SIZE   (0x00100000)   // 1 MiB
 
 typedef struct heap_block {
     uint32_t size;              // size of the usable area (in bytes)
@@ -19,7 +19,10 @@ typedef struct heap_block {
     struct heap_block* next;    // next block in list
 }   heap_block_t;
 
-static heap_block_t* heap_head = (heap_block_t*)NULL;
+alignas(16) static uint8_t kheap_area[KHEAP_SIZE];
+static heap_block_t* heap_head = nullptr;
+
+//static heap_block_t* heap_head = (heap_block_t*)NULL;
 
          mem_map_entry_t* mem_map;
 uint32_t mem_map_length; // Anzahl Einträge
@@ -34,22 +37,16 @@ static inline uint32_t align_up(uint32_t value, uint32_t align)
 void detect_memory(void)
 {
     uint32_t highest = 0;
+
     for (uint32_t i = 0; i < mem_map_length; ++i) {
         mem_map_entry_t* e = &mem_map[i];
+        if (e->type != 1) continue;
 
-        if (e->type != 1) {
-        continue; // nur "usable"
-        }
+        uint32_t end = (uint32_t)e->base + (uint32_t)e->length;
+        if (end > highest) highest = end;
+    }
 
-        uint32_t end = e->base + e->length;
-        if (end > highest) {
-            highest = end;
-        }
-    }
-    // Auf 4 GiB begrenzen, falls du 32-bit bist
-    if (highest > 0xFFFFFFFFu) {
-        highest = 0xFFFFFFFFu;
-    }
+    if (highest > 0xFFFFFFFF) highest = 0xFFFFFFFF;
     max_mem = (uint32_t)highest;
 }
 
@@ -135,17 +132,19 @@ extern "C" char* kstrcat(char* dest, const char* src)
 void kheap_init(void)
 {
     // Start of heap directly after the kernel
-    uint32_t start = (uint32_t)&__end;
+    uint32_t start = (uint32_t)(uintptr_t)kheap_area;
+    start = align_up(start, 8);
+    //(uint32_t)&__end;
 
     // Align heap start to 8 bytes for sanity
-    start = align_up((uint32_t)start, 8);
+    //start = align_up((uint32_t)start, 8);
 
     heap_head = (heap_block_t*)start;
 
     // total heap space = KHEAP_SIZE minus header
     heap_head->size = KHEAP_SIZE - sizeof(heap_block_t);
     heap_head->free = 1;
-    heap_head->next = (heap_block_t*)NULL;
+    heap_head->next = nullptr;
 }
 
 // Split a block into "used block" + "remainder" if large enough
@@ -268,10 +267,5 @@ void* calloc(size_t c, size_t s) {
     return p;
 }
 void* realloc(void* p, size_t n) {
-    // minimal: neu alloc + kopieren + frei (oder weglassen, wenn lodepng es nicht braucht)
-    void* np = kmalloc((uint32_t)n);
-    if (!np) return NULL;
-    // ohne Kenntnis der alten Größe ist das “unsauber”; besser echten realloc machen.
-    // Für viele Builds reicht es, wenn lodepng kein realloc nutzt (je nach Config).
-    return np;
+return krealloc(p, (uint32_t)n);
 }

@@ -1,8 +1,8 @@
 
 Discarded input sections
 
- .eh_frame      0x00000000       0x40 T:/a/WelcomeBackOS/build/obj/coff/ckernel.o
- .eh_frame      0x00000000      0x124 T:/a/WelcomeBackOS/build/obj/coff/paging.o
+ .eh_frame      0x00000000       0x54 T:/a/WelcomeBackOS/build/obj/coff/ckernel.o
+ .eh_frame      0x00000000      0x120 T:/a/WelcomeBackOS/build/obj/coff/paging.o
  .eh_frame      0x00000000       0x58 T:/a/WelcomeBackOS/build/obj/coff/idt.o
  .eh_frame      0x00000000       0x60 T:/a/WelcomeBackOS/build/obj/coff/irqc.o
  .eh_frame      0x00000000       0x44 T:/a/WelcomeBackOS/build/obj/coff/isrc.o
@@ -58,443 +58,446 @@ Linker script and memory map
                 0x00001000                        __size_of_heap_commit__ = 0x1000
                 0x00000000                        __loader_flags__ = 0x0
                 0x00000140                        __dll_characteristics__ = 0x140
-                0x00010000                        . = 0x10000
+                0x00080000                        . = 0x80000
 
-.text           0x00010000     0x6c00
-                0x00010000        0x4 LONG 0x1000a _kmain
-                0x00010004                        __code_start = .
+.text           0x00080000     0x6c00
+                0x00080000        0x4 LONG 0x8000a _kmain
+                0x00080004                        __code_start = .
  *(.text .text.*)
- .text          0x00010004       0xb4 T:/a/WelcomeBackOS/build/obj/coff/ckernel.o
-                0x00010004                __gxx_personality_v0
-                0x0001000a                kmain
- *fill*         0x000100b8        0x8 
- .text          0x000100c0      0x380 T:/a/WelcomeBackOS/build/obj/coff/paging.o
-                0x000100c0                map_range_identity
-                0x0001018a                page_allocator_add_page(unsigned int)
-                0x000101af                page_init
-                0x000101b0                page_alloc
-                0x000101ff                page_free
-                0x0001022a                mmio_map
-                0x0001034e                paging_init
- .text          0x00010440       0x3b T:/a/WelcomeBackOS/build/obj/coff/flush.o
-                0x00010440                _gdt_flush
-                0x0001045d                _tss_flush
-                0x00010473                idt_flush
- *fill*         0x0001047b        0x1 
- .text          0x0001047c      0x540 T:/a/WelcomeBackOS/build/obj/coff/idt.o
-                0x0001047c                idt_set_gate
-                0x000104ba                idt_init
- *fill*         0x000109bc        0x4 
- .text          0x000109c0      0x12e T:/a/WelcomeBackOS/build/obj/coff/isr.o
-                0x000109c0                isr0
-                0x000109ca                isr1
-                0x000109d4                isr2
-                0x000109de                isr3
-                0x000109e8                isr4
-                0x000109f2                isr5
-                0x000109fc                isr6
-                0x00010a06                isr7
-                0x00010a10                isr8
-                0x00010a18                isr9
-                0x00010a22                isr10
-                0x00010a2a                isr11
-                0x00010a32                isr12
-                0x00010a3a                isr13
-                0x00010a42                isr14
-                0x00010a47                isr15
-                0x00010a4e                isr16
-                0x00010a55                isr17
-                0x00010a5c                isr18
-                0x00010a63                isr19
-                0x00010a6a                isr20
-                0x00010a71                isr21
-                0x00010a78                isr22
-                0x00010a7f                isr23
-                0x00010a86                isr24
-                0x00010a8d                isr25
-                0x00010a94                isr26
-                0x00010a9b                isr27
-                0x00010aa2                isr28
-                0x00010aa9                isr29
-                0x00010ab0                isr30
-                0x00010ab5                isr31
-                0x00010abc                isr128
- *fill*         0x00010aee        0x2 
- .text          0x00010af0       0xd8 T:/a/WelcomeBackOS/build/obj/coff/irqc.o
-                0x00010af0                irq_remap
-                0x00010b2f                irq_handler
-                0x00010b74                irq_init
- *fill*         0x00010bc8        0x8 
- .text          0x00010bd0       0x36 T:/a/WelcomeBackOS/build/obj/coff/irq.o
-                0x00010bd0                irq0
-                0x00010bd7                irq1
- *fill*         0x00010c06        0x2 
- .text          0x00010c08       0x54 T:/a/WelcomeBackOS/build/obj/coff/isrc.o
-                0x00010c08                isr_init
-                0x00010c09                isr_handler
- *fill*         0x00010c5c        0x4 
- .text          0x00010c60      0x180 T:/a/WelcomeBackOS/build/obj/coff/gdt.o
-                0x00010c60                tss_set_kernel_stack
-                0x00010c6a                gdt_init
- .text          0x00010de0       0x54 T:/a/WelcomeBackOS/build/obj/coff/syscall.o
-                0x00010e13                syscall_init
-                0x00010e14                syscall_dispatch
- .text          0x00010e34       0x30 T:/a/WelcomeBackOS/build/obj/coff/timer.o
-                0x00010e34                timer_tick
- *fill*         0x00010e64       0x1c 
- .text          0x00010e80       0xa0 T:/a/WelcomeBackOS/build/obj/coff/math.o
-                0x00010e80                k_power
-                0x00010eae                k_abs
-                0x00010eba                k_sqrt
- .text          0x00010f20       0x1d T:/a/WelcomeBackOS/build/obj/coff/usermode.o
-                0x00010f20                enter_usermode
- *fill*         0x00010f3d        0x3 
- .text          0x00010f40       0x18 T:/a/WelcomeBackOS/build/obj/coff/usermodec.o
-                0x00010f40                user_mode_main
- *fill*         0x00010f58        0x8 
- .text          0x00010f60      0x1f0 T:/a/WelcomeBackOS/build/obj/coff/task.o
-                0x00010f91                tasking_is_enabled
-                0x00010f97                tasking_init
-                0x00010fe4                task_create
-                0x00011074                schedule
- *fill*         0x00011150       0x30 
- .text          0x00011180      0x640 T:/a/WelcomeBackOS/build/obj/coff/iso9660.o
-                0x00011180                iso_mount
-                0x0001124b                iso_init
-                0x000112af                iso_find_file(char const*, unsigned int*, unsigned int*)
-                0x000115e3                file_open(char const*)
-                0x00011635                file_read(iso_file*, void*, unsigned int)
-                0x00011743                file_getch(iso_file*)
-                0x00011777                file_seek(iso_file*, unsigned int)
-                0x0001179d                file_close(iso_file*)
- .text          0x000117c0      0x488 T:/a/WelcomeBackOS/build/obj/coff/video.o
-                0x000117c0                settextcolor
-                0x000117d8                move_cursor_right
-                0x000117fa                move_cursor_left
-                0x0001182d                update_cursor
-                0x0001186e                k_clear_screen
-                0x000118b1                move_cursor_home
-                0x000118be                move_cursor_end
-                0x000118cb                set_cursor
-                0x000118e3                scroll
-                0x0001195a                putch
-                0x00011a7e                puts
-                0x00011aa7                kprintf
-                0x00011aea                printformat
-                0x00011c11                save_cursor
-                0x00011c2c                restore_cursor
- *fill*         0x00011c48       0x18 
- .text          0x00011c60     0x1580 T:/a/WelcomeBackOS/build/obj/coff/vga.o
-                0x00011c60                gfx_drawGlyph12x12(surface_t*, int, int, unsigned short const*, unsigned short)
-                0x00011cef                gfx_drawGlyph16x16(surface_t*, int, int, unsigned short const*, unsigned short)
-                0x00011d7f                gfx_drawText12x12(surface_t*, int, int, char const*, unsigned short, int)
-                0x00011f41                gfx_drawText16x16(surface_t*, int, int, char const*, unsigned short, int)
-                0x000120fd                draw_glyph8x8_mask_565(surface_t*, int, int, int, unsigned char const*, unsigned short)
-                0x00012182                TCanvas::~TCanvas()
-                0x00012182                TCanvas::~TCanvas()
-                0x00012183                gfx_init()
-                0x00012233                gfx_rectFill(surface_t*, int, int, int, int, unsigned short)
-                0x000122eb                gfx_drawChar(surface_t*, int, int, unsigned char, unsigned short)
-                0x00012383                gfx_drawCharScaled(surface_t*, int, int, unsigned char, int, unsigned short, int, unsigned short)
-                0x00012480                gfx_drawTextScaled(surface_t*, int, int, char const*, int, unsigned short, int, unsigned short)
-                0x00012548                gfx_clear(unsigned short)
-                0x000125a3                gfx_rgbColor(unsigned char, unsigned char, unsigned char)
-                0x000125cc                draw_text_Hallo_565(surface_t*, int, int, int)
-                0x00012622                gfx_hLine(int, int, int, unsigned short)
-                0x0001269d                gfx_getPixel(int, int)
-                0x000126d9                gfx_putPixel(int, int, unsigned short)
-                0x00012715                gfx_putPixel2(int, int, int, unsigned short)
-                0x00012808                gfx_putPixel(unsigned short*, int, int, int, unsigned short)
-                0x00012825                gfx_drawLine(unsigned short*, int, int, int, int, int, unsigned short)
-                0x0001290d                gfx_drawLine(int, int, int, int, int, unsigned short)
-                0x00012a59                gfx_drawCircle(int, int, int, unsigned short)
-                0x00012b9d                gfx_drawCircle(int, int, int, int, unsigned short)
-                0x00012bf6                gfx_drawCircleFill(int, int, int, unsigned short)
-                0x00012cf2                gfx_rectFill(int, int, int, int, unsigned short)
-                0x00012dae                gfx_rectFill(unsigned short*, int, int, int, int, int, TColor)
-                0x00012e4e                gfx_rectFill(int, int, int, int, TColor)
-                0x00012e9f                gfx_rectFill(int, int, TColor)
-                0x00012eec                gfx_rectFill(TPoint&, TColor)
-                0x00012f1d                gfx_rectFill(TRect&, TColor)
-                0x00012f73                gfx_rectFrame(int, int, int, int, int, unsigned short)
-                0x00013011                gfx_drawChar(int, int, unsigned char, unsigned short, unsigned short)
-                0x00013012                gfx_putChar(char)
-                0x0001305d                gfx_print(char const*)
-                0x00013086                gfx_printf(char*, ...)
-                0x000131ae                TCanvas::TCanvas()
-                0x000131ae                TCanvas::TCanvas()
- .text          0x000131e0      0xb80 T:/a/WelcomeBackOS/build/obj/coff/bitmap.o
-                0x00013200                bmp_show_from_iso_16bpp565
-                0x0001371d                blit565_colorkey
-                0x0001381a                bmp_load_16bpp565_to_sprite
-                0x00013c32                show_bmp_with_germany_flag
- *fill*         0x00013d60       0x20 
- .text          0x00013d80      0x380 T:/a/WelcomeBackOS/build/obj/coff/util.o
-                0x00013d80                fetchESP
-                0x00013d83                fetchEBP
-                0x00013d86                fetchSS
-                0x00013d89                fetchCS
-                0x00013d8c                fetchDS
-                0x00013d8f                panic_assert
-                0x00013e02                k_memshow
-                0x00013e37                reboot
-                0x00013e66                kitoa
-                0x00013f4a                ki2hex
-                0x00013fb1                float2string
- .text          0x00014100      0x500 T:/a/WelcomeBackOS/build/obj/coff/atapi.o
-                0x00014256                atapi_read_sector
-                0x000143a9                atapi_read_sectors
-                0x000143f3                check_atapi
-                0x000144f3                cd_test_iso9660
- .text          0x00014600      0x700 T:/a/WelcomeBackOS/build/obj/coff/ahci.o
-                0x00014600                ahci_find_controller()
-                0x00014701                ahci_probe_ports
-                0x000147ee                sata_read_sectors
-                0x00014b05                sata_test_iso9660()
-                0x00014bf6                ahci_init
-                0x00014c58                check_ahci
- .text          0x00014d00      0x620 T:/a/WelcomeBackOS/build/obj/coff/ps2_mouse.o
-                0x00014d2e                cursor_overlay_move(int, int)
-                0x00015059                cursor_update(int, int)
-                0x00015076                mouse_install
-                0x000151b4                mouse_poll
- .text          0x00015320      0x3c0 T:/a/WelcomeBackOS/build/obj/coff/shell_loader.o
-                0x00015320                ps2_polling_enable()
-                0x0001532f                enter_shell
- .text          0x000156e0      0x6f8 T:/a/WelcomeBackOS/build/obj/coff/shell.o
-                0x000156e0                shell_main
- *fill*         0x00015dd8        0x8 
- .text          0x00015de0       0xc0 T:/a/WelcomeBackOS/build/obj/coff/int86.o
-                0x00015de0                int86
- .text          0x00015ea0      0x200 T:/a/WelcomeBackOS/build/obj/coff/pe.o
-                0x00015ea0                pe_load_image
- .text          0x000160a0      0x6f0 T:/a/WelcomeBackOS/build/obj/coff/wm.o
-                0x000160a0                wm_push_event
-                0x000160c9                parse_u32(char const*)
-                0x00016146                wm_create_window
-                0x00016533                wm_destroy_window
-                0x000165bc                wm_tick
-                0x00016635                wm_init
-                0x0001666f                wm_set_cursor
-                0x00016698                wm_on_mouse
-                0x0001674a                wm_on_key
- .text          0x00016790      0x380 T:/a/WelcomeBackOS/build/obj/coff/kheap.o
-                0x000167b6                detect_memory()
-                0x00016808                kmemcpy
-                0x00016835                kmemset
-                0x0001685e                kmemsetw
-                0x00016881                kstrlen
-                0x000168a0                kstrncmp
-                0x000168ee                kstrcmp
-                0x00016920                kstrcat
-                0x0001695d                kheap_init
-                0x0001697c                kmalloc
-                0x000169ca                kfree
-                0x00016a19                krealloc
-                0x00016a92                malloc
-                0x00016aa5                free
-                0x00016abc                calloc
-                0x00016aef                realloc
- .text          0x00016b10       0x94 T:/a/WelcomeBackOS/build/obj/coff/cpp_runtime.o
-                0x00016b10                operator new(unsigned int)
-                0x00016b33                operator delete(void*)
-                0x00016b4a                operator new[](unsigned int)
-                0x00016b5d                operator delete[](void*)
-                0x00016b70                operator delete(void*, unsigned int)
-                0x00016b83                operator delete[](void*, unsigned int)
-                0x00016b96                __cxa_pure_virtual
-                0x00016b98                __cxa_atexit
-                0x00016b9e                __dso_handle
- .text          0x00016ba4       0x30 T:/a/WelcomeBackOS/build/obj/coff/ctor.o
-                0x00016ba4                call_global_ctors
- .text          0x00016bd4       0x28 T:/a/WelcomeBackOS/build/obj/coff/kstl.o
-                0x00016bd4                mini_malloc
-                0x00016be7                mini_free
- .text          0x00016bfc        0x0 T:/a/WelcomeBackOS/build/obj/coff/roboto12x16.o
- .text          0x00016bfc        0x0 T:/a/WelcomeBackOS/build/obj/coff/testfont.o
+ .text          0x00080004       0xe0 T:/a/WelcomeBackOS/build/obj/coff/ckernel.o
+                0x00080004                __gxx_personality_v0
+                0x0008000a                kmain
+ *fill*         0x000800e4       0x1c 
+ .text          0x00080100      0x340 T:/a/WelcomeBackOS/build/obj/coff/paging.o
+                0x00080100                map_range_identity
+                0x000801ca                page_allocator_add_page(unsigned int)
+                0x000801f9                page_init
+                0x00080230                page_alloc
+                0x0008024f                page_free
+                0x0008028a                mmio_map
+                0x0008038e                paging_init
+ .text          0x00080440       0x3b T:/a/WelcomeBackOS/build/obj/coff/flush.o
+                0x00080440                _gdt_flush
+                0x0008045d                _tss_flush
+                0x00080473                idt_flush
+ *fill*         0x0008047b        0x1 
+ .text          0x0008047c      0x540 T:/a/WelcomeBackOS/build/obj/coff/idt.o
+                0x0008047c                idt_set_gate
+                0x000804ba                idt_init
+ *fill*         0x000809bc        0x4 
+ .text          0x000809c0      0x12e T:/a/WelcomeBackOS/build/obj/coff/isr.o
+                0x000809c0                isr0
+                0x000809ca                isr1
+                0x000809d4                isr2
+                0x000809de                isr3
+                0x000809e8                isr4
+                0x000809f2                isr5
+                0x000809fc                isr6
+                0x00080a06                isr7
+                0x00080a10                isr8
+                0x00080a18                isr9
+                0x00080a22                isr10
+                0x00080a2a                isr11
+                0x00080a32                isr12
+                0x00080a3a                isr13
+                0x00080a42                isr14
+                0x00080a47                isr15
+                0x00080a4e                isr16
+                0x00080a55                isr17
+                0x00080a5c                isr18
+                0x00080a63                isr19
+                0x00080a6a                isr20
+                0x00080a71                isr21
+                0x00080a78                isr22
+                0x00080a7f                isr23
+                0x00080a86                isr24
+                0x00080a8d                isr25
+                0x00080a94                isr26
+                0x00080a9b                isr27
+                0x00080aa2                isr28
+                0x00080aa9                isr29
+                0x00080ab0                isr30
+                0x00080ab5                isr31
+                0x00080abc                isr128
+ *fill*         0x00080aee        0x2 
+ .text          0x00080af0       0xd8 T:/a/WelcomeBackOS/build/obj/coff/irqc.o
+                0x00080af0                irq_remap
+                0x00080b2f                irq_handler
+                0x00080b74                irq_init
+ *fill*         0x00080bc8        0x8 
+ .text          0x00080bd0       0x36 T:/a/WelcomeBackOS/build/obj/coff/irq.o
+                0x00080bd0                irq0
+                0x00080bd7                irq1
+ *fill*         0x00080c06        0x2 
+ .text          0x00080c08       0x54 T:/a/WelcomeBackOS/build/obj/coff/isrc.o
+                0x00080c08                isr_init
+                0x00080c09                isr_handler
+ *fill*         0x00080c5c        0x4 
+ .text          0x00080c60      0x180 T:/a/WelcomeBackOS/build/obj/coff/gdt.o
+                0x00080c60                tss_set_kernel_stack
+                0x00080c6a                gdt_init
+ .text          0x00080de0       0x54 T:/a/WelcomeBackOS/build/obj/coff/syscall.o
+                0x00080e13                syscall_init
+                0x00080e14                syscall_dispatch
+ .text          0x00080e34       0x30 T:/a/WelcomeBackOS/build/obj/coff/timer.o
+                0x00080e34                timer_tick
+ *fill*         0x00080e64       0x1c 
+ .text          0x00080e80       0xa0 T:/a/WelcomeBackOS/build/obj/coff/math.o
+                0x00080e80                k_power
+                0x00080eae                k_abs
+                0x00080eba                k_sqrt
+ .text          0x00080f20       0x1d T:/a/WelcomeBackOS/build/obj/coff/usermode.o
+                0x00080f20                enter_usermode
+ *fill*         0x00080f3d        0x3 
+ .text          0x00080f40       0x18 T:/a/WelcomeBackOS/build/obj/coff/usermodec.o
+                0x00080f40                user_mode_main
+ *fill*         0x00080f58        0x8 
+ .text          0x00080f60      0x1f0 T:/a/WelcomeBackOS/build/obj/coff/task.o
+                0x00080f91                tasking_is_enabled
+                0x00080f97                tasking_init
+                0x00080fe4                task_create
+                0x00081074                schedule
+ *fill*         0x00081150       0x30 
+ .text          0x00081180      0x640 T:/a/WelcomeBackOS/build/obj/coff/iso9660.o
+                0x00081180                iso_mount
+                0x0008124b                iso_init
+                0x000812af                iso_find_file(char const*, unsigned int*, unsigned int*)
+                0x000815e3                file_open(char const*)
+                0x00081635                file_read(iso_file*, void*, unsigned int)
+                0x00081743                file_getch(iso_file*)
+                0x00081777                file_seek(iso_file*, unsigned int)
+                0x0008179d                file_close(iso_file*)
+ .text          0x000817c0      0x488 T:/a/WelcomeBackOS/build/obj/coff/video.o
+                0x000817c0                settextcolor
+                0x000817d8                move_cursor_right
+                0x000817fa                move_cursor_left
+                0x0008182d                update_cursor
+                0x0008186e                k_clear_screen
+                0x000818b1                move_cursor_home
+                0x000818be                move_cursor_end
+                0x000818cb                set_cursor
+                0x000818e3                scroll
+                0x0008195a                putch
+                0x00081a7e                puts
+                0x00081aa7                kprintf
+                0x00081aea                printformat
+                0x00081c11                save_cursor
+                0x00081c2c                restore_cursor
+ *fill*         0x00081c48       0x18 
+ .text          0x00081c60     0x1580 T:/a/WelcomeBackOS/build/obj/coff/vga.o
+                0x00081c60                gfx_drawGlyph12x12(surface_t*, int, int, unsigned short const*, unsigned short)
+                0x00081cef                gfx_drawGlyph16x16(surface_t*, int, int, unsigned short const*, unsigned short)
+                0x00081d7f                gfx_drawText12x12(surface_t*, int, int, char const*, unsigned short, int)
+                0x00081f41                gfx_drawText16x16(surface_t*, int, int, char const*, unsigned short, int)
+                0x000820fd                draw_glyph8x8_mask_565(surface_t*, int, int, int, unsigned char const*, unsigned short)
+                0x00082182                TCanvas::~TCanvas()
+                0x00082182                TCanvas::~TCanvas()
+                0x00082183                gfx_init()
+                0x00082233                gfx_rectFill(surface_t*, int, int, int, int, unsigned short)
+                0x000822eb                gfx_drawChar(surface_t*, int, int, unsigned char, unsigned short)
+                0x00082383                gfx_drawCharScaled(surface_t*, int, int, unsigned char, int, unsigned short, int, unsigned short)
+                0x00082480                gfx_drawTextScaled(surface_t*, int, int, char const*, int, unsigned short, int, unsigned short)
+                0x00082548                gfx_clear(unsigned short)
+                0x000825a3                gfx_rgbColor(unsigned char, unsigned char, unsigned char)
+                0x000825cc                draw_text_Hallo_565(surface_t*, int, int, int)
+                0x00082622                gfx_hLine(int, int, int, unsigned short)
+                0x0008269d                gfx_getPixel(int, int)
+                0x000826d9                gfx_putPixel(int, int, unsigned short)
+                0x00082715                gfx_putPixel2(int, int, int, unsigned short)
+                0x00082808                gfx_putPixel(unsigned short*, int, int, int, unsigned short)
+                0x00082825                gfx_drawLine(unsigned short*, int, int, int, int, int, unsigned short)
+                0x0008290d                gfx_drawLine(int, int, int, int, int, unsigned short)
+                0x00082a59                gfx_drawCircle(int, int, int, unsigned short)
+                0x00082b9d                gfx_drawCircle(int, int, int, int, unsigned short)
+                0x00082bf6                gfx_drawCircleFill(int, int, int, unsigned short)
+                0x00082cf2                gfx_rectFill(int, int, int, int, unsigned short)
+                0x00082dae                gfx_rectFill(unsigned short*, int, int, int, int, int, TColor)
+                0x00082e4e                gfx_rectFill(int, int, int, int, TColor)
+                0x00082e9f                gfx_rectFill(int, int, TColor)
+                0x00082eec                gfx_rectFill(TPoint&, TColor)
+                0x00082f1d                gfx_rectFill(TRect&, TColor)
+                0x00082f73                gfx_rectFrame(int, int, int, int, int, unsigned short)
+                0x00083011                gfx_drawChar(int, int, unsigned char, unsigned short, unsigned short)
+                0x00083012                gfx_putChar(char)
+                0x0008305d                gfx_print(char const*)
+                0x00083086                gfx_printf(char*, ...)
+                0x000831ae                TCanvas::TCanvas()
+                0x000831ae                TCanvas::TCanvas()
+ .text          0x000831e0      0xb80 T:/a/WelcomeBackOS/build/obj/coff/bitmap.o
+                0x00083200                bmp_show_from_iso_16bpp565
+                0x0008371d                blit565_colorkey
+                0x0008381a                bmp_load_16bpp565_to_sprite
+                0x00083c32                show_bmp_with_germany_flag
+ *fill*         0x00083d60       0x20 
+ .text          0x00083d80      0x380 T:/a/WelcomeBackOS/build/obj/coff/util.o
+                0x00083d80                fetchESP
+                0x00083d83                fetchEBP
+                0x00083d86                fetchSS
+                0x00083d89                fetchCS
+                0x00083d8c                fetchDS
+                0x00083d8f                panic_assert
+                0x00083e02                k_memshow
+                0x00083e37                reboot
+                0x00083e66                kitoa
+                0x00083f4a                ki2hex
+                0x00083fb1                float2string
+ .text          0x00084100      0x500 T:/a/WelcomeBackOS/build/obj/coff/atapi.o
+                0x00084256                atapi_read_sector
+                0x000843a9                atapi_read_sectors
+                0x000843f3                check_atapi
+                0x000844f3                cd_test_iso9660
+ .text          0x00084600      0x700 T:/a/WelcomeBackOS/build/obj/coff/ahci.o
+                0x00084600                ahci_find_controller()
+                0x00084701                ahci_probe_ports
+                0x000847ee                sata_read_sectors
+                0x00084b05                sata_test_iso9660()
+                0x00084bf6                ahci_init
+                0x00084c58                check_ahci
+ .text          0x00084d00      0x620 T:/a/WelcomeBackOS/build/obj/coff/ps2_mouse.o
+                0x00084d2e                cursor_overlay_move(int, int)
+                0x00085059                cursor_update(int, int)
+                0x00085076                mouse_install
+                0x000851b4                mouse_poll
+ .text          0x00085320      0x3c0 T:/a/WelcomeBackOS/build/obj/coff/shell_loader.o
+                0x00085320                ps2_polling_enable()
+                0x0008532f                enter_shell
+ .text          0x000856e0      0x6f8 T:/a/WelcomeBackOS/build/obj/coff/shell.o
+                0x000856e0                shell_main
+ *fill*         0x00085dd8        0x8 
+ .text          0x00085de0       0xc0 T:/a/WelcomeBackOS/build/obj/coff/int86.o
+                0x00085de0                int86
+ .text          0x00085ea0      0x200 T:/a/WelcomeBackOS/build/obj/coff/pe.o
+                0x00085ea0                pe_load_image
+ .text          0x000860a0      0x6f0 T:/a/WelcomeBackOS/build/obj/coff/wm.o
+                0x000860a0                wm_push_event
+                0x000860c9                parse_u32(char const*)
+                0x00086146                wm_create_window
+                0x00086533                wm_destroy_window
+                0x000865bc                wm_tick
+                0x00086635                wm_init
+                0x0008666f                wm_set_cursor
+                0x00086698                wm_on_mouse
+                0x0008674a                wm_on_key
+ .text          0x00086790      0x380 T:/a/WelcomeBackOS/build/obj/coff/kheap.o
+                0x000867b6                detect_memory()
+                0x00086808                kmemcpy
+                0x00086835                kmemset
+                0x0008685e                kmemsetw
+                0x00086881                kstrlen
+                0x000868a0                kstrncmp
+                0x000868ee                kstrcmp
+                0x00086920                kstrcat
+                0x0008695d                kheap_init
+                0x0008697c                kmalloc
+                0x000869ca                kfree
+                0x00086a19                krealloc
+                0x00086a92                malloc
+                0x00086aa5                free
+                0x00086abc                calloc
+                0x00086aef                realloc
+ .text          0x00086b10       0x94 T:/a/WelcomeBackOS/build/obj/coff/cpp_runtime.o
+                0x00086b10                operator new(unsigned int)
+                0x00086b33                operator delete(void*)
+                0x00086b4a                operator new[](unsigned int)
+                0x00086b5d                operator delete[](void*)
+                0x00086b70                operator delete(void*, unsigned int)
+                0x00086b83                operator delete[](void*, unsigned int)
+                0x00086b96                __cxa_pure_virtual
+                0x00086b98                __cxa_atexit
+                0x00086b9e                __dso_handle
+ .text          0x00086ba4       0x30 T:/a/WelcomeBackOS/build/obj/coff/ctor.o
+                0x00086ba4                call_global_ctors
+ .text          0x00086bd4       0x28 T:/a/WelcomeBackOS/build/obj/coff/kstl.o
+                0x00086bd4                mini_malloc
+                0x00086be7                mini_free
+ .text          0x00086bfc        0x0 T:/a/WelcomeBackOS/build/obj/coff/roboto12x16.o
+ .text          0x00086bfc        0x0 T:/a/WelcomeBackOS/build/obj/coff/testfont.o
 
-.rodata         0x00016c00     0x4c00
-                0x00016c00                        __rodata_start = .
+.rodata         0x00086c00     0x4c00
+                0x00086c00                        __rodata_start = .
  *(.rodata .rodata.* .rdata .rdata.*)
- .rdata         0x00016c00       0x44 T:/a/WelcomeBackOS/build/obj/coff/ckernel.o
- .rdata         0x00016c44        0x4 T:/a/WelcomeBackOS/build/obj/coff/math.o
- .rdata         0x00016c48       0x1c T:/a/WelcomeBackOS/build/obj/coff/usermodec.o
- .rdata         0x00016c64       0x44 T:/a/WelcomeBackOS/build/obj/coff/iso9660.o
- .rdata         0x00016ca8       0x84 T:/a/WelcomeBackOS/build/obj/coff/video.o
- *fill*         0x00016d2c       0x14 
- .rdata         0x00016d40     0x1be0 T:/a/WelcomeBackOS/build/obj/coff/vga.o
-                0x00016e40                font16x16_italic_extra
-                0x000175e0                font16x16_italic_extra_codepoints
-                0x000176e0                font16x16_italic_letters
-                0x00017d60                font12x12_italic_extra
-                0x00018320                font12x12_italic_extra_codepoints
-                0x00018420                font12x12_italic_letters
- .rdata         0x00018920      0x164 T:/a/WelcomeBackOS/build/obj/coff/bitmap.o
- .rdata         0x00018a84       0x44 T:/a/WelcomeBackOS/build/obj/coff/util.o
- .rdata         0x00018ac8      0x368 T:/a/WelcomeBackOS/build/obj/coff/atapi.o
- .rdata         0x00018e30      0x308 T:/a/WelcomeBackOS/build/obj/coff/ahci.o
- *fill*         0x00019138        0x8 
- .rdata         0x00019140      0x360 T:/a/WelcomeBackOS/build/obj/coff/ps2_mouse.o
- .rdata         0x000194a0       0x5c T:/a/WelcomeBackOS/build/obj/coff/shell_loader.o
- .rdata         0x000194fc       0x10 T:/a/WelcomeBackOS/build/obj/coff/shell.o
- *fill*         0x0001950c        0x4 
- .rodata        0x00019510      0x12e T:/a/WelcomeBackOS/build/obj/coff/int86_blob.o
-                0x00019510                _int86_blob_start
-                0x0001963e                _int86_blob_end
- *fill*         0x0001963e        0x2 
- .rdata         0x00019640       0x2c T:/a/WelcomeBackOS/build/obj/coff/pe.o
- .rdata         0x0001966c       0x94 T:/a/WelcomeBackOS/build/obj/coff/wm.o
- .rdata         0x00019700     0x2000 T:/a/WelcomeBackOS/build/obj/coff/roboto12x16.o
-                0x00019700                roboto12x16
+ .rdata         0x00086c00       0x44 T:/a/WelcomeBackOS/build/obj/coff/ckernel.o
+ .rdata         0x00086c44        0x4 T:/a/WelcomeBackOS/build/obj/coff/math.o
+ .rdata         0x00086c48       0x1c T:/a/WelcomeBackOS/build/obj/coff/usermodec.o
+ .rdata         0x00086c64       0x44 T:/a/WelcomeBackOS/build/obj/coff/iso9660.o
+ .rdata         0x00086ca8       0x84 T:/a/WelcomeBackOS/build/obj/coff/video.o
+ *fill*         0x00086d2c       0x14 
+ .rdata         0x00086d40     0x1be0 T:/a/WelcomeBackOS/build/obj/coff/vga.o
+                0x00086e40                font16x16_italic_extra
+                0x000875e0                font16x16_italic_extra_codepoints
+                0x000876e0                font16x16_italic_letters
+                0x00087d60                font12x12_italic_extra
+                0x00088320                font12x12_italic_extra_codepoints
+                0x00088420                font12x12_italic_letters
+ .rdata         0x00088920      0x164 T:/a/WelcomeBackOS/build/obj/coff/bitmap.o
+ .rdata         0x00088a84       0x44 T:/a/WelcomeBackOS/build/obj/coff/util.o
+ .rdata         0x00088ac8      0x368 T:/a/WelcomeBackOS/build/obj/coff/atapi.o
+ .rdata         0x00088e30      0x308 T:/a/WelcomeBackOS/build/obj/coff/ahci.o
+ *fill*         0x00089138        0x8 
+ .rdata         0x00089140      0x360 T:/a/WelcomeBackOS/build/obj/coff/ps2_mouse.o
+ .rdata         0x000894a0       0x5c T:/a/WelcomeBackOS/build/obj/coff/shell_loader.o
+ .rdata         0x000894fc       0x10 T:/a/WelcomeBackOS/build/obj/coff/shell.o
+ *fill*         0x0008950c        0x4 
+ .rodata        0x00089510      0x12e T:/a/WelcomeBackOS/build/obj/coff/int86_blob.o
+                0x00089510                _int86_blob_start
+                0x0008963e                _int86_blob_end
+ *fill*         0x0008963e        0x2 
+ .rdata         0x00089640       0x2c T:/a/WelcomeBackOS/build/obj/coff/pe.o
+ .rdata         0x0008966c       0x94 T:/a/WelcomeBackOS/build/obj/coff/wm.o
+ .rdata         0x00089700     0x2000 T:/a/WelcomeBackOS/build/obj/coff/roboto12x16.o
+                0x00089700                roboto12x16
 
-.rdata          0x0001c000      0x600
- .rdata$zzz     0x0001c000       0x2c T:/a/WelcomeBackOS/build/obj/coff/ckernel.o
- .rdata$zzz     0x0001c02c       0x2c T:/a/WelcomeBackOS/build/obj/coff/paging.o
- .rdata$zzz     0x0001c058       0x2c T:/a/WelcomeBackOS/build/obj/coff/idt.o
- .rdata$zzz     0x0001c084       0x2c T:/a/WelcomeBackOS/build/obj/coff/irqc.o
- .rdata$zzz     0x0001c0b0       0x2c T:/a/WelcomeBackOS/build/obj/coff/isrc.o
- .rdata$zzz     0x0001c0dc       0x2c T:/a/WelcomeBackOS/build/obj/coff/gdt.o
- .rdata$zzz     0x0001c108       0x2c T:/a/WelcomeBackOS/build/obj/coff/syscall.o
- .rdata$zzz     0x0001c134       0x2c T:/a/WelcomeBackOS/build/obj/coff/timer.o
- .rdata$zzz     0x0001c160       0x2c T:/a/WelcomeBackOS/build/obj/coff/math.o
- .rdata$zzz     0x0001c18c       0x2c T:/a/WelcomeBackOS/build/obj/coff/usermodec.o
- .rdata$zzz     0x0001c1b8       0x2c T:/a/WelcomeBackOS/build/obj/coff/task.o
- .rdata$zzz     0x0001c1e4       0x2c T:/a/WelcomeBackOS/build/obj/coff/iso9660.o
- .rdata$zzz     0x0001c210       0x2c T:/a/WelcomeBackOS/build/obj/coff/video.o
- .rdata$zzz     0x0001c23c       0x2c T:/a/WelcomeBackOS/build/obj/coff/vga.o
- .rdata$zzz     0x0001c268       0x2c T:/a/WelcomeBackOS/build/obj/coff/bitmap.o
- .rdata$zzz     0x0001c294       0x2c T:/a/WelcomeBackOS/build/obj/coff/util.o
- .rdata$zzz     0x0001c2c0       0x2c T:/a/WelcomeBackOS/build/obj/coff/atapi.o
- .rdata$zzz     0x0001c2ec       0x2c T:/a/WelcomeBackOS/build/obj/coff/ahci.o
- .rdata$zzz     0x0001c318       0x2c T:/a/WelcomeBackOS/build/obj/coff/ps2_mouse.o
- .rdata$zzz     0x0001c344       0x2c T:/a/WelcomeBackOS/build/obj/coff/shell_loader.o
- .rdata$zzz     0x0001c370       0x2c T:/a/WelcomeBackOS/build/obj/coff/shell.o
- .rdata$zzz     0x0001c39c       0x2c T:/a/WelcomeBackOS/build/obj/coff/int86.o
- .rdata$zzz     0x0001c3c8       0x2c T:/a/WelcomeBackOS/build/obj/coff/pe.o
- .rdata$zzz     0x0001c3f4       0x2c T:/a/WelcomeBackOS/build/obj/coff/wm.o
- .rdata$zzz     0x0001c420       0x2c T:/a/WelcomeBackOS/build/obj/coff/kheap.o
- .rdata$zzz     0x0001c44c       0x2c T:/a/WelcomeBackOS/build/obj/coff/cpp_runtime.o
- .rdata$zzz     0x0001c478       0x2c T:/a/WelcomeBackOS/build/obj/coff/ctor.o
- .rdata$zzz     0x0001c4a4       0x2c T:/a/WelcomeBackOS/build/obj/coff/kstl.o
- .rdata$zzz     0x0001c4d0       0x2c T:/a/WelcomeBackOS/build/obj/coff/roboto12x16.o
- .rdata$zzz     0x0001c4fc       0x2c T:/a/WelcomeBackOS/build/obj/coff/testfont.o
+.rdata          0x0008c000      0x600
+ .rdata$zzz     0x0008c000       0x2c T:/a/WelcomeBackOS/build/obj/coff/ckernel.o
+ .rdata$zzz     0x0008c02c       0x2c T:/a/WelcomeBackOS/build/obj/coff/paging.o
+ .rdata$zzz     0x0008c058       0x2c T:/a/WelcomeBackOS/build/obj/coff/idt.o
+ .rdata$zzz     0x0008c084       0x2c T:/a/WelcomeBackOS/build/obj/coff/irqc.o
+ .rdata$zzz     0x0008c0b0       0x2c T:/a/WelcomeBackOS/build/obj/coff/isrc.o
+ .rdata$zzz     0x0008c0dc       0x2c T:/a/WelcomeBackOS/build/obj/coff/gdt.o
+ .rdata$zzz     0x0008c108       0x2c T:/a/WelcomeBackOS/build/obj/coff/syscall.o
+ .rdata$zzz     0x0008c134       0x2c T:/a/WelcomeBackOS/build/obj/coff/timer.o
+ .rdata$zzz     0x0008c160       0x2c T:/a/WelcomeBackOS/build/obj/coff/math.o
+ .rdata$zzz     0x0008c18c       0x2c T:/a/WelcomeBackOS/build/obj/coff/usermodec.o
+ .rdata$zzz     0x0008c1b8       0x2c T:/a/WelcomeBackOS/build/obj/coff/task.o
+ .rdata$zzz     0x0008c1e4       0x2c T:/a/WelcomeBackOS/build/obj/coff/iso9660.o
+ .rdata$zzz     0x0008c210       0x2c T:/a/WelcomeBackOS/build/obj/coff/video.o
+ .rdata$zzz     0x0008c23c       0x2c T:/a/WelcomeBackOS/build/obj/coff/vga.o
+ .rdata$zzz     0x0008c268       0x2c T:/a/WelcomeBackOS/build/obj/coff/bitmap.o
+ .rdata$zzz     0x0008c294       0x2c T:/a/WelcomeBackOS/build/obj/coff/util.o
+ .rdata$zzz     0x0008c2c0       0x2c T:/a/WelcomeBackOS/build/obj/coff/atapi.o
+ .rdata$zzz     0x0008c2ec       0x2c T:/a/WelcomeBackOS/build/obj/coff/ahci.o
+ .rdata$zzz     0x0008c318       0x2c T:/a/WelcomeBackOS/build/obj/coff/ps2_mouse.o
+ .rdata$zzz     0x0008c344       0x2c T:/a/WelcomeBackOS/build/obj/coff/shell_loader.o
+ .rdata$zzz     0x0008c370       0x2c T:/a/WelcomeBackOS/build/obj/coff/shell.o
+ .rdata$zzz     0x0008c39c       0x2c T:/a/WelcomeBackOS/build/obj/coff/int86.o
+ .rdata$zzz     0x0008c3c8       0x2c T:/a/WelcomeBackOS/build/obj/coff/pe.o
+ .rdata$zzz     0x0008c3f4       0x2c T:/a/WelcomeBackOS/build/obj/coff/wm.o
+ .rdata$zzz     0x0008c420       0x2c T:/a/WelcomeBackOS/build/obj/coff/kheap.o
+ .rdata$zzz     0x0008c44c       0x2c T:/a/WelcomeBackOS/build/obj/coff/cpp_runtime.o
+ .rdata$zzz     0x0008c478       0x2c T:/a/WelcomeBackOS/build/obj/coff/ctor.o
+ .rdata$zzz     0x0008c4a4       0x2c T:/a/WelcomeBackOS/build/obj/coff/kstl.o
+ .rdata$zzz     0x0008c4d0       0x2c T:/a/WelcomeBackOS/build/obj/coff/roboto12x16.o
+ .rdata$zzz     0x0008c4fc       0x2c T:/a/WelcomeBackOS/build/obj/coff/testfont.o
 
-.init_array     0x0001c528        0x0
-                0x0001c528                        __init_array_start = .
+.init_array     0x0008c528        0x0
+                0x0008c528                        __init_array_start = .
  *(SORT_BY_INIT_PRIORITY(.init_array.*))
  *(.init_array)
-                0x0001c528                        __init_array_end = .
+                0x0008c528                        __init_array_end = .
 
-.data           0x0001c540     0x1400
-                0x0001c540                        __data_start = .
+.data           0x0008c540     0x1400
+                0x0008c540                        __data_start = .
  *(.data .data.*)
- .data          0x0001c540        0x4 T:/a/WelcomeBackOS/build/obj/coff/ckernel.o
-                0x0001c540                kernel_stack_top
- .data          0x0001c544        0x4 T:/a/WelcomeBackOS/build/obj/coff/paging.o
- .data          0x0001c548        0x0 T:/a/WelcomeBackOS/build/obj/coff/idt.o
- .data          0x0001c548        0x0 T:/a/WelcomeBackOS/build/obj/coff/irqc.o
- .data          0x0001c548        0x0 T:/a/WelcomeBackOS/build/obj/coff/isrc.o
- .data          0x0001c548        0x0 T:/a/WelcomeBackOS/build/obj/coff/gdt.o
- .data          0x0001c548        0x4 T:/a/WelcomeBackOS/build/obj/coff/syscall.o
- .data          0x0001c54c        0x0 T:/a/WelcomeBackOS/build/obj/coff/timer.o
- .data          0x0001c54c        0x0 T:/a/WelcomeBackOS/build/obj/coff/math.o
- .data          0x0001c54c        0x4 T:/a/WelcomeBackOS/build/obj/coff/usermodec.o
-                0x0001c54c                user_stack_top
- .data          0x0001c550        0x0 T:/a/WelcomeBackOS/build/obj/coff/task.o
- .data          0x0001c550        0x4 T:/a/WelcomeBackOS/build/obj/coff/iso9660.o
- .data          0x0001c554        0x8 T:/a/WelcomeBackOS/build/obj/coff/video.o
-                0x0001c554                tui_vidmem
-                0x0001c558                attrib
- .data          0x0001c55c        0x8 T:/a/WelcomeBackOS/build/obj/coff/vga.o
- .data          0x0001c564        0x0 T:/a/WelcomeBackOS/build/obj/coff/bitmap.o
- .data          0x0001c564        0x4 T:/a/WelcomeBackOS/build/obj/coff/util.o
-                0x0001c564                INT_MAX
- .data          0x0001c568        0x8 T:/a/WelcomeBackOS/build/obj/coff/atapi.o
- .data          0x0001c570        0x0 T:/a/WelcomeBackOS/build/obj/coff/ahci.o
- *fill*         0x0001c570       0x10 
- .data          0x0001c580      0xc00 T:/a/WelcomeBackOS/build/obj/coff/ps2_mouse.o
- .data          0x0001d180        0x0 T:/a/WelcomeBackOS/build/obj/coff/shell_loader.o
- .data          0x0001d180        0x0 T:/a/WelcomeBackOS/build/obj/coff/shell.o
- .data          0x0001d180        0x0 T:/a/WelcomeBackOS/build/obj/coff/int86.o
- .data          0x0001d180        0x0 T:/a/WelcomeBackOS/build/obj/coff/pe.o
- .data          0x0001d180        0x0 T:/a/WelcomeBackOS/build/obj/coff/wm.o
- .data          0x0001d180        0x0 T:/a/WelcomeBackOS/build/obj/coff/kheap.o
- .data          0x0001d180        0x4 T:/a/WelcomeBackOS/build/obj/coff/cpp_runtime.o
- .data          0x0001d184        0x0 T:/a/WelcomeBackOS/build/obj/coff/ctor.o
- .data          0x0001d184        0x0 T:/a/WelcomeBackOS/build/obj/coff/kstl.o
- .data          0x0001d184        0x0 T:/a/WelcomeBackOS/build/obj/coff/roboto12x16.o
- *fill*         0x0001d184       0x1c 
- .data          0x0001d1a0      0x680 T:/a/WelcomeBackOS/build/obj/coff/testfont.o
-                0x0001d1a0                testfont
+ .data          0x0008c540        0x4 T:/a/WelcomeBackOS/build/obj/coff/ckernel.o
+                0x0008c540                kernel_stack_top
+ .data          0x0008c544        0x4 T:/a/WelcomeBackOS/build/obj/coff/paging.o
+ .data          0x0008c548        0x0 T:/a/WelcomeBackOS/build/obj/coff/idt.o
+ .data          0x0008c548        0x0 T:/a/WelcomeBackOS/build/obj/coff/irqc.o
+ .data          0x0008c548        0x0 T:/a/WelcomeBackOS/build/obj/coff/isrc.o
+ .data          0x0008c548        0x0 T:/a/WelcomeBackOS/build/obj/coff/gdt.o
+ .data          0x0008c548        0x4 T:/a/WelcomeBackOS/build/obj/coff/syscall.o
+ .data          0x0008c54c        0x0 T:/a/WelcomeBackOS/build/obj/coff/timer.o
+ .data          0x0008c54c        0x0 T:/a/WelcomeBackOS/build/obj/coff/math.o
+ .data          0x0008c54c        0x4 T:/a/WelcomeBackOS/build/obj/coff/usermodec.o
+                0x0008c54c                user_stack_top
+ .data          0x0008c550        0x0 T:/a/WelcomeBackOS/build/obj/coff/task.o
+ .data          0x0008c550        0x4 T:/a/WelcomeBackOS/build/obj/coff/iso9660.o
+ .data          0x0008c554        0x8 T:/a/WelcomeBackOS/build/obj/coff/video.o
+                0x0008c554                tui_vidmem
+                0x0008c558                attrib
+ .data          0x0008c55c        0x8 T:/a/WelcomeBackOS/build/obj/coff/vga.o
+ .data          0x0008c564        0x0 T:/a/WelcomeBackOS/build/obj/coff/bitmap.o
+ .data          0x0008c564        0x4 T:/a/WelcomeBackOS/build/obj/coff/util.o
+                0x0008c564                INT_MAX
+ .data          0x0008c568        0x8 T:/a/WelcomeBackOS/build/obj/coff/atapi.o
+ .data          0x0008c570        0x0 T:/a/WelcomeBackOS/build/obj/coff/ahci.o
+ *fill*         0x0008c570       0x10 
+ .data          0x0008c580      0xc00 T:/a/WelcomeBackOS/build/obj/coff/ps2_mouse.o
+ .data          0x0008d180        0x0 T:/a/WelcomeBackOS/build/obj/coff/shell_loader.o
+ .data          0x0008d180        0x0 T:/a/WelcomeBackOS/build/obj/coff/shell.o
+ .data          0x0008d180        0x0 T:/a/WelcomeBackOS/build/obj/coff/int86.o
+ .data          0x0008d180        0x0 T:/a/WelcomeBackOS/build/obj/coff/pe.o
+ .data          0x0008d180        0x0 T:/a/WelcomeBackOS/build/obj/coff/wm.o
+ .data          0x0008d180        0x0 T:/a/WelcomeBackOS/build/obj/coff/kheap.o
+ .data          0x0008d180        0x4 T:/a/WelcomeBackOS/build/obj/coff/cpp_runtime.o
+ .data          0x0008d184        0x0 T:/a/WelcomeBackOS/build/obj/coff/ctor.o
+ .data          0x0008d184        0x0 T:/a/WelcomeBackOS/build/obj/coff/kstl.o
+ .data          0x0008d184        0x0 T:/a/WelcomeBackOS/build/obj/coff/roboto12x16.o
+ *fill*         0x0008d184       0x1c 
+ .data          0x0008d1a0      0x680 T:/a/WelcomeBackOS/build/obj/coff/testfont.o
+                0x0008d1a0                testfont
 
-.ctors          0x0001e000      0x200
- .ctors         0x0001e000        0x4 T:/a/WelcomeBackOS/build/obj/coff/vga.o
+.ctors          0x0008e000      0x200
+ .ctors         0x0008e000        0x4 T:/a/WelcomeBackOS/build/obj/coff/ckernel.o
+ .ctors         0x0008e004        0x4 T:/a/WelcomeBackOS/build/obj/coff/vga.o
 
-.bss            0x0001f000   0x404c1c
-                0x0001f000                        __bss_start = .
+.bss            0x0008f000   0x506c1c
+                0x0008f000                        __bss_start = .
  *(.bss .bss.*)
- .bss           0x0001f000        0x0 T:/a/WelcomeBackOS/build/obj/coff/ckernel.o
- .bss           0x0001f000   0x402000 T:/a/WelcomeBackOS/build/obj/coff/paging.o
- .bss           0x00421000      0x820 T:/a/WelcomeBackOS/build/obj/coff/idt.o
- .bss           0x00421820        0x0 T:/a/WelcomeBackOS/build/obj/coff/irqc.o
- .bss           0x00421820        0x0 T:/a/WelcomeBackOS/build/obj/coff/isrc.o
- .bss           0x00421820       0xc0 T:/a/WelcomeBackOS/build/obj/coff/gdt.o
-                0x00421820                tss_entry
-                0x0042187c                gp
-                0x004218a0                gdt
- .bss           0x004218e0        0x0 T:/a/WelcomeBackOS/build/obj/coff/syscall.o
- .bss           0x004218e0        0x4 T:/a/WelcomeBackOS/build/obj/coff/timer.o
- .bss           0x004218e4        0x0 T:/a/WelcomeBackOS/build/obj/coff/math.o
- *fill*         0x004218e4       0x1c 
- .bss           0x00421900     0x1000 T:/a/WelcomeBackOS/build/obj/coff/usermodec.o
-                0x00421900                user_stack
- .bss           0x00422900       0x10 T:/a/WelcomeBackOS/build/obj/coff/task.o
- .bss           0x00422910       0x10 T:/a/WelcomeBackOS/build/obj/coff/iso9660.o
- .bss           0x00422920        0x4 T:/a/WelcomeBackOS/build/obj/coff/video.o
-                0x00422920                saved_csr_y
-                0x00422921                saved_csr_x
-                0x00422922                csr_y
-                0x00422923                csr_x
- .bss           0x00422924       0x10 T:/a/WelcomeBackOS/build/obj/coff/vga.o
-                0x00422924                canvas_desktop
-                0x00422926                lfb_bpp
-                0x00422928                lfb_yres
-                0x0042292a                lfb_xres
-                0x0042292c                lfb_pitch
-                0x00422930                lfb_base
- .bss           0x00422934        0x0 T:/a/WelcomeBackOS/build/obj/coff/bitmap.o
- .bss           0x00422934        0x0 T:/a/WelcomeBackOS/build/obj/coff/util.o
- .bss           0x00422934        0xc T:/a/WelcomeBackOS/build/obj/coff/atapi.o
- *fill*         0x00422940      0x2c0 
- .bss           0x00422c00      0x800 T:/a/WelcomeBackOS/build/obj/coff/ahci.o
- .bss           0x00423400       0x1c T:/a/WelcomeBackOS/build/obj/coff/ps2_mouse.o
-                0x00423400                seen_aux
-                0x00423404                seen_out
-                0x00423408                mouse_y
-                0x0042340a                mouse_x
-                0x0042340c                mouse_byte
-                0x0042340f                mouse_cycle
- .bss           0x0042341c        0x0 T:/a/WelcomeBackOS/build/obj/coff/shell_loader.o
- .bss           0x0042341c        0x0 T:/a/WelcomeBackOS/build/obj/coff/shell.o
- .bss           0x0042341c        0x0 T:/a/WelcomeBackOS/build/obj/coff/int86.o
- .bss           0x0042341c        0x0 T:/a/WelcomeBackOS/build/obj/coff/pe.o
- *fill*         0x0042341c        0x4 
- .bss           0x00423420      0x7e0 T:/a/WelcomeBackOS/build/obj/coff/wm.o
- .bss           0x00423c00       0x10 T:/a/WelcomeBackOS/build/obj/coff/kheap.o
-                0x00423c00                max_mem
-                0x00423c04                mem_map_length
-                0x00423c08                mem_map
- .bss           0x00423c10        0x0 T:/a/WelcomeBackOS/build/obj/coff/cpp_runtime.o
- .bss           0x00423c10        0x4 T:/a/WelcomeBackOS/build/obj/coff/ctor.o
-                0x00423c10                g_ctor_ran
- .bss           0x00423c14        0x8 T:/a/WelcomeBackOS/build/obj/coff/kstl.o
-                0x00423c14                std::cin
-                0x00423c18                std::cout
- .bss           0x00423c1c        0x0 T:/a/WelcomeBackOS/build/obj/coff/roboto12x16.o
- .bss           0x00423c1c        0x0 T:/a/WelcomeBackOS/build/obj/coff/testfont.o
+ .bss           0x0008f000        0x4 T:/a/WelcomeBackOS/build/obj/coff/ckernel.o
+                0x0008f000                kernel_stack_bottom
+ *fill*         0x0008f004      0xffc 
+ .bss           0x00090000   0x403000 T:/a/WelcomeBackOS/build/obj/coff/paging.o
+ .bss           0x00493000      0x820 T:/a/WelcomeBackOS/build/obj/coff/idt.o
+ .bss           0x00493820        0x0 T:/a/WelcomeBackOS/build/obj/coff/irqc.o
+ .bss           0x00493820        0x0 T:/a/WelcomeBackOS/build/obj/coff/isrc.o
+ .bss           0x00493820       0xc0 T:/a/WelcomeBackOS/build/obj/coff/gdt.o
+                0x00493820                tss_entry
+                0x0049387c                gp
+                0x004938a0                gdt
+ .bss           0x004938e0        0x0 T:/a/WelcomeBackOS/build/obj/coff/syscall.o
+ .bss           0x004938e0        0x4 T:/a/WelcomeBackOS/build/obj/coff/timer.o
+ .bss           0x004938e4        0x0 T:/a/WelcomeBackOS/build/obj/coff/math.o
+ *fill*         0x004938e4       0x1c 
+ .bss           0x00493900     0x1000 T:/a/WelcomeBackOS/build/obj/coff/usermodec.o
+                0x00493900                user_stack
+ .bss           0x00494900       0x10 T:/a/WelcomeBackOS/build/obj/coff/task.o
+ .bss           0x00494910       0x10 T:/a/WelcomeBackOS/build/obj/coff/iso9660.o
+ .bss           0x00494920        0x4 T:/a/WelcomeBackOS/build/obj/coff/video.o
+                0x00494920                saved_csr_y
+                0x00494921                saved_csr_x
+                0x00494922                csr_y
+                0x00494923                csr_x
+ .bss           0x00494924       0x10 T:/a/WelcomeBackOS/build/obj/coff/vga.o
+                0x00494924                canvas_desktop
+                0x00494926                lfb_bpp
+                0x00494928                lfb_yres
+                0x0049492a                lfb_xres
+                0x0049492c                lfb_pitch
+                0x00494930                lfb_base
+ .bss           0x00494934        0x0 T:/a/WelcomeBackOS/build/obj/coff/bitmap.o
+ .bss           0x00494934        0x0 T:/a/WelcomeBackOS/build/obj/coff/util.o
+ .bss           0x00494934        0xc T:/a/WelcomeBackOS/build/obj/coff/atapi.o
+ *fill*         0x00494940      0x2c0 
+ .bss           0x00494c00      0x800 T:/a/WelcomeBackOS/build/obj/coff/ahci.o
+ .bss           0x00495400       0x1c T:/a/WelcomeBackOS/build/obj/coff/ps2_mouse.o
+                0x00495400                seen_aux
+                0x00495404                seen_out
+                0x00495408                mouse_y
+                0x0049540a                mouse_x
+                0x0049540c                mouse_byte
+                0x0049540f                mouse_cycle
+ .bss           0x0049541c        0x0 T:/a/WelcomeBackOS/build/obj/coff/shell_loader.o
+ .bss           0x0049541c        0x0 T:/a/WelcomeBackOS/build/obj/coff/shell.o
+ .bss           0x0049541c        0x0 T:/a/WelcomeBackOS/build/obj/coff/int86.o
+ .bss           0x0049541c        0x0 T:/a/WelcomeBackOS/build/obj/coff/pe.o
+ *fill*         0x0049541c        0x4 
+ .bss           0x00495420      0x7e0 T:/a/WelcomeBackOS/build/obj/coff/wm.o
+ .bss           0x00495c00   0x100010 T:/a/WelcomeBackOS/build/obj/coff/kheap.o
+                0x00495c00                max_mem
+                0x00495c04                mem_map_length
+                0x00495c08                mem_map
+ .bss           0x00595c10        0x0 T:/a/WelcomeBackOS/build/obj/coff/cpp_runtime.o
+ .bss           0x00595c10        0x4 T:/a/WelcomeBackOS/build/obj/coff/ctor.o
+                0x00595c10                g_ctor_ran
+ .bss           0x00595c14        0x8 T:/a/WelcomeBackOS/build/obj/coff/kstl.o
+                0x00595c14                std::cin
+                0x00595c18                std::cout
+ .bss           0x00595c1c        0x0 T:/a/WelcomeBackOS/build/obj/coff/roboto12x16.o
+ .bss           0x00595c1c        0x0 T:/a/WelcomeBackOS/build/obj/coff/testfont.o
  *(COMMON)
-                0x00423c1c                        __bss_end = .
-                0x00423c1c                        ___end = .
+                0x00595c1c                        __bss_end = .
+                0x00595c1c                        ___end = .
 
 /DISCARD/
  *(.eh_frame)

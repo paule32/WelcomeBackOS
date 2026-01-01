@@ -18,11 +18,11 @@ permissions:
 env:
   SRC_DIR: src
   ISO_PATH: build/bin/bootcd.iso
-  ARTIFACT_NAME: bootcd-iso
+  ARTIFACT_CD_NAME: bootCD-iso
 
 jobs:
   BootISO:              # interne ID (ohne Leerzeichen)
-    name: Boot CD ISO   # Anzeige-Name (mit Leerzeichen ok)
+    name: Boot-CD ISO   # Anzeige-Name (mit Leerzeichen ok)
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -66,8 +66,8 @@ jobs:
           wget --version | head -n 1
           dd --version | head -n 1
           awk --version | head -n 1
-
-      - name: Build (make) in repo root
+          
+      - name: Build-CD in MSYS2
         shell: msys2 {0}
         run: |
           set -euxo pipefail
@@ -78,17 +78,17 @@ jobs:
         shell: msys2 {0}
         run: |
           set -euxo pipefail
-          ls -la build/bin
-          test -f "${ISO_PATH}"
-          ls -la "${ISO_PATH}"
+          ls   -la  build/bin
+          test -f   "${ISO_PATH}"
+          ls   -la  "${ISO_PATH}"
 
-      - name: Upload Artifact (bootcd.iso)
+      - name: Upload Artifact (bootCD.iso)
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.ARTIFACT_NAME }}
+          name: ${{ env.ARTIFACT_CD_NAME }}
           path: ${{ env.ISO_PATH }}
           if-no-files-found: error
-
+      
       # 1) Zeitstempel-Tag (Berlin-Zeit) erzeugen + pushen
       - name: Create & push timestamp tag (vYYYY_mm_dd_HH_mm)
         shell: msys2 {0}
@@ -125,7 +125,7 @@ jobs:
           gh release create $tag "${{ env.ISO_PATH }}" `
             --title $tag `
             --generate-notes
-
+          
       - name: Verify email recipient is set
         shell: pwsh
         env:
@@ -150,7 +150,7 @@ jobs:
           from: "GitHub Actions <${{ secrets.SMTP_USERNAME }}>"
           subject: "✅ Boot ISO Release erstellt: ${{ env.RELEASE_TAG }}"
           body: |
-            Build & Release erfolgreich ✅
+            Build & Release erfolgreich
 
             Repo:  ${{ github.repository }}
             Tag:   ${{ env.RELEASE_TAG }}

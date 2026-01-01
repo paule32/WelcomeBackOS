@@ -19,9 +19,9 @@
 # include "font16x16_italic_letters.h"
 # include "font16x16_italic_extra.h"
 
-# define VBE_MODE_INFO_PTR ((const vbe_info_t*)0x00009000)
+# define VBE_MODE_INFO_PTR ((const vbe_info_t*)0x00002000)
 
-static vbe_info_t* _vga = (vbe_info_t*)0x00009000;
+static vbe_info_t* _vga = (vbe_info_t*)0x00002000;
 
 volatile uint32_t lfb_base  = 0;
 

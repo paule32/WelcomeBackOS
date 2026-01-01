@@ -33,17 +33,17 @@ start_boot2:
     call print_string
 
     ; -------------------------------------------------
-    ; Kernel per LBA nach 0x1000:0000 laden
+    ; Kernel per LBA nach 0x8000:0000 laden
     ; -------------------------------------------------
     mov word  [dap_sectors ], KERNEL_SECTORS   ; aus xorriso
     mov word  [dap_offset  ], 0x0000          ; Offset 0
-    mov word  [dap_segment ], 0x1000          ; Segment 0x1000 -> phys 0x10000
+    mov word  [dap_segment ], 0x8000          ; Segment 0x8000 -> phys 0x80000
     mov dword [dap_lba_low ], KERNEL_LBA
     mov dword [dap_lba_high], 0
 
-    ; Kernel nach physisch 0x00010000 laden
-    mov ax, 0x1000
-    mov es, ax          ; ES:BX = 1000:0000 → phys 0x10000
+    ; Kernel nach physisch 0x00080000 laden
+    mov ax, 0x8000
+    mov es, ax          ; ES:BX = 8000:0000 → phys 0x80000
     mov bx, 0x0000
     
     mov si, disk_address_packet
@@ -59,9 +59,19 @@ start_boot2:
     ; A20 aktivieren
     ; -------------------------------------------------
     call enable_a20
+    call check_a20
+    jz a20_failed          ; ZF=1 -> aus
+
     mov si, msgA20OK
     call print_string
+    jmp A20ok
     
+    a20_failed:
+    mov si, msgA20FAIL
+    call print_string
+    hlt
+    
+    A20ok:
     sti
     call get_vesa_mode
 ;   call set_vesa_mode
@@ -69,6 +79,9 @@ start_boot2:
     ; -------------------------------------------------
     ; GDT laden, Protected Mode aktivieren
     ; -------------------------------------------------
+    mov si, msgBeforePM
+    call print_string
+    
     cli
     lgdt [gdt_descriptor]
     
@@ -103,15 +116,21 @@ load_error:
 ; Versuch 1: BIOS-Funktion INT 15h, AX=2401h
 ;---------------------------------------------------------
 enable_a20:
+    ; 1) Fast A20 (Port 0x92)
+    in   al, 0x92
+    or   al, 00000010b
+    and  al, 11111110b
+    out  0x92, al
+    
     mov ax, 0x2401
     int 0x15
-    jc .via_kbd           ; wenn Fehler: Keyboard-Controller-Methode
+    jc .via_kbd   ; wenn Fehler: Keyboard-Controller-Methode
 
     ret
 
-.via_kbd:
+    .via_kbd:
     ; Sehr vereinfachte KBC-Methode (reicht fuer QEMU / Bochs)
-.wait_input:
+    .wait_input:
     in al, 0x64
     test al, 2
     jnz .wait_input
@@ -119,7 +138,7 @@ enable_a20:
     mov al, 0xD1
     out 0x64, al
 
-.wait_input2:
+    .wait_input2:
     in al, 0x64
     test al, 2
     jnz .wait_input2
@@ -192,20 +211,50 @@ _out:
     int 0x10
     ret
 
+; returns ZF=0 wenn A20 AN, ZF=1 wenn A20 AUS
+check_a20:
+    pushf
+    cli
+    push ds
+    push es
+    xor ax, ax
+    mov ds, ax          ; DS = 0x0000
+    mov ax, 0xFFFF
+    mov es, ax          ; ES = 0xFFFF
+
+    mov si, 0x0500      ; 0000:0500  -> phys 0x000500
+    mov di, 0x0510      ; FFFF:0510  -> phys 0x100500 (wenn A20 an)
+
+    mov al, [ds:si]
+    mov bl, [es:di]
+
+    mov byte [ds:si], 0x00
+    mov byte [es:di], 0xFF
+
+    cmp byte [ds:si], 0xFF   ; wenn A20 AUS -> wrap -> wird 0xFF
+    ; restore
+    mov [ds:si], al
+    mov [es:di], bl
+
+    pop es
+    pop ds
+    popf
+    ret
+    
 ; -------------------------------------------------
 ; VESA Mode 0x114 mit LFB setzen und Infos sichern
 ; -------------------------------------------------
 get_vesa_mode:
-    %ifdef ISOGUI = 0
+    ;%ifdef ISOGUI = 0
     ;ret                   ; text interface verwenden
-    %endif
-    
+    ;%endif
+     
     ; 1) Mode-Info holen
     mov ax, 0x4F01        ; VBE-Funktion: Get Mode Info
     mov cx, 0x0114        ; gewünschter Modus: 0x114
-    mov di, 0x9000        ; Offset = 0x0800
     xor bx, bx
-    mov es, bx            ; ES = 0x0000 → ES:DI = 0000:0800 (phys 0x00000800)
+    mov es, bx            
+    mov di, 0x2000        ; ES -> 0x2000 -> ES:DI = 0000:2000 (phys 0x00002000)
     int 0x10
     
     cmp ax, 0x004F
@@ -230,10 +279,11 @@ vbe_ok:
 vbe_fail:
     ; hier fallback z.B. Textmodus lassen, Meldung zeigen
     ; ...
-    mov ax, 3
-    int 0x10
-    jmp $
-    ret
+    mov si, msgVESAerr
+    call print_string
+vbe_hlt:
+    hlt
+    jmp vbe_hlt
 
 BITS 32
 pm_entry:
@@ -245,10 +295,18 @@ pm_entry:
     mov fs, ax
     mov gs, ax
 
-    mov esp, 0x00180000   ; irgendein 32-Bit-Stack im oberen Bereich
+    mov dword [0xB8000], 0x07420741  ; "AB"
+    mov esp, 0x0009F000   ; irgendein 32-Bit-Stack im oberen Bereich
+    
+    mov dword [0xB8000], 0x072A072A  ; "**" (2 Zeichen) weiß auf schwarz
+    
+    ; entrypoint steht als dword am Anfang des
+    ; geladenen kernel.bin (kernel.ld)
+    mov eax, [0x00080000]
+    jmp eax
 
-    ; Jetzt zum Kernel-Einstieg springen (0x00010000)
-    jmp 0x00010000        ; KernelStart wurde auf 0x00010000 gelinkt
+    ; Jetzt zum Kernel-Einstieg springen (0x00080000)
+    ;jmp 0x00080000        ; KernelStart wurde auf 0x00080000 gelinkt
 
 ;---------------------------------------------------------
 ; Daten
@@ -257,9 +315,12 @@ BITS 16
 boot_drive      db 0
 
 msgB2Start      db 13,10,"[Stage2] BOOT2 gestartet, Kernel wird geladen ...",13,10,0
-msgB2OK         db "[Stage2] Kernel geladen, springe nach 1000:0000",13,10,0
+msgB2OK         db "[Stage2] Kernel geladen, springe nach 8000:0000",13,10,0
 msgA20OK        db "[Stage2] A20 aktiviert, Protected Mode wird gestartet ...",13,10,0
+msgA20FAIL      db "[Stage2] A20 Fehler",13,10,0
 msgB2Fail       db "[Stage2] FEHLER beim Laden des Kernels",13,10,0
+msgBeforePM     db "[Stage2] Protected Mode CLI",13,10,0
+msgVESAerr      db "[Stage2] VESA Modus Fehler!",13,10,0
 
 msgAH           db " AH=",0
 

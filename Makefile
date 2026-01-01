@@ -5,6 +5,8 @@
 # -----------------------------------------------------------------------------
 # we only support MinGW 32-bit and Linux Systems ...
 # -----------------------------------------------------------------------------
+CYGPATH := cygpath
+
 MAKE_VERSION_LINE := $(shell $(MAKE) --version 2>/dev/null | head -n 1)
 MAKE_VENDOR       := $(word 1,$(MAKE_VERSION_LINE))
 MAKE_VERSION      := $(word 3,$(MAKE_VERSION_LINE))
@@ -102,6 +104,9 @@ HEX_OUT := $(BUI_DIR)/hex
 
 FNT_DIR := $(SRC_DIR)/fntres
 
+MBR_BIN := $(BIN_DIR)/fat32_mbr.bin
+VBR_BIN := $(BIN_DIR)/fat32_vbr.bin
+
 README_FILE := $(firstword $(wildcard $(BASEDIR)/README.md))
 # -----------------------------------------------------------------------------
 # src directory must exists ...
@@ -125,6 +130,9 @@ EXT      :=
 GCC_DIR  := /mingw32/bin
 BLD_DIR  := /usr/bin
 
+ISO_IMG  := $(BIN_DIR)/bootcd.iso
+USB_IMG  := $(BIN_DIR)/bootusb.iso
+
 ifeq ($(HOST_OS),windows)
 EXT      += .exe
 endif
@@ -142,6 +150,10 @@ MKDIR    := $(BLD_DIR)/mkdir$(EXT)
 STRIP    := $(BLD_DIR)/strip$(EXT)
 COPY     := $(BLD_DIR)/cp$(EXT)
 
+XORRISO  := $(BLD_DIR)/xorriso$(EXT)
+MFORMAT  := $(GCC_DIR)/mformat$(EXT)
+MCOPY    := $(GCC_DIR)/mcopy$(EXT)
+
 GCC      := $(GCC_DIR)/$(CROSS)gcc$(EXT)
 CPP      := $(GCC_DIR)/$(CROSS)g++$(EXT)
 
@@ -158,6 +170,7 @@ OBJCOPY  := $(GCC_DIR)/$(CROSS)objcopy$(EXT)
 #.PHONY: confirm
 all: confirm clean setup $(BIN_DIR)/bootcd.iso
 setup:
+	$(MKDIR) -p $(BUI_DIR) $(BUI_DIR)/bin $(BUI_DIR)/bin/content $(BUI_DIR)/hex
 	$(MKDIR) -p $(BIN_DIR)/content/img
 	$(COPY) $(IMG_DIR)/*.bmp $(BIN_DIR)/content/img
 	(   cd $(SRC_DIR)/fntres        ;\
@@ -200,6 +213,8 @@ confirm:
         esac \
 	)
 	@(  $(ECHO) "setup environment ..."   ;\
+        $(MKDIR) -p $(BUI_DIR) $(BUI_DIR)/bin $(BUI_DIR)/bin/content $(BUI_DIR)/hex ;\
+        $(MKDIR) -p $(BIN_DIR)/content/img ;\
         $(MKDIR) -p $(HEX_DIR)           ;\
         if [ -f "$(HEX_OUT)/font8x16.h" ]; then  \
             echo "$(HEX_OUT)/font8x16.h: found.";\
@@ -272,6 +287,9 @@ BASE :=
 SRC  := $(BASEDIR)/src
 OBJ  := $(BASEDIR)/build/obj
 BIN  := $(BASEDIR)/build/bin
+
+PART_START_SECTOR   := 2048
+USB_SIZE_MIB        := 64
 
 # -----------------------------------------------------------------------------
 # source files for the C-kernel ...
@@ -457,11 +475,10 @@ define MOD-LBA
 	$(AS) -DLBA_FILE=\"$(COR_DIR)/lba.inc\" -f bin $(COR_DIR)/boot/boot1.asm -o $(BIN_DIR)/content/boot1.bin
 	$(AS) -DLBA_FILE=\"$(COR_DIR)/lba.inc\" -f bin $(COR_DIR)/boot/boot2.asm -o $(BIN_DIR)/content/boot2.bin
 	@cd $(BIN_DIR)/content && \
-	xorriso -as mkisofs -o $(BIN_DIR)/bootcd.iso \
-        -b boot1.bin          \
-        -no-emul-boot         \
-        -boot-load-size 4     \
-        .
+	$(XORRISO) -as mkisofs -o $(BIN_DIR)/bootcd.iso  \
+        -b boot1.bin       \
+        -no-emul-boot      \
+        -boot-load-size 4  .
     cd ..
     @echo "DONE"
 endef
@@ -572,11 +589,11 @@ clean:
 	$(MKDIR) -p $(BUI_DIR)/{obj/coff,obj/elf,obj/inc}
 
 # -----------------------------------------------------------------------------
-# optional/bonus: QEMU boot for bootcd.iso ...
+# optional/bonus: QEMU boot for bootCD.iso ...
 # -----------------------------------------------------------------------------
 bootcd:
 	/mingw64/bin/qemu-system-x86_64.exe \
     -drive file=$(BIN_DIR)/bootcd.iso,if=none,media=cdrom,id=cdrom0 \
     -device ich9-ahci,id=ahci0 \
     -device ide-cd,drive=cdrom0,bus=ahci0.0 \
-    -boot d -m 256M -machine q35,i8042=on
+    -boot d -m 128M -machine q35,i8042=on

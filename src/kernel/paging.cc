@@ -116,50 +116,30 @@ void page_allocator_add_page(uint32_t phys_addr)
 // reserved_up_to: alle Frames unterhalb dieser Adresse gelten als belegt
 void page_init(uint32_t reserved)
 {
-    // alles < reserved ist belegt
-    // zusätzlich: framebuffer-Bereich blocken
-    /*vbe_info_t* vi   = (vbe_info_t*)0x9000; 
-    uint32_t fb_phys = vi->phys_base;
-    uint32_t fb_size = vi->xres * vi->yres * (vi->bpp / 8);
+    uint32_t start = (reserved + 0xFFF) & ~0xFFF;
+    uint32_t limit = MANAGED_MEMORY_BYTES;   // 16 MiB, passend zu MAX_PAGES
 
-    uint32_t fb_start =  fb_phys & ~0xFFF;
-    uint32_t fb_end   = (fb_phys + fb_size + 0xFFF) & ~0xFFF;
-
-    for (uint32_t p = reserved; p < max_mem; p += 0x1000) {
-        if (p >= fb_start && p < fb_end) {
-            continue; // VRAM nicht in freien Pool aufnehmen
-        }
+    for (uint32_t p = start; p < limit; p += 0x1000) {
         page_allocator_add_page(p);
-    }*/
+    }
 }
 
 void* page_alloc(void)
 {
-    for (uint32_t i = 0; i < MAX_PAGES; ++i) {
-        if (!test_bit(i)) {
-            // freie Seite gefunden
-            set_bit(i);
-            // Identity-Mapping: virtuelle == physische Adresse
-            uint32_t addr = i * PAGE_SIZE;
-            return (void*)addr;
-        }
-    }
-
-    return NULL; // kein freier Frame
+    if (free_page_count == 0) return NULL;
+    return (void*)free_pages[--free_page_count];
 }
 
 void page_free(void* addr)
 {
     if (!addr) return;
+    uint32_t a = ((uint32_t)addr) & PAGE_MASK;
 
-    uint32_t a = (uint32_t)addr;
-    if (a >= MANAGED_MEMORY_BYTES) {
-        // Adresse ausserhalb unseres Verwaltungsbereichs
-        return;
-    }
+    if (a < 0x00100000) return;          // nie unter 1MiB
+    if (a >= MANAGED_MEMORY_BYTES) return; // wenn du weiterhin nur 16MiB managst
 
-    uint32_t page_idx = (uint32_t)(a / PAGE_SIZE);
-    clear_bit(page_idx);
+    if (free_page_count < MAX_PAGES)
+        free_pages[free_page_count++] = a;
 }
 
 void *mmio_map(uint32_t phys, uint32_t size)

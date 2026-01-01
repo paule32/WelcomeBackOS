@@ -39,27 +39,34 @@ extern "C" void call_global_ctors(void);
 extern "C" void* __gxx_personality_v0(){return (void*)0;}
 extern uint32_t __end;
 
-uint32_t kernel_stack_top = 0x00180000;
+# define KSTACK_SIZE  (64*1024)
+
+uint32_t kernel_stack_top    = 0x00180000;
+uint32_t kernel_stack_bottom = kernel_stack_top - KSTACK_SIZE;
 
 extern "C" int kmain()
 {
-    /*
-    volatile char *vga = (volatile char*)0xB8000;
-    vga[2] = 'M';
-    vga[3] = 0x0F;*/
+    volatile uint16_t* vga = (volatile uint16_t*)0xB8000;
+    vga[0] = 0x0F00 | 'K';
     
+    idt_init();
+ 
     paging_init();
     kheap_init();
-    
+ 
     //detect_memory();          // setzt max_mem
-    uint32_t reserved = (uint32_t)(&__end) + 0x00100000;
-    page_init(reserved);
     
+    uint32_t stack_top = kernel_stack_top;
+    uint32_t stack_bottom = stack_top - (64*1024);
+
+    uint32_t reserved = ((uint32_t)&__end + 0xFFF) & ~0xFFF;
+    if (reserved < kernel_stack_top) reserved = kernel_stack_top; // Stack schützen
+    page_init(reserved);
+
     // 3) aktuellen Stack als esp0 für TSS verwenden
     uint32_t esp;
     __asm__ volatile("mov %%esp, %0" : "=r"(esp));
     gdt_init(esp);
-    idt_init();
     isr_init();
     irq_init();
     
