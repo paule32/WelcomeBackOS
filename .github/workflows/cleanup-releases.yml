@@ -1,0 +1,82 @@
+# -------------------------------------------------------------
+# \file   cleanup-releases.yml
+# \author Jens Kallup - paule32.jk
+# \legal  (c) 2025, 2026 all rights reserved.
+#
+# \nore   clean old releases so, that the last two releases are
+#         keep on top of the new available releases. The other
+#         ones will be delete.
+#         currently, this workflow file must be trigger manuall
+#         to take effect. Hint: workflow_dispatch == manually.
+# -------------------------------------------------------------
+name: Cleanup old releases (keep last 2)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup_releases:
+    name: Cleanup releases (keep 2 newest)
+    runs-on: windows-latest
+
+    steps:
+      - name: Delete all releases except 2 newest (and delete their tags)
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $repo = "${{ github.repository }}"
+          $keep = 2
+
+          # Alle Releases holen (paginieren)
+          $all = @()
+          $page = 1
+          while ($true) {
+            $batchJson = gh api "repos/$repo/releases?per_page=100&page=$page"
+            $batch = $batchJson | ConvertFrom-Json
+
+            if (-not $batch -or $batch.Count -eq 0) { break }
+
+            $all += $batch
+            $page++
+          }
+
+          if ($all.Count -le $keep) {
+            Write-Host "Releases: $($all.Count). Nothing to delete (keep=$keep)."
+            exit 0
+          }
+
+          # API liefert i.d.R. neueste zuerst => erste 2 behalten, Rest löschen
+          $toDelete = $all | Select-Object -Skip $keep
+
+          Write-Host "Total releases: $($all.Count)"
+          Write-Host "Keeping newest: $keep"
+          Write-Host "Deleting older: $($toDelete.Count)"
+          Write-Host ""
+
+          foreach ($r in $toDelete) {
+            $id  = $r.id
+            $tag = $r.tag_name
+            $name = $r.name
+
+            Write-Host "Deleting release id=$id tag=$tag name=$name"
+            gh api -X DELETE "repos/$repo/releases/$id" | Out-Null
+
+            # Tag-Ref löschen (falls vorhanden)
+            if ($tag -and $tag.Trim().Length -gt 0) {
+              Write-Host "Deleting tag ref: refs/tags/$tag"
+              # Manche Tags können hier 404 geben (z.B. wenn schon gelöscht) -> nicht abbrechen
+              try {
+                gh api -X DELETE "repos/$repo/git/refs/tags/$tag" | Out-Null
+              } catch {
+                Write-Host "Tag ref delete skipped/failed (maybe already gone): $tag"
+              }
+            }
+
+            Write-Host ""
+          }
+
+          Write-Host "Cleanup done."

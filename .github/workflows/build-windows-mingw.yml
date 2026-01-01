@@ -126,6 +126,15 @@ jobs:
             --title $tag `
             --generate-notes
 
+      - name: Verify email recipient is set
+        shell: pwsh
+        env:
+          NOTIFY_TO_EMAIL: ${{ secrets.NOTIFY_TO_EMAIL }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:NOTIFY_TO_EMAIL)) {
+            throw "Secret NOTIFY_TO_EMAIL is missing/empty. Set it in Repo Settings -> Secrets and variables -> Actions."
+          }
+          
       # 3) E-Mail nur bei Erfolg (nach erfolgreichem Release)
       - name: Send email (success)
         if: success()
