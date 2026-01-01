@@ -1,3 +1,10 @@
+# -------------------------------------------------------------
+# \file   build-windows-mingw.yml
+# \author Jens Kallup - paule32.jk
+# \legal  (c) 2026 all rights reserved.
+#
+# \nore   builds remote bootcd.iso file for IBM-PC compatibles
+# -------------------------------------------------------------
 name: Build Boot ISO (Windows / MSYS2 MinGW32)
 
 on:
@@ -14,7 +21,7 @@ env:
   ARTIFACT_NAME: bootcd-iso
 
 jobs:
-  BootISO:
+  BootCD ISO:
     runs-on: windows-latest
 
     steps:
@@ -60,10 +67,11 @@ jobs:
           dd --version | head -n 1
           awk --version | head -n 1
 
-      - name: Build (make clean + make)
+      - name: Build (make) in repo root
         shell: msys2 {0}
         run: |
           set -euxo pipefail
+          ls
           make AUTO_YES=1
 
       - name: Verify ISO exists
@@ -81,21 +89,19 @@ jobs:
           path: ${{ env.ISO_PATH }}
           if-no-files-found: error
 
-      # 1) Tag erzeugen (Berlin-Zeit) + pushen
+      # 1) Zeitstempel-Tag (Berlin-Zeit) erzeugen + pushen
       - name: Create & push timestamp tag (vYYYY_mm_dd_HH_mm)
         shell: msys2 {0}
         run: |
           set -euxo pipefail
 
-          # Berlin-Zeit für Tag-Format
           export TZ=Europe/Berlin
           TAG="$(date +v%Y_%m_%d_%H_%M)"
 
-          # Git identity für den Tag
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Sicherheitscheck gegen Kollision (z.B. Re-Run in derselben Minute)
+          # Kollision vermeiden (z.B. Re-Run in derselben Minute)
           if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
             echo "Tag ${TAG} existiert bereits. Bitte erneut starten (nächste Minute) oder Format erweitern."
             exit 1
@@ -104,7 +110,6 @@ jobs:
           git tag -a "${TAG}" -m "Automated build ${TAG}"
           git push origin "${TAG}"
 
-          # Tag für nachfolgende Steps verfügbar machen
           echo "RELEASE_TAG=${TAG}" >> "$GITHUB_ENV"
 
       # 2) Release erstellen + ISO anhängen
@@ -120,3 +125,26 @@ jobs:
           gh release create $tag "${{ env.ISO_PATH }}" `
             --title $tag `
             --generate-notes
+
+      # 3) E-Mail nur bei Erfolg (nach erfolgreichem Release)
+      - name: Send email (success)
+        if: success()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}   # z.B. 465 oder 587
+          secure: false                           # 465 meist true; bei 587 ggf. false
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+
+          to: ${{ secrets.NOTIFY_TO_EMAIL }}
+          from: "GitHub Actions <${{ secrets.SMTP_USERNAME }}>"
+          subject: "✅ Boot ISO Release erstellt: ${{ env.RELEASE_TAG }}"
+          body: |
+            Build & Release erfolgreich ✅
+
+            Repo:  ${{ github.repository }}
+            Tag:   ${{ env.RELEASE_TAG }}
+            ISO:   ${{ env.ISO_PATH }}
+
+            Run:   https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
