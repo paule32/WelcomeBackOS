@@ -21,6 +21,22 @@ boot_menu:
 
     mov ax, 0xB800
     mov es, ax
+
+    ; menu bar
+    mov di, (0*80 + 0) * 2
+    mov ax, 0x07DB
+    mov cx, 80
+    .drawMenu:
+    stosw
+    loop .drawMenu
+    ; status
+    mov di, (24*80 + 0) * 2
+    mov ax, 0x07DB
+    mov cx, 80
+    .drawStatus:
+    stosw
+    loop .drawStatus
+
     
     ; top
     mov di, (5*80 + 10) * 2
@@ -197,85 +213,162 @@ boot_menu:
     loop .draw52
 
     ; SHARE WARE text
-    PRINT_AT 19, share1
-    PRINT_AT 20, share2
-    PRINT_AT 21, share3
-    PRINT_AT 22, share4
-    PRINT_AT 23, share5
+    PRINT_AT 18, share1
+    PRINT_AT 19, share2
+    PRINT_AT 20, share3
+    PRINT_AT 21, share4
+    PRINT_AT 22, share5
 
     call ui_draw_texte
     call main_bootmenu_loop
 jmp $
     ret
 
+; ------------------------------------
+; BIOS RTC Zeit lesen
+; INT 1Ah / AH=02h
+; ------------------------------------
+get_rtc_time:
+    mov ah, 0x02
+    int 0x1A
+    jc .error
+
+    ; Rückgabewerte (BCD!)
+    ; CH = Stunden
+    ; CL = Minuten
+    ; DH = Sekunden
+    ret
+
+.error:
+    ret
+
+; AL = BCD → zwei ASCII-Zeichen
+bcd_to_ascii:
+    push ax
+    mov ah, al
+    shr ah, 4          ; Zehner
+    and al, 0x0F       ; Einer
+    add ah, '0'
+    add al, '0'
+    pop ax
+    ret
+; Input : AL = BCD (z.B. 0x59)
+; Output: AL = ASCII Zehner ('0'..'5')
+;         AH = ASCII Einer  ('0'..'9')
+bcd_to_2ascii:
+    mov ah, al
+    and ah, 0x0F      ; Einer
+    shr al, 4         ; Zehner
+    add al, '0'
+    add ah, '0'
+    ret
+    
+show_time:
+    mov ah, 0x02
+    int 0x1A
+    jc .done
+
+    mov ax, 0xB800
+    mov es, ax
+    mov di, (0*80 + 71)*2
+    mov bl, 0x70
+
+    ; Stunden (CH)
+    mov al, ch
+    call bcd_to_2ascii
+    mov dl, ah          ; Einer sichern
+    mov ah, bl
+    stosw               ; Zehner
+    mov al, dl
+    stosw               ; Einer
+
+    ; :
+    mov al, ':'
+    mov ah, bl
+    stosw
+
+    ; Minuten (CL)
+    mov al, cl
+    call bcd_to_2ascii
+    mov dl, ah
+    mov ah, bl
+    stosw
+    mov al, dl
+    stosw
+
+    ; :
+    mov al, ':'
+    mov ah, bl
+    stosw
+
+    ; Sekunden (DH)
+    mov al, dh
+    call bcd_to_2ascii
+    mov dl, ah
+    mov ah, bl
+    stosw
+    mov al, dl
+    stosw
+
+.done:
+    ret
+
 ui_draw_texte:
+    call ui_text_init
     mov bl, 0x1F
     call ui_draw_options_A
     ;
+    call ui_text_init
     mov bl, 0x1F
     call ui_draw_options_B
     ;
+    call ui_text_init
     mov bl, 0x1F
     call ui_draw_options_C
     ret
-    
+
+ui_text_init:
+    push cs
+    pop  ds
+    mov  ax, 0xB800
+    mov  es, ax
+    cld
+    ret
+
+; ------------------------------------------------------------
+;   DI = Zielposition im Textspeicher (Wortoffset)
+;   SI = String (0-terminiert)
+;   AH = Attribut
+; ------------------------------------------------------------
+ui_puts_at:
+.next:
+    lodsb
+    or   al, al
+    jz   .done
+    stosw
+    jmp  short .next
+.done:
+    ret
+
 ui_draw_options_A:
-    ; starten im Textmode 80x25
-    push cs
-    pop ds
-    mov ax, 0xB800
-    mov es, ax
-    mov di, (7*80 + 16)*2   ; y=6, x=11
-    mov ah, bl
-    mov si, msgDBASEtextmode80x25
-    cld
-    .loop:
-    lodsb
-    test al, al
-    jz .endeDBstr
-    stosw
-    jmp .loop
-    .endeDBstr:
+    mov  di, (7*80 + 16)*2
+    mov  ah, bl
+    mov  si, msgDBASEtextmode80x25
+    jmp  ui_puts_at
     ret
-
 ui_draw_options_B:
-    ; starten im vesa mode 800x600x16bpp
-    push cs
-    pop ds
-    mov ax, 0xB800
-    mov es, ax
-    mov di, (9*80 + 16)*2   ; y=6, x=11
-    mov ah, bl
-    mov si, msgDBASEvesa800x600
-    cld
-    .loop:
-    lodsb
-    test al, al
-    jz .endeDBstr
-    stosw
-    jmp .loop
-    .endeDBstr:
+    mov  di, (9*80 + 16)*2
+    mov  ah, bl
+    mov  si, msgDBASEvesa800x600
+    jmp  ui_puts_at
     ret
-
 ui_draw_options_C:
-    ; starten im vesa mode 1024x728x16bpp
-    push cs
-    pop ds
-    mov ax, 0xB800
-    mov es, ax
-    mov di, (11*80 + 16)*2   ; y=6, x=11
-    mov ah, bl
-    mov si, msgDBASEvesa1024x728
-    cld
-    .loop:
-    lodsb
-    test al, al
-    jz .endeDBstr
-    stosw
-    jmp .loop
-    .endeDBstr:
+    mov  di, (11*80 + 16)*2
+    mov  ah, bl
+    mov  si, msgDBASEvesa1024x728
+    jmp  ui_puts_at
     ret
-
+    
 print_base_str:
     push cs
     pop ds
@@ -319,6 +412,8 @@ ui_fill_bg:
 ; - reagiert auf UP / DOWN / ENTER
 ; ------------------------------------------------------------
 main_bootmenu_loop:
+    call show_time
+    
     ; Check ob Taste verfügbar (ZF=1 => keine Taste)
     mov ah, 0x01
     int 0x16
@@ -430,101 +525,34 @@ on_enter:
     jmp main_bootmenu_loop
 
     .enter_vesa_800x600_pm:
-    
-    call dpa_packet_jump
+    jmp get_option
     
     ; i see no output -->
     mov si, msgB2Fail
     call print_string
-    <--
+    ; <--
     
     
     jmp 0x08:pm_entry
     jmp $
     
     .enter_text_pm:
-    call dpa_packet_jump
+    jmp get_option
     jmp 0x08:pm_entry
     jmp $
 
-dpa_packet_jump:
-    cli
-    
-    ; Code- und Datensegmente angleichen
-    mov ax, cs
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
-    mov sp, 0x5000      ; irgendein Stack im ersten MB
-    
-    sti
-    
-    ; -------------------------------------------------
-    ; Kernel per LBA nach 0x8000:0000 laden
-    ; -------------------------------------------------
-    mov word  [dap_sectors ], KERNEL_SECTORS   ; aus xorriso
-    mov word  [dap_offset  ], 0x0000          ; Offset 0
-    mov word  [dap_segment ], 0x8000          ; Segment 0x8000 -> phys 0x80000
-    mov dword [dap_lba_low ], KERNEL_LBA
-    mov dword [dap_lba_high], 0
-
-    ; Kernel nach physisch 0x00080000 laden
-    mov ax, 0x8000
-    mov es, ax          ; ES:BX = 8000:0000 → phys 0x80000
-    mov bx, 0x0000
-    
-    mov si, disk_address_packet
-    mov dl, [boot_drive]
-    mov ah, 0x42
-    int 0x13
-    jc .load_error
-
-    mov si, msgB2OK
-    call print_string
-
-    jmp .lba_kernel_ok
-    
-    
-.load_error:
-    mov si, msgB2Fail
-    call print_string
-
-    ; Debug: Fehlercode ausgeben
-    mov al, ah             ; AH = BIOS Error Code
-    call print_hex8        ; z.B. " AH=0E"
-
-.halt:
-    cli
-    hlt
-    jmp .halt
-
-.lba_kernel_ok:
-    ; -------------------------------------------------
-    ; A20 aktivieren
-    ; -------------------------------------------------
-    call enable_a20
-    call check_a20
-    jz a20_failed2          ; ZF=1 -> aus
-
-    jmp A20ok2
-    
-    a20_failed2:
-    sti
-    mov si, msgA20FAIL
-    call print_string
-    hlt
-    
-    A20ok2:
+get_option:
     mov ah, [menuFlag]
     cmp ah, 2                       ; wenn grafik
     je  .set_graphics_mode_800x600   ; dann ...
-    jne .only_text
+    jmp .only_text
     
     .set_graphics_mode_800x600:
+    mov ax, 3
+    int 0x10
+    
     call get_vesa_mode
-    call set_vesa_mode
+    ;call set_vesa_mode
     jmp switcher
     
     .only_text:
@@ -541,6 +569,10 @@ dpa_packet_jump:
     mov eax, cr0
     or  eax, 1             ; PE-Bit setzen
     mov cr0, eax
+    
+    ; Far Jump in 32-Bit-Code (pm_entry)
+    jmp 0x08:pm_entry      ; 0x08 = Code-Segment-Selector
+
     ret
 
 BITS 32

@@ -14,7 +14,7 @@ BITS 16
 ORG 0x0500          ; Stage1 springt nach 0000:0500
 
 start_boot2:
-    cli
+        cli
     
     ; Code- und Datensegmente angleichen
     mov ax, cs
@@ -31,6 +31,37 @@ start_boot2:
 
     mov si, msgB2Start
     call print_string
+
+    ; -------------------------------------------------
+    ; Kernel per LBA nach 0x1000:0000 laden
+    ; -------------------------------------------------
+    mov word  [dap_sectors ], KERNEL_SECTORS   ; aus xorriso
+    mov word  [dap_offset  ], 0x0000          ; Offset 0
+    mov word  [dap_segment ], 0x1000          ; Segment 0x1000 -> phys 0x10000
+    mov dword [dap_lba_low ], KERNEL_LBA
+    mov dword [dap_lba_high], 0
+
+    ; Kernel nach physisch 0x00010000 laden
+    mov ax, 0x1000
+    mov es, ax          ; ES:BX = 1000:0000 → phys 0x10000
+    mov bx, 0x0000
+    
+    mov si, disk_address_packet
+    mov dl, [boot_drive]
+    mov ah, 0x42
+    int 0x13
+    jc load_error
+
+    mov si, msgB2OK
+    call print_string
+
+    ; -------------------------------------------------
+    ; A20 aktivieren
+    ; -------------------------------------------------
+    call enable_a20
+
+    mov si, msgB2Start
+    call print_string
     
     ; -------------------------------------------------
     ; Text-Interface für Benutzer-Desktop text or gui
@@ -38,6 +69,19 @@ start_boot2:
     %include 'src/kernel/boot/boot_menu.asm'
     call boot_menu
     ; no return here
+
+load_error:
+    mov si, msgB2Fail
+    call print_string
+
+    ; Debug: Fehlercode ausgeben
+    mov al, ah             ; AH = BIOS Error Code
+    call print_hex8        ; z.B. " AH=0E"
+
+.halt:
+    cli
+    hlt
+    jmp .halt
 
 ;---------------------------------------------------------
 ; Versuch 1: BIOS-Funktion INT 15h, AX=2401h
@@ -52,8 +96,6 @@ enable_a20:
     mov ax, 0x2401
     int 0x15
     jc .via_kbd   ; wenn Fehler: Keyboard-Controller-Methode
-
-    ret
 
     .via_kbd:
     ; Sehr vereinfachte KBC-Methode (reicht fuer QEMU / Bochs)
@@ -144,25 +186,40 @@ check_a20:
     cli
     push ds
     push es
+    push si
+    push di
+    push ax
+    push bx
+
     xor ax, ax
-    mov ds, ax          ; DS = 0x0000
+    mov ds, ax              ; DS=0000
     mov ax, 0xFFFF
-    mov es, ax          ; ES = 0xFFFF
+    mov es, ax              ; ES=FFFF
 
-    mov si, 0x0500      ; 0000:0500  -> phys 0x000500
-    mov di, 0x0510      ; FFFF:0510  -> phys 0x100500 (wenn A20 an)
+    mov di, 0x0500          ; phys: 0000:0500 = 0x00500
+    mov si, 0x0510          ; phys: FFFF:0510 = 0x100500 (A20 entscheidet!)
 
-    mov al, [ds:si]
-    mov bl, [es:di]
+    mov al, [ds:di]
+    mov bl, [es:si]
+    push ax
+    push bx
 
-    mov byte [ds:si], 0x00
-    mov byte [es:di], 0xFF
+    mov byte [ds:di], 0x00
+    mov byte [es:si], 0xFF
 
-    cmp byte [ds:si], 0xFF   ; wenn A20 AUS -> wrap -> wird 0xFF
-    ; restore
-    mov [ds:si], al
-    mov [es:di], bl
+    cmp byte [ds:di], 0xFF  ; wenn A20 AUS, landet 0xFF auch bei 0x00500
+    ; ZF=1 => A20 AUS
+    ; ZF=0 => A20 AN
 
+    pop bx
+    pop ax
+    mov [es:si], bl
+    mov [ds:di], al
+
+    pop bx
+    pop ax
+    pop di
+    pop si
     pop es
     pop ds
     popf
@@ -172,45 +229,84 @@ check_a20:
 ; VESA Mode 0x114 mit LFB setzen und Infos sichern
 ; -------------------------------------------------
 get_vesa_mode:
-    ;%ifdef ISOGUI = 0
-    ;ret                   ; text interface verwenden
-    ;%endif
-     
-    ; 1) Mode-Info holen
-    mov ax, 0x4F01        ; VBE-Funktion: Get Mode Info
-    mov cx, 0x0114        ; gewünschter Modus: 0x114
-    xor bx, bx
-    mov es, bx            
-    mov di, 0x2000        ; ES -> 0x2000 -> ES:DI = 0000:2000 (phys 0x00002000)
+VBE_INFO_SEG  equ 0x0000
+VBE_INFO_OFF  equ 0x3000        ; 512 Bytes frei lassen
+MODE_INFO_OFF equ 0x3200        ; nochmal 256+ Bytes frei lassen
+
+get_set_vesa:
+    pushad
+    push ds
+    push es
+
+    ; --- 4F00: Controller Info ---
+    xor ax, ax
+    mov es, ax
+    mov di, VBE_INFO_OFF
+    ; 'VBE2' Signature hilft bei manchen BIOS
+    mov dword [es:di], '2EBV'
+
+    mov ax, 0x4F00
     int 0x10
-    
     cmp ax, 0x004F
-    jne vbe_fail
+    jne .fail_controller
 
-set_vesa_mode:
-    mov ax, 0x4F02        ; VBE-Funktion: Set VBE Mode
-    mov bx, 0x4114        ; 0x114 | 0x4000 (Bit14 = Linear Framebuffer)
+    ; --- 4F01: Mode Info 0x114 ---
+    xor ax, ax
+    mov es, ax
+    mov di, MODE_INFO_OFF
+
+    mov ax, 0x4F01
+    mov cx, 0x0114
+    int 0x10
+    cmp ax, 0x004F
+    jne .fail_modeinfo
+
+    ; ModeAttributes prüfen (optional, aber hilfreich)
+    ; [MODE_INFO_OFF+0] = ModeAttributes (word)
+    ; Bit0 = supported, Bit7 = LFB available (bei VBE 2.0+ üblich)
+    mov bx, [es:MODE_INFO_OFF + 0]
+    test bx, 0000000000000001b
+    jz .fail_unsupported
+
+    ; --- 4F02: Set Mode ---
+    mov ax, 0x4F02
+    mov bx, 0x0114            ; erst ohne LFB testen!
+    int 0x10
+    cmp ax, 0x004F
+    jne .fail_setmode
+
+    ; Wenn das klappt, kannst du als 2. Versuch LFB probieren:
+    mov ax, 0x4F02
+    mov bx, 0x4114
     int 0x10
 
-    cmp ax, 0x004F
-    jne vbe_fail
-
-    ; Erfolg: hier geht's normal weiter (z.B. in Protected Mode wechseln)
-    jmp vbe_ok
-
-    ; optional: Debug: "VESA OK" ausgeben
-    ; ...
-vbe_ok:
+    pop es
+    pop ds
+    popad
+    clc
     ret
 
-vbe_fail:
-    ; hier fallback z.B. Textmodus lassen, Meldung zeigen
-    ; ...
-    mov si, msgVESAerr
+.fail_controller:
+    mov si, msgVESA_failController
     call print_string
-vbe_hlt:
-    hlt
-    jmp vbe_hlt
+    jmp .failVESA
+.fail_modeinfo:
+    mov si, msgVESA_failModeInfo
+    call print_string
+    jmp .failVESA
+.fail_unsupported:
+    mov si, msgVESA_failUnsupported
+    call print_string
+    jmp .failVESA
+.fail_setmode:
+    mov si, msgVESA_failSetmode
+    call print_string
+.failVESA:
+    pop es
+    pop ds
+    popad
+    stc
+    ret
 
 ;---------------------------------------------------------
 ; Daten
@@ -267,9 +363,15 @@ share3: db " \___ \| |_| | / _ \ | |_) |  _|      | |/\| | / _ \ | |_) |  _|   "
 share4: db "  ___) |  _  |/ ___ \|  _ <| |___     |  /\  |/ ___ \|  _ <| |___  ", 0
 share5: db " |____/|_| |_/_/   \_\_| \_\_____|    |_|  |_/_/   \_\_| \_\_____| ", 0
 
-vessatext_a: db "vESSA 1111", 0
-vessatext_b: db "vESSA CCCC", 0
-vessatext_c: db "gugu ", 0
+msgVESA_failController:     db "[VESA] Error: Controller." , 0
+msgVESA_failModeInfo:       db "[VESA] Error: ModeInfo."   , 0
+msgVESA_failUnsupported:    db "[VESA] Error: Unsupported.", 0
+msgVESA_failSetmode:        db "[VESA] Error: SetMode."    , 0
+
+
+vessatext_a: db "vESSA 1111", 13, 10, 0
+vessatext_b: db "vESSA CCCC", 13, 10, 0
+vessatext_c: db "gugu ",      13, 10, 0
 menuFlag db 4
 
 ; Puffer für VBE Mode Info (256 Byte reichen)
