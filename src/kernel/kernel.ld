@@ -12,7 +12,7 @@ SECTIONS
 { 
     . = 0x00080000;
     .text : {
-        LONG(_kmain);
+/*        LONG(_kmain);*/
         __code_start = .;
         *(.text .text.*)
     } 

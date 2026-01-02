@@ -228,62 +228,32 @@ check_a20:
 ; -------------------------------------------------
 ; VESA Mode 0x114 mit LFB setzen und Infos sichern
 ; -------------------------------------------------
-get_vesa_mode:
-VBE_INFO_SEG  equ 0x0000
-VBE_INFO_OFF  equ 0x3000        ; 512 Bytes frei lassen
-MODE_INFO_OFF equ 0x3200        ; nochmal 256+ Bytes frei lassen
-
-get_set_vesa:
-    pushad
-    push ds
-    push es
-
-    ; --- 4F00: Controller Info ---
-    xor ax, ax
-    mov es, ax
-    mov di, VBE_INFO_OFF
-    ; 'VBE2' Signature hilft bei manchen BIOS
-    mov dword [es:di], '2EBV'
-
-    mov ax, 0x4F00
+set_vesa_mode_800x600:
+    ; 1) Mode-Info holen
+    mov ax, 0x4F01        ; VBE-Funktion: Get Mode Info
+    mov cx, 0x0114        ; gewünschter Modus: 0x114
+    mov di, 0x2000  ; todo !!!
+    xor bx, bx
+    mov es, bx
     int 0x10
-    cmp ax, 0x004F
-    jne .fail_controller
 
-    ; --- 4F01: Mode Info 0x114 ---
-    xor ax, ax
-    mov es, ax
-    mov di, MODE_INFO_OFF
-
-    mov ax, 0x4F01
-    mov cx, 0x0114
-    int 0x10
-    cmp ax, 0x004F
-    jne .fail_modeinfo
-
-    ; ModeAttributes prüfen (optional, aber hilfreich)
-    ; [MODE_INFO_OFF+0] = ModeAttributes (word)
-    ; Bit0 = supported, Bit7 = LFB available (bei VBE 2.0+ üblich)
-    mov bx, [es:MODE_INFO_OFF + 0]
-    test bx, 0000000000000001b
-    jz .fail_unsupported
-
-    ; --- 4F02: Set Mode ---
-    mov ax, 0x4F02
-    mov bx, 0x0114            ; erst ohne LFB testen!
-    int 0x10
-    cmp ax, 0x004F
-    jne .fail_setmode
-
-    ; Wenn das klappt, kannst du als 2. Versuch LFB probieren:
     mov ax, 0x4F02
     mov bx, 0x4114
     int 0x10
 
-    pop es
-    pop ds
-    popad
-    clc
+    ; -------------------------------------------------
+    ; GDT laden, Protected Mode aktivieren
+    ; -------------------------------------------------
+    cli
+    lgdt [gdt_descriptor]
+    
+    mov eax, cr0
+    or  eax, 1             ; PE-Bit setzen
+    mov cr0, eax
+    
+    ; Far Jump in 32-Bit-Code (pm_entry)
+    jmp 0x08:pm_entry      ; 0x08 = Code-Segment-Selector
+
     ret
 
 .fail_controller:
@@ -308,6 +278,20 @@ get_set_vesa:
     stc
     ret
 
+BITS 32
+pm_entry:
+    ; Segmente im Protected Mode setzen
+    mov ax, 0x10          ; Data-Segment-Selector
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov fs, ax
+    mov gs, ax
+    
+    mov esp, 0x0009F000   ; irgendein 32-Bit-Stack im oberen Bereich
+    
+    jmp 0x00080004  ; entry #2
+   
 ;---------------------------------------------------------
 ; Daten
 ;---------------------------------------------------------
