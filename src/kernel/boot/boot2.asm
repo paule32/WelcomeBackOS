@@ -37,87 +37,7 @@ start_boot2:
     ; -------------------------------------------------
     %include 'src/kernel/boot/boot_menu.asm'
     call boot_menu
-    next_part:
-    
-    ; -------------------------------------------------
-    ; Kernel per LBA nach 0x8000:0000 laden
-    ; -------------------------------------------------
-    mov word  [dap_sectors ], KERNEL_SECTORS   ; aus xorriso
-    mov word  [dap_offset  ], 0x0000          ; Offset 0
-    mov word  [dap_segment ], 0x8000          ; Segment 0x8000 -> phys 0x80000
-    mov dword [dap_lba_low ], KERNEL_LBA
-    mov dword [dap_lba_high], 0
-
-    ; Kernel nach physisch 0x00080000 laden
-    mov ax, 0x8000
-    mov es, ax          ; ES:BX = 8000:0000 → phys 0x80000
-    mov bx, 0x0000
-    
-    mov si, disk_address_packet
-    mov dl, [boot_drive]
-    mov ah, 0x42
-    int 0x13
-    jc load_error
-
-    mov si, msgB2OK
-    call print_string
-
-    ; -------------------------------------------------
-    ; A20 aktivieren
-    ; -------------------------------------------------
-    call enable_a20
-    call check_a20
-    jz a20_failed          ; ZF=1 -> aus
-
-    mov si, msgA20OK
-    call print_string
-    jmp A20ok
-    
-    a20_failed:
-    mov si, msgA20FAIL
-    call print_string
-    hlt
-    
-    A20ok:
-    sti
-    call get_vesa_mode
-;   call set_vesa_mode
-
-    ; -------------------------------------------------
-    ; GDT laden, Protected Mode aktivieren
-    ; -------------------------------------------------
-    mov si, msgBeforePM
-    call print_string
-    
-    cli
-    lgdt [gdt_descriptor]
-    
-    mov eax, cr0
-    or  eax, 1             ; PE-Bit setzen
-    mov cr0, eax
-
-    ; Far Jump in 32-Bit-Code (pm_entry)
-    jmp 0x08:pm_entry      ; 0x08 = Code-Segment-Selector
-    
-    
-    ; -------------------------------------------------
-    ; In den Kernel springen
-    ; -------------------------------------------------
-    ;mov dl, [boot_drive]      ; Laufwerk an Kernel weiterreichen (falls gebraucht)
-    ;jmp 0x1000:0000           ; CS:IP = 1000:0000
-
-load_error:
-    mov si, msgB2Fail
-    call print_string
-
-    ; Debug: Fehlercode ausgeben
-    mov al, ah             ; AH = BIOS Error Code
-    call print_hex8        ; z.B. " AH=0E"
-
-.halt:
-    cli
-    hlt
-    jmp .halt
+    ; no return here
 
 ;---------------------------------------------------------
 ; Versuch 1: BIOS-Funktion INT 15h, AX=2401h
@@ -292,29 +212,6 @@ vbe_hlt:
     hlt
     jmp vbe_hlt
 
-BITS 32
-pm_entry:
-    ; Segmente im Protected Mode setzen
-    mov ax, 0x10          ; Data-Segment-Selector
-    mov ds, ax
-    mov es, ax
-    mov ss, ax
-    mov fs, ax
-    mov gs, ax
-
-    mov dword [0xB8000], 0x07420741  ; "AB"
-    mov esp, 0x0009F000   ; irgendein 32-Bit-Stack im oberen Bereich
-    
-    mov dword [0xB8000], 0x072A072A  ; "**" (2 Zeichen) weiß auf schwarz
-    
-    ; entrypoint steht als dword am Anfang des
-    ; geladenen kernel.bin (kernel.ld)
-    mov eax, [0x00080000]
-    jmp eax
-
-    ; Jetzt zum Kernel-Einstieg springen (0x00080000)
-    ;jmp 0x00080000        ; KernelStart wurde auf 0x00080000 gelinkt
-
 ;---------------------------------------------------------
 ; Daten
 ;---------------------------------------------------------
@@ -355,8 +252,25 @@ dap_lba_low     dd 0
 dap_lba_high    dd 0
 
 ; ------------------------------------------------------------
-; Data / BSS
+; boot menu
 ; ------------------------------------------------------------
+msgDBASEtextmode80x25:  db " Start dBase 2026 Text-Mode 80x25        ... ", 0
+msgDBASEvesa800x600:    db " Start dBase 2026 Graphics-Mode  800x600 ... ", 0
+msgDBASEvesa1024x728:   db " Start dBase 2026 Graphics-Mode 1024x728 ... ", 0
+; ------------------------------------------------------------
+msgDBASE:               db " -=< dBASE 2026 >=- ",0
+msgDBASEenv:            db " Choose your Favorite Environment ", 0
+
+share1: db "  ____  _   _    _    ____  _____      _    _    _    ____  _____  ", 0
+share2: db " / ___|| | | |  / \  |  _ \| ____|    | |  | |  / \  |  _ \| ____| ", 0
+share3: db " \___ \| |_| | / _ \ | |_) |  _|      | |/\| | / _ \ | |_) |  _|   ", 0
+share4: db "  ___) |  _  |/ ___ \|  _ <| |___     |  /\  |/ ___ \|  _ <| |___  ", 0
+share5: db " |____/|_| |_/_/   \_\_| \_\_____|    |_|  |_/_/   \_\_| \_\_____| ", 0
+
+vessatext_a: db "vESSA 1111", 0
+vessatext_b: db "vESSA CCCC", 0
+vessatext_c: db "gugu ", 0
+menuFlag db 4
 
 ; Puffer für VBE Mode Info (256 Byte reichen)
 vesa_mode_info:

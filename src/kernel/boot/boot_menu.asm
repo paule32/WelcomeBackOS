@@ -2,6 +2,13 @@
 %define SCREEN_ROWS 25
 %define VIDSEG      0xB800
 
+%macro PRINT_AT 2
+    mov di, (%1*80 + 6)*2
+    mov si, %2
+    mov bl, 0x20
+    call print_base_str
+%endmacro
+
 boot_menu:
     ; Textmode 03h
     mov ax, 0x0003
@@ -189,31 +196,12 @@ boot_menu:
     stosw
     loop .draw52
 
-mov di, (19*80 + 6)*2   ; y=6, x=11
-mov si, share1
-mov bl, 0x20
-call print_base_str
-;
-mov di, (20*80 + 6)*2   ; y=6, x=11
-mov si, share2
-mov bl, 0x20
-call print_base_str
-;
-mov di, (21*80 + 6)*2   ; y=6, x=11
-mov si, share3
-mov bl, 0x20
-call print_base_str
-;
-mov di, (22*80 + 6)*2   ; y=6, x=11
-mov si, share4
-mov bl, 0x20
-call print_base_str
-;
-mov di, (23*80 + 6)*2   ; y=6, x=11
-mov si, share5
-mov bl, 0x20
-call print_base_str
-;
+    ; SHARE WARE text
+    PRINT_AT 19, share1
+    PRINT_AT 20, share2
+    PRINT_AT 21, share3
+    PRINT_AT 22, share4
+    PRINT_AT 23, share5
 
     call ui_draw_texte
     call main_bootmenu_loop
@@ -358,31 +346,35 @@ on_up:
     call ui_draw_texte
     mov ah, [menuFlag]
 
-    cmp ah, 3
-    je .print_optionBup
-    
-    cmp ah, 2
-    je .print_optionAup
+    cmp ah, 4
+    je .print_optionB4
     
     cmp ah, 1
-    je .print_optionCup
+    je .print_optionB1
+    
+    cmp ah, 2
+    je .print_optionB2
+    
+    cmp ah, 3
+    je .print_optionB3
     jmp main_bootmenu_loop
     
-    .print_optionAup:
+    .print_optionB3:
+    mov bl, 0x2F
+    call ui_draw_options_B
+    mov ah, 2
+    mov [menuFlag], ah
+    jmp main_bootmenu_loop
+    
+    .print_optionB2:
     mov bl, 0x2F
     call ui_draw_options_A
     mov ah, 1
     mov [menuFlag], ah
     jmp main_bootmenu_loop
 
-    .print_optionBup:
-    mov bl, 0x2F
-    call ui_draw_options_B
-    mov ah, 2
-    mov [menuFlag], ah
-    jmp main_bootmenu_loop
-
-    .print_optionCup:
+    .print_optionB4:
+    .print_optionB1:
     mov bl, 0x2F
     call ui_draw_options_C
     mov ah, 3
@@ -393,55 +385,202 @@ on_down:
     call ui_draw_texte
     mov ah, [menuFlag]
     
+    cmp ah, 4
+    je .print_optionAdown0
+    
     cmp ah, 1
-    je .print_optionAdown
+    je .print_optionAdown1
     
     cmp ah, 2
-    je .print_optionBdown
+    je .print_optionAdown2
     
     cmp ah, 3
-    je .print_optionCdiwn
+    je .print_optionAdown3
     jmp main_bootmenu_loop
     
-    .print_optionCdiwn:
+    .print_optionAdown0:
+    .print_optionAdown3:
     mov bl, 0x2F
-    call ui_draw_options_C
+    call ui_draw_options_A
     mov ah, 1
     mov [menuFlag], ah
     jmp main_bootmenu_loop
-    
-    .print_optionBdown:
+
+    .print_optionAdown1:
     mov bl, 0x2F
     call ui_draw_options_B
+    mov ah, 2
+    mov [menuFlag], ah
+    jmp main_bootmenu_loop
+    
+    .print_optionAdown2:
+    mov bl, 0x2F
+    call ui_draw_options_C
     mov ah, 3
     mov [menuFlag], ah
     jmp main_bootmenu_loop
     
-    .print_optionAdown:
-    mov bl, 0x2F
-    call ui_draw_options_A
-    mov ah, 2
-    mov [menuFlag], ah
-    jmp main_bootmenu_loop
-
 on_enter:
-    ; TODO: bestätigen / weiter
-    jmp main_bootmenu_loop
+    mov ah, [menuFlag]
+    cmp ah, 1
+    je .enter_text_pm
     
-; ------------------------------------------------------------
-; Daten
-; ------------------------------------------------------------
-msgDBASEtextmode80x25:  db " Start dBase 2026 Text-Mode 80x25        ... ", 0
-msgDBASEvesa800x600:    db " Start dBase 2026 Graphics-Mode  800x600 ... ", 0
-msgDBASEvesa1024x728:   db " Start dBase 2026 Graphics-Mode 1024x728 ... ", 0
-; ------------------------------------------------------------
-msgDBASE:               db " -=< dBASE 2026 >=- ",0
-msgDBASEenv:            db " Choose your Favorite Environment ", 0
+    cmp ah, 2
+    je .enter_vesa_800x600_pm
+    jmp main_bootmenu_loop
 
-share1: db "  ____  _   _    _    ____  _____      _    _    _    ____  _____  ", 0
-share2: db " / ___|| | | |  / \  |  _ \| ____|    | |  | |  / \  |  _ \| ____| ", 0
-share3: db " \___ \| |_| | / _ \ | |_) |  _|      | |/\| | / _ \ | |_) |  _|   ", 0
-share4: db "  ___) |  _  |/ ___ \|  _ <| |___     |  /\  |/ ___ \|  _ <| |___  ", 0
-share5: db " |____/|_| |_/_/   \_\_| \_\_____|    |_|  |_/_/   \_\_| \_\_____| ", 0
+    .enter_vesa_800x600_pm:
+    
+    call dpa_packet_jump
+    
+    ; i see no output -->
+    mov si, msgB2Fail
+    call print_string
+    <--
+    
+    
+    jmp 0x08:pm_entry
+    jmp $
+    
+    .enter_text_pm:
+    call dpa_packet_jump
+    jmp 0x08:pm_entry
+    jmp $
 
-menuFlag db 1
+dpa_packet_jump:
+    cli
+    
+    ; Code- und Datensegmente angleichen
+    mov ax, cs
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    mov sp, 0x5000      ; irgendein Stack im ersten MB
+    
+    sti
+    
+    ; -------------------------------------------------
+    ; Kernel per LBA nach 0x8000:0000 laden
+    ; -------------------------------------------------
+    mov word  [dap_sectors ], KERNEL_SECTORS   ; aus xorriso
+    mov word  [dap_offset  ], 0x0000          ; Offset 0
+    mov word  [dap_segment ], 0x8000          ; Segment 0x8000 -> phys 0x80000
+    mov dword [dap_lba_low ], KERNEL_LBA
+    mov dword [dap_lba_high], 0
+
+    ; Kernel nach physisch 0x00080000 laden
+    mov ax, 0x8000
+    mov es, ax          ; ES:BX = 8000:0000 → phys 0x80000
+    mov bx, 0x0000
+    
+    mov si, disk_address_packet
+    mov dl, [boot_drive]
+    mov ah, 0x42
+    int 0x13
+    jc .load_error
+
+    mov si, msgB2OK
+    call print_string
+
+    jmp .lba_kernel_ok
+    
+    
+.load_error:
+    mov si, msgB2Fail
+    call print_string
+
+    ; Debug: Fehlercode ausgeben
+    mov al, ah             ; AH = BIOS Error Code
+    call print_hex8        ; z.B. " AH=0E"
+
+.halt:
+    cli
+    hlt
+    jmp .halt
+
+.lba_kernel_ok:
+    ; -------------------------------------------------
+    ; A20 aktivieren
+    ; -------------------------------------------------
+    call enable_a20
+    call check_a20
+    jz a20_failed2          ; ZF=1 -> aus
+
+    jmp A20ok2
+    
+    a20_failed2:
+    sti
+    mov si, msgA20FAIL
+    call print_string
+    hlt
+    
+    A20ok2:
+    mov ah, [menuFlag]
+    cmp ah, 2                       ; wenn grafik
+    je  .set_graphics_mode_800x600   ; dann ...
+    jne .only_text
+    
+    .set_graphics_mode_800x600:
+    call get_vesa_mode
+    call set_vesa_mode
+    jmp switcher
+    
+    .only_text:
+    ; -------------------------------------------------
+    ; GDT laden, Protected Mode aktivieren
+    ; -------------------------------------------------
+    mov si, vessatext_a
+    call print_string
+    
+    switcher:
+    cli
+    lgdt [gdt_descriptor]
+    
+    mov eax, cr0
+    or  eax, 1             ; PE-Bit setzen
+    mov cr0, eax
+    ret
+
+BITS 32
+pm_entry:
+    ; Segmente im Protected Mode setzen
+    mov ax, 0x10          ; Data-Segment-Selector
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov fs, ax
+    mov gs, ax
+    
+    mov esp, 0x0009F000   ; irgendein 32-Bit-Stack im oberen Bereich
+    
+    mov ah, [menuFlag]
+    cmp ah, 1
+    je .go_text
+    cmp ah, 2
+    je .go_graphics
+    jmp main_bootmenu_loop
+
+    ; entrypoint steht als dword am Anfang des
+    ; geladenen kernel.bin (kernel.ld)
+    .go_text:
+    ; base = kernel load addr
+    mov esi, 0x00080000
+    ; wähle entry: 0=_text_main, 1=_graphics_main
+    mov ebx, 0              ; 0 => _text_main
+    mov eax, [esi + ebx*4]  ; dword lesen
+    jmp eax
+    jmp $
+
+    ; entrypoint steht als dword am Anfang des
+    ; geladenen kernel.bin (kernel.ld)
+    .go_graphics:
+    ; base = kernel load addr
+    mov esi, 0x00080000
+    ; wähle entry: 0=_text_main, 1=_graphics_main
+    mov ebx, 1              ; 1 => _graphics_main
+    mov eax, [esi + ebx*4]  ; dword lesen
+    jmp eax
+    jmp $
+    
