@@ -4,16 +4,31 @@
 ;        all rights reserved.
 ; ---------------------------------------------------------------------------
 ; boot2.asm – Minimaler Stage2
+; ---------------------------------------------------------------------------
+BITS 16
+ORG 0x0500          ; Stage1 springt nach 0000:0500
+jmp start
+
 %include LBA_FILE
 
 %ifndef ISOGUI
     %define ISOGUI 0    ; default text input
 %endif
 
-%define SCREEN_COLS 80
-%define SCREEN_ROWS 25
-%define VIDSEG      0xB800
+%define CHUNK_SECTORS    127               ; 127*512 = 65024 (passt in 64 KiB)
 
+%define LOAD_SEG         0x8000            ; ES=9000, BX=0000 => phys 0x00090000
+%define LOAD_OFF         0x0000
+%define LOAD_BUF_PHYS    0x00080000
+
+%define KERNEL_DST_BASE  0x00400000        ; 4 MiB Zieladresse
+
+%define SCREEN_COLS      80
+%define SCREEN_ROWS      25
+%define VIDSEG           0xB800
+
+%define USE_ENTRY_PTR    1   ; 1: DWORD [0x00400000] ist Entry
+                             ; 0: direkt jmp 0x00400000
 %macro PRINT_AT 2
     mov di, (%1*80 + 6)*2
     mov si, %2
@@ -21,47 +36,372 @@
     call print_base_str
 %endmacro
 
-BITS 16
-ORG 0x0500          ; Stage1 springt nach 0000:0500
-
-start_boot2:
-    cli
+check_edd:
+    mov dl, [boot_drive]
+    mov ax, 0x4100
+    mov bx, 0x55AA
+    int 0x13
+    jc  .no
+    cmp bx, 0xAA55
+    jne .no
+    test cx, 1          ; Bit0: Extensions vorhanden
+    jz  .no
+    ret
+.no:
+    ; hier Fehlertext ausgeben und hängen
+    jmp disk_error
     
-    ; Code- und Datensegmente angleichen
-    mov ax, cs
+start:
+    cli
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov sp, 0x7C00
+    sti
+
+    ; Falls Stage1 DL übergibt, kannst du hier speichern:
+    mov [boot_drive], dl
+    call check_edd
+
+    ; Textmodus sicher
+    ;mov ax, 0x0003
+    ;int 0x10
+
+    push cs
+    pop  ds
+
+    mov si, msgB2Start
+    call print_string
+
+    call enable_a20_fast
+
+    ; Laden + Kopieren nach 4 MiB
+    call load_kernel_chunks_to_4mb
+
+    ; Jetzt sind wir wieder im RM. Status anzeigen:
+    push cs
+    pop  ds
+    mov si, msg_loaded
+    call print_string
+
+    ; Final in Protected Mode und Kernel starten
+    call enter_pm_final
+
+[BITS 32]
+%if USE_ENTRY_PTR
+    mov eax, dword [KERNEL_DST_BASE]    ; Entry-Pointer am Image-Anfang
+    jmp eax
+%else
+    jmp KERNEL_DST_BASE                 ; direkter Entry bei 0x00400000
+%endif
+
+; ------------------------------------------------------------
+; print_string: DS:SI -> 0-terminierte Zeichenkette (BIOS teletype)
+; ------------------------------------------------------------
+[BITS 16]
+print_string:
+    lodsb
+    cmp al, 0
+    je .ps_done
+    mov ah, 0x0E
+    mov bh, 0
+    mov bl, 0x07
+    int 0x10
+    jmp print_string
+.ps_done:
+    ret
+
+; ------------------------------------------------------------
+; Kernel in Chunks lesen und je Chunk nach 0x00400000 kopieren
+; ------------------------------------------------------------
+[BITS 16]
+load_kernel_chunks_to_4mb:
+    mov word [sectors_left], KERNEL_SECTORS
+    mov word [sectors_done], 0
+
+.next_chunk:
+    mov ax, [sectors_left]
+    test ax, ax
+    jz .done
+
+    ; chunk = min(sectors_left, CHUNK_SECTORS)
+    mov cx, CHUNK_SECTORS
+    cmp ax, cx
+    jbe .use_ax
+    mov ax, cx
+.use_ax:
+    ; AX = chunk sectors
+
+    ; DAP füllen
+    mov word  [dap_sectors], ax
+    mov word  [dap_offset ], LOAD_OFF
+    mov word  [dap_segment], LOAD_SEG
+
+    ; LBA = KERNEL_LBA + sectors_done (nur low32)
+    movzx eax, word [sectors_done]
+    add eax, dword [kernel_lba_low]
+    mov dword [dap_lba_low], eax
+    mov dword [dap_lba_high], 0
+
+    ; BIOS Read (EDD)
+    push cs
+    pop  ds
+    mov si, disk_address_packet
+    mov dl, [boot_drive]
+    mov ah, 0x42
+    int 0x13
+    jc  disk_error
+
+    ; Chunk im PM kopieren (kommt garantiert in RM zurück!)
+    call pm_copy_chunk_thunk
+
+    ; bookkeeping
+    mov ax, [sectors_left]
+    sub ax, [dap_sectors]
+    mov [sectors_left], ax
+
+    mov ax, [sectors_done]
+    add ax, [dap_sectors]
+    mov [sectors_done], ax
+
+    jmp .next_chunk
+
+.done:
+    ret
+
+; ------------------------------------------------------------
+; PM Copy Thunk: RM -> PM -> copy -> RM -> ret
+; Verhindert "call/ret über Modusgrenze" Probleme.
+; ------------------------------------------------------------
+[BITS 16]
+pm_copy_chunk_thunk:
+    cli
+    lgdt [gdt_desc]
+
+    ; Protected Mode an
+    mov eax, cr0
+    or  eax, 1
+    mov cr0, eax
+
+    ; Far jump flush
+    jmp CODE_SEL:pm_copy_do
+
+[BITS 32]
+pm_copy_do:
+    mov ax, DATA_SEL
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
     mov ss, ax
-    mov sp, 0x5000      ; irgendein Stack im ersten MB
+
+    ; Ziel = 0x00400000 + sectors_done*512
+    movzx eax, word [sectors_done]
+    shl eax, 9
+    add eax, KERNEL_DST_BASE
+    mov edi, eax
+
+    mov esi, LOAD_BUF_PHYS
+
+    ; Länge = dap_sectors*512 Bytes => dwords
+    movzx ecx, word [dap_sectors]
+    shl ecx, 9
+    shr ecx, 2
+
+    cld
+    rep movsd
+
+    ; zurück nach Real Mode
+    cli
+    mov eax, cr0
+    and eax, 0xFFFFFFFE
+    mov cr0, eax
+
+    jmp 0x0000:rm_after_pm_copy
+
+; ------------------------------------------------------------
+; Finaler Wechsel in PM (bleiben) und dann Kernel-Jump (oben)
+; ------------------------------------------------------------
+[BITS 16]
+enter_pm_final:
+    cli
+    lgdt [gdt_desc]
+
+    mov eax, cr0
+    or  eax, 1
+    mov cr0, eax
+
+    jmp CODE_SEL:pm_final_entry
+
+[BITS 32]
+pm_final_entry:
+    mov ax, DATA_SEL
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+
+    mov esp, 0x0090000         ; Stack (Beispiel im Lowmem)
+    ret
+
+; ------------------------------------------------------------
+; A20 schnell (Port 0x92)
+; ------------------------------------------------------------
+[BITS 16]
+enable_a20_fast:
+    in   al, 0x92
+    or   al, 00000010b
+    and  al, 11111110b
+    out  0x92, al
+    ret
+
+; ------------------------------------------------------------
+; Fehler
+; ------------------------------------------------------------
+[BITS 16]
+; ---------------------------------------------------------
+; print_error_from_table
+;   IN:  AL = error code
+;   OUT: gibt passenden String aus
+; ---------------------------------------------------------
+print_error_from_table:
+    push bx
+    push di
     
-    sti
+    mov di, disk_status_error_table ; DI zeigt auf aktuellen Eintrag
 
-    mov [boot_drive], dl
+.next:
+    mov bl, [di]                ; BL = code (db)
+;   cmp bl, 0xFF
+;   je  .not_found
 
-    mov si, msgB2Start
+    cmp bl, al
+    je  .found
+
+    add di, 3                   ; nächstes Paar (1+2 bytes)
+    jmp .next
+
+.found:
+    mov si, [di+1]              ; SI = dw pointer (Offset im gleichen Segment)
+    call print_string
+    jmp .done
+
+.not_found:
+    mov si, [di+1]              ; unknown_error
     call print_string
 
-    ; -------------------------------------------------
-    ; Kernel per LBA nach 0x8000:0000 laden
-    ; -------------------------------------------------
-    mov word  [dap_sectors ], KERNEL_SECTORS   ; aus xorriso
-    mov word  [dap_offset  ], 0x0000          ; Offset 0
-    mov word  [dap_segment ], 0x8000          ; Segment 0x8000 -> phys 0x80000
-    mov dword [dap_lba_low ], KERNEL_LBA
-    mov dword [dap_lba_high], 0
-
-    ; Kernel nach physisch 0x00080000 laden
-    mov ax, 0x8000
-    mov es, ax          ; ES:BX = 8000:0000 → phys 0x80000
-    mov bx, 0x0000
+.done:
+    pop di
+    pop bx
+    ret
     
-    mov si, disk_address_packet
+disk_error:
+    push cs
+    pop  ds
+    
+    mov si, msgStage2Error
+    call print_string
+    
+    mov ah, 1
     mov dl, [boot_drive]
-    mov ah, 0x42
     int 0x13
-    jc load_error
+
+    mov al, ah
+
+    push cs
+    pop  ds
+    call print_error_from_table
+    
+.hang:
+    cli
+    hlt
+    jmp .hang
+
+
+; --------------------------------------------------------------------
+; Protected Mode Enter/Leave (minimal, ohne IDT)
+; Achtung: Während PM sind BIOS-Interrupts tabu => wir gehen pro Chunk zurück.
+; --------------------------------------------------------------------
+[BITS 16]
+enter_pm:
+    cli
+    lgdt [gdt_desc]
+
+    ; Protected Mode an
+    mov eax, cr0
+    or  eax, 1
+    mov cr0, eax
+
+    ; far jump flush
+    jmp CODE_SEL:pm_entry
+
+[BITS 32]
+pm_entry:
+    mov ax, DATA_SEL
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    
+    ; Zieladresse = 0x00400000 + sectors_done*512
+    movzx eax, word [sectors_done]
+    shl eax, 9
+    add eax, KERNEL_DST_BASE
+    mov edi, eax
+
+    mov esi, LOAD_BUF_PHYS
+
+    ; Länge = dap_sectors*512 Bytes => dwords
+    movzx ecx, word [dap_sectors]
+    shl ecx, 9
+    shr ecx, 2
+
+    cld
+    rep movsd
+
+    ; zurück nach Real Mode
+    cli
+    mov eax, cr0
+    and eax, 0xFFFFFFFE
+    mov cr0, eax
+
+    jmp 0x0000:rm_after_pm_copy
+    ret
+    
+; ------------------ Wieder Real Mode ------------------
+[BITS 16]
+rm_after_pm_copy:
+    ; Segmente wieder vernünftig
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    ; Stack wiederherstellen (oder deinen echten RM-Stack)
+    mov sp, 0x7C00
+
+    sti
+    ret
+
+; Zurück nach Real Mode (für nächsten BIOS-Read)
+leave_pm:
+    cli
+    mov eax, cr0
+    and eax, 0xFFFFFFFE
+    mov cr0, eax
+    jmp 0x0000:rm_entry
+
+[BITS 16]
+rm_entry:
+    mov ax, 0
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov sp, 0x7C00
+    sti
+    ret
 
 boot_menu:
     ; Textmode 03h
@@ -613,7 +953,7 @@ enter_vesa_800x600_pm:
     call print_string
     
     cli
-    lgdt [gdt_descriptor]
+    ;lgdt [gdt_descriptor]
     
     mov eax, cr0
     or  eax, 1             ; PE-Bit setzen
@@ -647,7 +987,7 @@ enter_text_pm:
     ; -------------------------------------------------
     A20ok2:
     cli
-    lgdt [gdt_descriptor]
+    ;lgdt [gdt_descriptor]
     
     mov eax, cr0
     or  eax, 1             ; PE-Bit setzen
@@ -702,21 +1042,6 @@ enable_a20:
     mov al, 0xDF         ; A20 einschalten
     out 0x60, al
 
-    ret
-
-;---------------------------------------------------------
-; print_string: DS:SI -> 0-terminierte Zeichenkette
-;---------------------------------------------------------
-print_string:
-    lodsb
-    cmp al, 0
-    je .ps_done
-    mov ah, 0x0E
-    mov bh, 0
-    mov bl, 0x07
-    int 0x10
-    jmp print_string
-.ps_done:
     ret
 
 ;---------------------------------------------------------
@@ -838,7 +1163,7 @@ set_vesa_mode_800x600:
     ; GDT laden, Protected Mode aktivieren
     ; -------------------------------------------------
     cli
-    lgdt [gdt_descriptor]
+    ;lgdt [gdt_descriptor]
     
     mov eax, cr0
     or  eax, 1             ; PE-Bit setzen
@@ -873,36 +1198,20 @@ set_vesa_mode_800x600:
     stc
     ret
 
-BITS 32
-pm_entry:
-    ; Segmente im Protected Mode setzen
-    mov ax, 0x10          ; Data-Segment-Selector
-    mov ds, ax
-    mov es, ax
-    mov ss, ax
-    mov fs, ax
-    mov gs, ax
-
-    ;mov dword [0xB8000], 0x07420741  ; "AB"
-    mov esp, 0x0009F000   ; irgendein 32-Bit-Stack im oberen Bereich
-    
-    ;mov dword [0xB8000], 0x072A072A  ; "**" (2 Zeichen) weiß auf schwarz
-    
-    ; entrypoint steht als dword am Anfang des
-    ; geladenen kernel.bin (kernel.ld)
-    mov eax, [0x00080000]
-    jmp eax
-
-    ; Jetzt zum Kernel-Einstieg springen (0x00080000)
-    ;jmp 0x00080000        ; KernelStart wurde auf 0x00080000 gelinkt
-
 ;---------------------------------------------------------
 ; Daten
 ;---------------------------------------------------------
 BITS 16
 boot_drive      db 0
 
-msgB2Start      db 13,10,"[Stage2] BOOT2 gestartet, Kernel wird geladen ...",13,10,0
+kernel_lba_low  dd KERNEL_LBA
+kernel_lba_high dd 0
+
+sectors_left    dw 0
+sectors_done    dw 0
+
+msgStage2Error  db "[Stage2] Error ", 0
+msgB2Start      db 13,10,"[Stage2] BOOT2 gestartet, Kernel wird geladen -> 4MB ...",13,10,0
 msgB2OK         db "[Stage2] Kernel geladen, springe nach 8000:0000",13,10,0
 msgA20OK        db "[Stage2] A20 aktiviert, Protected Mode wird gestartet ...",13,10,0
 msgA20FAIL      db "[Stage2] A20 Fehler",13,10,0
@@ -910,7 +1219,115 @@ msgB2Fail       db "[Stage2] FEHLER beim Laden des Kernels",13,10,0
 msgBeforePM     db "[Stage2] Protected Mode CLI",13,10,0
 msgVESAerr      db "[Stage2] VESA Modus Fehler!",13,10,0
 
-msgAH           db " AH=",0
+disk_status_error_00 db ": 0x00 successful completion.", 0
+disk_status_error_01 db ": 0x01 invalid function in AH or invalid parameter.", 0
+disk_status_error_02 db ": 0x02 address mark not found.", 0
+disk_status_error_03 db ": 0x03 disk write-protected.", 0
+disk_status_error_04 db ": 0x04 sector not found/read error.", 0
+disk_status_error_05 db ": 0x05 reset failed.", 0
+disk_status_error_06 db ": 0x06 disk changed.", 0
+disk_status_error_07 db ": 0x07 drive parameter activity failed.", 0
+disk_status_error_08 db ": 0x08 DMA overrun.", 0
+disk_status_error_09 db ": 0x09 data boundary error (attempted DMA across 64K boundary or >80h sectors).", 0
+disk_status_error_0A db ": 0x0A bad sector detected.", 0
+disk_status_error_0B db ": 0x0B bad track detected.", 0
+disk_status_error_0C db ": 0x0C unsupported track or invalid media.", 0
+disk_status_error_0D db ": 0x0D invalid number of sectors on format (PS/2 hard disk).", 0
+disk_status_error_0E db ": 0x0E control data address mark detected.", 0
+disk_status_error_0F db ": 0x0F DMA arbitration level out of range.", 0
+disk_status_error_10 db ": 0x10 uncorrectable CRC or ECC error on read.", 0
+disk_status_error_11 db ": 0x11 data ECC corrected.", 0
+disk_status_error_20 db ": 0x20 controller failure.", 0
+disk_status_error_31 db ": 0x31 no media in drive (IBM/MS INT 13 extensions).", 0
+disk_status_error_32 db ": 0x32 incorrect drive type stored in CMOS (Compaq).", 0
+disk_status_error_40 db ": 0x40 seek failed.", 0
+disk_status_error_80 db ": 0x80 timeout (not ready).", 0
+disk_status_error_AA db ": 0xAA drive not ready (hard disk)", 0
+disk_status_error_B0 db ": 0xB0 volume not locked in drive.", 0
+disk_status_error_B1 db ": 0xB1 volume locked in drive.", 0
+disk_status_error_B2 db ": 0xB2 volume not removable.", 0
+disk_status_error_B3 db ": 0xB3 volume in use", 0
+disk_status_error_B4 db ": 0xB4 lock count exceeded.", 0
+disk_status_error_B5 db ": 0xB5 valid eject request failed.", 0
+disk_status_error_B6 db ": 0xB6 volume present but read protected.", 0
+disk_status_error_BB db ": 0xBB undefined error.", 0
+disk_status_error_CC db ": 0xCC write fault.", 0
+disk_status_error_E0 db ": 0xE0 status register error.", 0
+disk_status_error_FF db ": 0xFF sense operation failed.", 0
+
+disk_status_error_table:
+  db 0x00
+  dw disk_status_error_00
+  db 0x01
+  dw disk_status_error_01
+  db 0x02
+  dw disk_status_error_02
+  db 0x03
+  dw disk_status_error_03
+  db 0x04
+  dw disk_status_error_04
+  db 0x05
+  dw disk_status_error_05
+  db 0x06
+  dw disk_status_error_06
+  db 0x07
+  dw disk_status_error_07
+  db 0x08
+  dw disk_status_error_08
+  db 0x09
+  dw disk_status_error_09
+  db 0x0A
+  dw disk_status_error_0A
+  db 0x0B
+  dw disk_status_error_0B
+  db 0x0C
+  dw disk_status_error_0C
+  db 0x0D
+  dw disk_status_error_0D
+  db 0x0E
+  dw disk_status_error_0E
+  db 0x0F
+  dw disk_status_error_0F
+  db 0x10
+  dw disk_status_error_10
+  db 0x11
+  dw disk_status_error_11
+  db 0x20
+  dw disk_status_error_20
+  db 0x31
+  dw disk_status_error_31
+  db 0x32
+  dw disk_status_error_32
+  db 0x40
+  dw disk_status_error_40
+  db 0x80
+  dw disk_status_error_80
+  db 0xAA
+  dw disk_status_error_AA
+  db 0xB0
+  dw disk_status_error_B0
+  db 0xB1
+  dw disk_status_error_B1
+  db 0xB2
+  dw disk_status_error_B2
+  db 0xB3
+  dw disk_status_error_B3
+  db 0xB4
+  dw disk_status_error_B4
+  db 0xB5
+  dw disk_status_error_B5
+  db 0xB6
+  dw disk_status_error_B6
+  db 0xBB
+  dw disk_status_error_BB
+  db 0xCC
+  dw disk_status_error_CC
+  db 0xE0
+  dw disk_status_error_E0
+  db 0xFF
+  dw disk_status_error_FF
+
+msgAH      db " AH=",0
 
 ; einfache 3-Entry-GDT: null, code, data
 gdt_start:
@@ -919,16 +1336,19 @@ gdt_code:   dq 0x00CF9A000000FFFF   ; base=0, limit=4GB, Code, RX
 gdt_data:   dq 0x00CF92000000FFFF   ; base=0, limit=4GB, Data, RW
 gdt_end:
 
-gdt_descriptor:
+gdt_desc:
     dw gdt_end - gdt_start - 1
     dd gdt_start
+
+CODE_SEL equ (gdt_code - gdt_start)
+DATA_SEL equ (gdt_data - gdt_start)
 
 ;---------------------------------------------------------
 ; Disk Address Packet
 ;---------------------------------------------------------
 disk_address_packet:
 dap_size        db 0x10
-dap_reserved    db 0
+dap_reserved    db 0x00
 dap_sectors     dw 0
 dap_offset      dw 0
 dap_segment     dw 0
@@ -956,12 +1376,17 @@ msgVESA_failModeInfo:       db "[VESA] Error: ModeInfo."   , 0
 msgVESA_failUnsupported:    db "[VESA] Error: Unsupported.", 0
 msgVESA_failSetmode:        db "[VESA] Error: SetMode."    , 0
 
-
 vessatext_a: db "vESSA 1111", 13, 10, 0
 vessatext_b: db "vESSA CCCC", 13, 10, 0
 vessatext_c: db "gugu ",      13, 10, 0
 menuFlag db 4
 
+msg_loaded  db "boot2: kernel loaded, jump PM...", 13, 10, 0
+msg_diskerr db "boot2: disk read error!", 13, 10, 0
+
+disk_error_ext db "boot2: no disk extensions.",13,0
+
+loaddd: db "lllooo ", 0
 ; Puffer für VBE Mode Info (256 Byte reichen)
 vesa_mode_info:
     times 256 db 0

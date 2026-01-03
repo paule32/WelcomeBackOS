@@ -594,7 +594,7 @@ clean:
 bootcd:
 	/mingw64/bin/qemu-system-x86_64.exe \
     -drive file=$(BIN_DIR)/bootcd.iso,if=none,media=cdrom,id=cdrom0 \
-    -machine q35,i8042=on \
+    -machine q35,i8042=on  \
     -device ich9-ahci,id=ahci0 \
     -device ide-cd,drive=cdrom0,bus=ahci0.0 \
     -boot d -m 512M

@@ -10,7 +10,13 @@
 ENTRY(_kmain)
 SECTIONS
 { 
-    . = 0x00080000;
+    . = 0x00400000;
+/*
+    .header : {
+        LONG(_kmain);
+        LONG(_kmain);
+    }
+*/
     .text : {
         LONG(_kmain);
         __code_start = .;

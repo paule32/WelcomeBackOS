@@ -11,3 +11,4 @@ log/
 *.hex
 *.iso
 *.zip
+src/kernel/boot/1
