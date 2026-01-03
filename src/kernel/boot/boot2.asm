@@ -15,13 +15,13 @@ jmp start
     %define ISOGUI 0    ; default text input
 %endif
 
-%define CHUNK_SECTORS    127               ; 127*512 = 65024 (passt in 64 KiB)
+%define CHUNK_SECTORS    15
 
-%define LOAD_SEG         0x8000            ; ES=9000, BX=0000 => phys 0x00090000
+%define LOAD_SEG         0x8000        ; ES=9000, BX=0000 => phys 0x00080000
 %define LOAD_OFF         0x0000
 %define LOAD_BUF_PHYS    0x00080000
 
-%define KERNEL_DST_BASE  0x00400000        ; 4 MiB Zieladresse
+%define KERNEL_DST_BASE  0x00400000    ; 4 MiB Zieladresse
 
 %define SCREEN_COLS      80
 %define SCREEN_ROWS      25
@@ -121,6 +121,25 @@ load_kernel_chunks_to_4mb:
     mov word [sectors_done], 0
 
 .next_chunk:
+    ; -------->
+    push cx
+    push bx
+    push ax
+    push si
+    push di
+    push ds
+    push es
+    mov si, dotstr1      ; <--- load status
+    call print_string
+    pop es
+    pop ds
+    pop di
+    pop si
+    pop ax
+    pop bx
+    pop cx
+    ; <--------
+
     mov ax, [sectors_left]
     test ax, ax
     jz .done
@@ -132,6 +151,25 @@ load_kernel_chunks_to_4mb:
     mov ax, cx
 .use_ax:
     ; AX = chunk sectors
+    
+    ; -------->
+    push cx
+    push bx
+    push ax
+    push si
+    push di
+    push ds
+    push es
+    mov si, dotstr2      ; <--- load status
+    call print_string
+    pop es
+    pop ds
+    pop di
+    pop si
+    pop ax
+    pop bx
+    pop cx
+    ; <--------
 
     ; DAP füllen
     mov word  [dap_sectors], ax
@@ -144,6 +182,25 @@ load_kernel_chunks_to_4mb:
     mov dword [dap_lba_low], eax
     mov dword [dap_lba_high], 0
 
+    ; -------->
+    push cx
+    push bx
+    push ax
+    push si
+    push di
+    push ds
+    push es
+    mov si, dotstr3      ; <--- load status
+    call print_string
+    pop es
+    pop ds
+    pop di
+    pop si
+    pop ax
+    pop bx
+    pop cx
+    ; <--------
+
     ; BIOS Read (EDD)
     push cs
     pop  ds
@@ -152,6 +209,25 @@ load_kernel_chunks_to_4mb:
     mov ah, 0x42
     int 0x13
     jc  disk_error
+
+    ; -------->
+    push cx
+    push bx
+    push ax
+    push si
+    push di
+    push ds
+    push es
+    mov si, dotstr4      ; <--- load status
+    call print_string
+    pop es
+    pop ds
+    pop di
+    pop si
+    pop ax
+    pop bx
+    pop cx
+    ; <--------
 
     ; Chunk im PM kopieren (kommt garantiert in RM zurück!)
     call pm_copy_chunk_thunk
@@ -217,7 +293,7 @@ pm_copy_do:
     mov eax, cr0
     and eax, 0xFFFFFFFE
     mov cr0, eax
-
+    
     jmp 0x0000:rm_after_pm_copy
 
 ; ------------------------------------------------------------
@@ -274,8 +350,8 @@ print_error_from_table:
 
 .next:
     mov bl, [di]                ; BL = code (db)
-;   cmp bl, 0xFF
-;   je  .not_found
+   cmp bl, 0xFF
+   je  .not_found
 
     cmp bl, al
     je  .found
@@ -382,7 +458,27 @@ rm_after_pm_copy:
     ; Stack wiederherstellen (oder deinen echten RM-Stack)
     mov sp, 0x7C00
 
-    sti
+    sti   ;
+    ; -------->
+    push cx
+    push bx
+    push ax
+    push si
+    push di
+    push ds
+    push es
+    mov si, dotstr5      ; <--- load status
+    call print_string
+    pop es
+    pop ds
+    pop di
+    pop si
+    pop ax
+    pop bx
+    pop cx
+    ; <--------
+    cli
+
     ret
 
 ; Zurück nach Real Mode (für nächsten BIOS-Read)
@@ -1354,6 +1450,12 @@ dap_offset      dw 0
 dap_segment     dw 0
 dap_lba_low     dd 0
 dap_lba_high    dd 0
+
+dotstr1 db '1',0
+dotstr2 db '2',0
+dotstr3 db '3',0
+dotstr4 db '4',0
+dotstr5 db '5',0
 
 ; ------------------------------------------------------------
 ; boot menu
