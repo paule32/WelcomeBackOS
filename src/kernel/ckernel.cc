@@ -49,7 +49,7 @@ extern "C" int kmain()
 //    volatile uint16_t* vga = (volatile uint16_t*)0xB8000;
 //    vga[0] = 0x0F00 | 'K';
 
-for(;;);
+
     idt_init();
  
     paging_init();
