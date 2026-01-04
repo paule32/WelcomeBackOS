@@ -577,37 +577,15 @@ on_enter:
     cmp ah, 2
     je enter_vesa_800x600_pm
     
+    cmp ah, 3
+    je main_bootmenu_loop
+    
+    cmp ah, 4
+    je enter_vesa_800x600_pm
+    
     jmp main_bootmenu_loop
 
 enter_vesa_800x600_pm:
-    ; -------------------------------------------------
-    ; A20 aktivieren
-    ; -------------------------------------------------
-    call enable_a20
-    call check_a20
-    jz a20_failed          ; ZF=1 -> aus
-
-    ; -------------------------------------------------
-    ; GDT laden, Protected Mode aktivieren
-    ; -------------------------------------------------
-    A20ok2:
-    sti
-    call set_vesa_mode_800x600
-    
-    
-    cli
-    lgdt [gdt_descriptor]
-    
-    mov eax, cr0
-    or  eax, 1             ; PE-Bit setzen
-    mov cr0, eax
-
-    ; Far Jump in 32-Bit-Code (pm_entry)
-    jmp 0x08:pm_entry_kernel_1    ; 0x08 = Code-Segment-Selector
-
-
-    
-enter_text_pm:
     ; -------------------------------------------------
     ; A20 aktivieren
     ; -------------------------------------------------
@@ -622,12 +600,18 @@ enter_text_pm:
     a20_failed:
     mov si, msgA20FAIL
     call print_string
-    hlt
+    ;jmp enter_vesa_800x600_pm
     
+    A20ok:
+    sti
+    call set_vesa_mode_800x600
+
     ; -------------------------------------------------
     ; GDT laden, Protected Mode aktivieren
     ; -------------------------------------------------
-    A20ok:
+    mov si, msgBeforePM
+    call print_string
+    
     cli
     lgdt [gdt_descriptor]
     
@@ -636,7 +620,41 @@ enter_text_pm:
     mov cr0, eax
 
     ; Far Jump in 32-Bit-Code (pm_entry)
-    jmp 0x08:pm_entry_kernel_2    ; 0x08 = Code-Segment-Selector
+    jmp 0x08:pm_entry      ; 0x08 = Code-Segment-Selector
+
+    
+    
+    
+enter_text_pm:
+    ; -------------------------------------------------
+    ; A20 aktivieren
+    ; -------------------------------------------------
+    call enable_a20
+    call check_a20
+    jz a20_failed2          ; ZF=1 -> aus
+
+    mov si, msgA20OK
+    call print_string
+    jmp A20ok2
+    
+    a20_failed2:
+    mov si, msgA20FAIL
+    call print_string
+    hlt
+    
+    ; -------------------------------------------------
+    ; GDT laden, Protected Mode aktivieren
+    ; -------------------------------------------------
+    A20ok2:
+    cli
+    lgdt [gdt_descriptor]
+    
+    mov eax, cr0
+    or  eax, 1             ; PE-Bit setzen
+    mov cr0, eax
+
+    ; Far Jump in 32-Bit-Code (pm_entry)
+    jmp 0x08:pm_entry      ; 0x08 = Code-Segment-Selector
     
     
 load_error:
@@ -666,8 +684,6 @@ enable_a20:
     int 0x15
     jc .via_kbd   ; wenn Fehler: Keyboard-Controller-Methode
 
-    ret
-    
     .via_kbd:
     ; Sehr vereinfachte KBC-Methode (reicht fuer QEMU / Bochs)
     .wait_input:
@@ -801,7 +817,6 @@ check_a20:
 ; -------------------------------------------------
 set_vesa_mode_800x600:
     ; 1) Mode-Info holen
-    sti
     mov ax, 0x4F01   ; VBE-Funktion: Get Mode Info
     mov cx, 0x0114   ; gewünschter Modus: 0x114
     xor bx, bx
@@ -819,6 +834,19 @@ set_vesa_mode_800x600:
     cmp ax, 0x004F
     jne .fail_setmode
 
+    ; -------------------------------------------------
+    ; GDT laden, Protected Mode aktivieren
+    ; -------------------------------------------------
+    cli
+    lgdt [gdt_descriptor]
+    
+    mov eax, cr0
+    or  eax, 1             ; PE-Bit setzen
+    mov cr0, eax
+    
+    ; Far Jump in 32-Bit-Code (pm_entry)
+    jmp 0x08:pm_entry      ; 0x08 = Code-Segment-Selector
+
     ret
 
 .fail_controller:
@@ -834,11 +862,10 @@ set_vesa_mode_800x600:
     call print_string
     jmp .failVESA
 .fail_setmode:
-    ;mov ax, 3
-    ;int 0x10
+    mov ax, 3
+    int 0x10
     mov si, msgVESA_failSetmode
     call print_string
-    jmp $
 .failVESA:
     pop es
     pop ds
@@ -847,7 +874,7 @@ set_vesa_mode_800x600:
     ret
 
 BITS 32
-pm_entry_kernel_1:
+pm_entry:
     ; Segmente im Protected Mode setzen
     mov ax, 0x10          ; Data-Segment-Selector
     mov ds, ax
@@ -866,25 +893,8 @@ pm_entry_kernel_1:
     mov eax, [0x00080000]
     jmp eax
 
-BITS 32
-pm_entry_kernel_2:
-    ; Segmente im Protected Mode setzen
-    mov ax, 0x10          ; Data-Segment-Selector
-    mov ds, ax
-    mov es, ax
-    mov ss, ax
-    mov fs, ax
-    mov gs, ax
-
-    ;mov dword [0xB8000], 0x07420741  ; "AB"
-    mov esp, 0x0009F000   ; irgendein 32-Bit-Stack im oberen Bereich
-    
-    ;mov dword [0xB8000], 0x072A072A  ; "**" (2 Zeichen) weiß auf schwarz
-    
-    ; entrypoint steht als dword am Anfang des
-    ; geladenen kernel.bin (kernel.ld)
-    mov eax, [0x00080004]
-    jmp eax
+    ; Jetzt zum Kernel-Einstieg springen (0x00080000)
+    ;jmp 0x00080000        ; KernelStart wurde auf 0x00080000 gelinkt
 
 ;---------------------------------------------------------
 ; Daten
@@ -946,7 +956,6 @@ msgVESA_failModeInfo:       db "[VESA] Error: ModeInfo."   , 0
 msgVESA_failUnsupported:    db "[VESA] Error: Unsupported.", 0
 msgVESA_failSetmode:        db "[VESA] Error: SetMode."    , 0
 
-
 vessatext_a: db "vESSA 1111", 13, 10, 0
 vessatext_b: db "vESSA CCCC", 13, 10, 0
 vessatext_c: db "gugu ",      13, 10, 0
@@ -955,3 +964,4 @@ menuFlag db 4
 ; Puffer für VBE Mode Info (256 Byte reichen)
 vesa_mode_info:
     times 256 db 0
+    

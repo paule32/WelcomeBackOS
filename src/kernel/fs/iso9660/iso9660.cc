@@ -296,7 +296,7 @@ int iso_find_file(const char* path, uint32_t* out_lba, uint32_t* out_size)
 // FILE-API
 // ----------------------------------------
 
-FILE* file_open(const char* path)
+extern "C" FILE* file_open(const char* path)
 {
     uint32_t lba, size;
     if (iso_find_file(path, &lba, &size) != 0)
@@ -311,7 +311,7 @@ FILE* file_open(const char* path)
     return (FILE*)f;
 }
 
-uint32_t file_read(FILE* file, void* buf, uint32_t len)
+extern "C" uint32_t file_read(FILE* file, void* buf, uint32_t len)
 {
     if (!file || !buf || len == 0 || !iso_read_sectors)
         return 0;
@@ -354,7 +354,7 @@ uint32_t file_read(FILE* file, void* buf, uint32_t len)
     return len;
 }
 
-uint32_t file_getch(FILE* file)
+extern "C" uint32_t file_getch(FILE* file)
 {
     uint8_t c;
     uint32_t n = file_read(file, &c, 1);
@@ -363,7 +363,7 @@ uint32_t file_getch(FILE* file)
     return (uint32_t)c;
 }
 
-int file_seek(FILE* file, uint32_t new_pos)
+extern "C" int file_seek(FILE* file, uint32_t new_pos)
 {
     if (!file) return -1;
     ISO_FILE* f = (ISO_FILE*)file;
@@ -374,7 +374,7 @@ int file_seek(FILE* file, uint32_t new_pos)
     return 0;
 }
 
-void file_close(FILE* file)
+extern "C" void file_close(FILE* file)
 {
     if (!file) return;
     ISO_FILE* f = (ISO_FILE*)file;

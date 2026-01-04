@@ -157,3 +157,33 @@ jobs:
             ISO:   ${{ env.ISO_PATH }}
 
             Run:   https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+      - name: Send IRC notification (PowerShell)
+        if: success()
+        shell: pwsh
+        run: |
+          $server = "irc.eu.libera.chat"
+          $port   = 6667
+          $nick   = "dBaseBot"
+          $chan   = "#dBase.de"
+          $msg    = "✅ Neues Release erstellt: ${{ github.event.release.tag_name }}"
+
+          $client = [System.Net.Sockets.TcpClient]::new($server, $port)
+          $stream = $client.GetStream()
+          $writer = [System.IO.StreamWriter]::new($stream)
+          $writer.NewLine = "`r`n"
+          $writer.AutoFlush = $true
+
+          $writer.WriteLine("NICK $nick")
+          $writer.WriteLine("USER $nick 0 * :GitHub Release Bot")
+          Start-Sleep -Seconds 2
+          $writer.WriteLine("JOIN $chan")
+          Start-Sleep -Seconds 2
+          $writer.WriteLine("PRIVMSG $chan :$msg")
+          Start-Sleep -Seconds 1
+          $writer.WriteLine("QUIT")
+
+          $writer.Dispose()
+          $stream.Dispose()
+          $client.Close()
+          

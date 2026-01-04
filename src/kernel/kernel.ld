@@ -10,15 +10,12 @@
 ENTRY(_kmain)
 SECTIONS
 { 
-    . = 0x00400000;
-/*
-    .header : {
-        LONG(_kmain);
-        LONG(_kmain);
-    }
-*/
+    . = 0x00080000;
+    
     .text : {
-        LONG(_kmain);
+        LONG(_vid_main);    /* kernel 1 */
+        LONG(_txt_main);    /* kernel 2 */
+
         __code_start = .;
         *(.text .text.*)
     } 

@@ -38,6 +38,14 @@ typedef struct {
     uint32_t p_align;
 } Elf32_Phdr;
 
+// ------------------------------------------------------------
+// Ergebnisinfo für den Caller
+// ------------------------------------------------------------
+typedef struct {
+    uint32_t entry;      // User-EIP
+    uint32_t load_bias;  // 0 für ET_EXEC, sonst base-bias
+} elf_user_image_t;
+
 # define ELFMAG0 0x7f
 # define ELFMAG1 'E'
 # define ELFMAG2 'L'

@@ -10,14 +10,6 @@
 # include "elf_loader.h"
 
 // ------------------------------------------------------------
-// Ergebnisinfo für den Caller
-// ------------------------------------------------------------
-typedef struct {
-    uint32_t entry;      // User-EIP
-    uint32_t load_bias;  // 0 für ET_EXEC, sonst base-bias
-} elf_user_image_t;
-
-// ------------------------------------------------------------
 // Helpers
 // ------------------------------------------------------------
 static bool read_exact(FILE* f, uint32_t off, void* dst, uint32_t len) {
@@ -30,6 +22,7 @@ static bool read_exact(FILE* f, uint32_t off, void* dst, uint32_t len) {
     }   return false;
 }
 static inline uint32_t align_down(uint32_t x, uint32_t a) { return x & ~(a - 1u); }
+static inline uint32_t align_up  (uint32_t x, uint32_t a) { return (x + a - 1u) & ~(a - 1u); }
 
 // Optional: sehr einfache Range-Checks (an dein Layout anpassen)
 static bool user_range_ok(uint32_t start, uint32_t size) {
@@ -65,7 +58,12 @@ bool elf32_load_nomap(FILE* f, uint32_t base_for_dyn, elf_user_image_t* out) {
     if (eh.e_phnum == 0 || eh.e_phnum > 128) return false;
 
     // Program Header Tabelle einlesen (kleiner Kernel-Stack? -> besser static/heap)
-    Elf32_Phdr ph[128];
+    //Elf32_Phdr ph[128];
+    Elf32_Phdr* ph = kmalloc(eh.e_phnum * sizeof(Elf32_Phdr));
+    if (!ph) {
+        printformat("elf32 ph error.\n");
+        return false;
+    }
     uint32_t ph_bytes = eh.e_phnum * sizeof(Elf32_Phdr);
     if (!read_exact(f, eh.e_phoff, ph, ph_bytes)) return false;
 

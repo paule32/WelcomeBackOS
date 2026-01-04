@@ -295,7 +295,6 @@ USB_SIZE_MIB        := 64
 # source files for the C-kernel ...
 # -----------------------------------------------------------------------------
 SRC_SHELL       :=\
-        $(SRC)/user32/shell32/shell_loader.cc  \
         $(SRC)/user32/shell32/shell.cc
 
 RUN_CPO := \
@@ -351,13 +350,6 @@ SRCC := $(COR_DIR)/ckernel.cc       \
         $(SRC_KXSTL) \
         \
         $(SRC_SHELL)
-# -----------------------------------------------------------------------------
-# source files for the C-kernel ...
-# -----------------------------------------------------------------------------
-SHSRCC := \
-        $(SRC)/shell.c          \
-        $(SRC)/ps2_mouse.cc     \
-        $(SRC)/paging.c
 
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the C-kernel ...
@@ -386,12 +378,13 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
         $(OBJ_DIR)/coff/ahci.o           \
         $(OBJ_DIR)/coff/ps2_mouse.o      \
         $(OBJ_DIR)/coff/shell_loader.o   \
-        $(OBJ_DIR)/coff/shell.o          \
         $(OBJ_DIR)/coff/int86_blob.o     \
         $(OBJ_DIR)/coff/int86.o          \
         $(OBJ_DIR)/coff/pe.o             \
         $(OBJ_DIR)/coff/wm.o             \
         $(OBJ_DIR)/coff/kheap.o          \
+        \
+        $(OBJ_DIR)/coff/elf_loader.o     \
         \
         $(RUN_CPO) \
         $(OBJ_DIR)/coff/kstl.o \
@@ -403,14 +396,7 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
 # *.o bject files for linkage stage of the shell ...
 # -----------------------------------------------------------------------------
 SHOBJS := \
-        $(OBJ_DIR)/coff/shell.o          \
-        $(OBJ_DIR)/coff/kheap.o          \
-        $(OBJ_DIR)/coff/math.o           \
-        $(OBJ_DIR)/coff/paging.o         \
-        $(OBJ_DIR)/coff/ps2_mouse.o      \
-        $(OBJ_DIR)/coff/vga.o            \
-        $(OBJ_DIR)/coff/video.o          \
-        $(OBJ_DIR)/coff/util.o
+        $(OBJ_DIR)/elf/shell.o
 
 ISO_FILES  := /boot2.bin /kernel.bin
 LBA        := $(COR_DIR)/lba.inc
@@ -519,10 +505,6 @@ $(eval $(call compile_rule,$(SRC_DIR)/fntres))
 DEPS := $(patsubst $(OBJ_DIR)/coff/%.o,$(DEP_DIR)/coff/%.d,$(OBJS))
 -include $(DEPS)
 
-$(OBJ_DIR)/coff/%.o: $(SRC_DIR)/user32/shell32/%.c
-	$(GCC) $(CFLAGS_C)  -c $< -o $@
-$(OBJ_DIR)/coff/%.o: $(SRC_DIR)/user32/shell32/%.cc
-	$(CPP) $(CFLAGS_CC) -c $< -o $@
 # -----------------------------------------------------------------------------
 # link C-kernel to finaly output binary image ...
 # -----------------------------------------------------------------------------
@@ -549,12 +531,21 @@ $(SRC)/initrd.dat: $(BIN)/INITRD.EXE
 $(BIN)/INITRD.EXE: $(OBJ)/make_initrd.o
 	$(GCC) -m32 -mconsole -O2 -Wall -Wextra -o $@ $<
 	$(STRIP) $@
-
-$(OBJ)/shell.bin: $(SHOBJS) $(SRC)/shell.ld
-	$(LD) $(LDSHFLGS) -o    $(OBJ)/shell.bin $(SHOBJS)
-
-$(BIN)/shell.exe:  $(OBJ)/shell.bin
+# -----------------------------------------------------------------------------
+#
+# -----------------------------------------------------------------------------
+$(OBJ_DIR)/elf/%.o: $(SRC_DIR)/user32/shell32/%.c
+	$(GCC) $(CFLAGS_C)  -c $< -o $@
+$(OBJ_DIR)/elf/%.o: $(SRC_DIR)/user32/shell32/%.cc
+	$(CPP) $(CFLAGS_CC) -c $< -o $@
+$(OBJ_DIR)/elf/shell.bin:   \
+    $(OBJ_DIR)/elf/user32.o \
+    $(SRC_DIR)/user32/shell32/shell.ld
+	$(LD) $(LDSHFLGS) -o  $(OBJ_DIR)/elf/shell.bin $(SHOBJS)
+$(BIN)/shell.elf:  $(OBJ_DIR)/elf/shell.bin
 	$(OBJCOPY) -O binary $(OBJ)/shell.bin $(BIN)/shell.exe
+shell: $(BIN)/shell.elf
+	echo "dodo"
 
 $(BIN_DIR)/bootcd.iso: \
     $(BIN_DIR)/content/boot1.bin $(BIN_DIR)/content/boot2.bin \
@@ -594,7 +585,7 @@ clean:
 bootcd:
 	/mingw64/bin/qemu-system-x86_64.exe \
     -drive file=$(BIN_DIR)/bootcd.iso,if=none,media=cdrom,id=cdrom0 \
-    -machine q35,i8042=on  \
+    -machine q35,i8042=on \
     -device ich9-ahci,id=ahci0 \
     -device ide-cd,drive=cdrom0,bus=ahci0.0 \
     -boot d -m 512M

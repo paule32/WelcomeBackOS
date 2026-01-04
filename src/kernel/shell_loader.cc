@@ -3,11 +3,14 @@
 // \note  (c) 2025 by Jens Kallup - paule32
 //        all rights reserved.
 // ----------------------------------------------------------------------------
+# include "config.h"
+
 # include "stdint.h"
 # include "proto.h"
 # include "kheap.h"
 # include "int86.h"
 # include "iso9660.h"
+# include "elf_loader.h"
 
 # define DESKTOP
 # include "vga.h"
@@ -47,6 +50,7 @@ extern "C" void blit565_colorkey(
 typedef void (*app_entry_t)(void);
 
 static inline void io_wait(void) { outb(0x80, 0); }
+extern "C" bool elf32_load_nomap(FILE* f, uint32_t base_for_dyn, elf_user_image_t* out);
 
 static void pic_mask_irq(uint8_t irq)
 {
@@ -61,10 +65,24 @@ void ps2_polling_enable(void)
     pic_mask_irq(12);  // Mouse IRQ12
 }
 
-extern "C" void enter_shell(void)
+void enter_txt_shell(void)
+{
+    printformat("in text shell.\n");
+    FILE *user_file = file_open("/textshell.elf");
+    if (!user_file) {
+        printformat("textshell.elf: not found.\n");
+        return;
+    }
+    if (!elf32_load_nomap(user_file, 2, nullptr)) {
+        file_close(user_file);
+        printformat("textshell program error.\n");
+    }
+}
+
+void enter_vid_shell(void)
 {
     mouse_install();
-    shell_main();
+    //shell_main();
 
     /*
     wm_init(
@@ -177,4 +195,14 @@ extern "C" void enter_shell(void)
         for(;;);
     }
     */
+}
+
+
+extern "C" void enter_shell(void)
+{
+    if (graph_mode == 1) {
+        enter_txt_shell();
+    }   else {
+        enter_vid_shell();
+    }
 }

@@ -16,4 +16,12 @@
 # define ISOLANG LANG_ENU
 #endif
 
+#ifdef __cplusplus
+extern "C" void printformat (char *args, ...);
+#else
+           void printformat (char *args, ...);
+#endif
+
+extern int graph_mode;
+
 #endif  // __CONFIG_H__

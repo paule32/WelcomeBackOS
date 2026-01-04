@@ -167,7 +167,7 @@ void kprintf(char* message, UINT line, unsigned char attribute)
 };
 
 /* Lean version of printf: printformat(...): supports %u, %d, %x/%X, %s, %c */
-void printformat (char *args, ...)
+extern "C" void printformat (char *args, ...)
 {
 	va_list ap;
 	va_start (ap, args);

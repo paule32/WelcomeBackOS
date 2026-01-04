@@ -41,22 +41,42 @@ int iso_find_file(const char* path, uint32_t* out_lba, uint32_t* out_size);
 
 // Öffnet eine Datei als ISO_FILE / FILE*
 // path wie bei iso_find_file
-FILE* file_open(const char* path);
+#ifdef __cplusplus
+extern "C" FILE* file_open(const char* path);
+#else
+           FILE* file_open(const char* path);
+#endif
 
 // Liest bis zu "len" Bytes aus der Datei in "buf".
 // Rückgabewert: Anzahl gelesener Bytes (0 = EOF)
-uint32_t file_read(FILE* f, void* buf, uint32_t len);
+#ifdef __cplusplus
+extern "C" uint32_t file_read(FILE* f, void* buf, uint32_t len);
+#else
+           uint32_t file_read(FILE* f, void* buf, uint32_t len);
+#endif
 
 // Liest ein einzelnes Byte (wie getch):
 // Rückgabewert: 0..255 oder 0xFFFFFFFF bei EOF/Fehler
-uint32_t file_getch(FILE* f);
+#ifdef __cplusplus
+extern "C" uint32_t file_getch(FILE* f);
+#else
+           uint32_t file_getch(FILE* f);
+#endif
 
 // Setzt Dateiposition absolut (0 = Anfang).
 // Gibt 0 bei Erfolg, -1 bei ungültiger Position zurück.
-int file_seek(FILE* f, uint32_t new_pos);
+#ifdef __cplusplus
+extern "C" int file_seek(FILE* f, uint32_t new_pos);
+#else
+           int file_seek(FILE* f, uint32_t new_pos);
+#endif
 
 // Schließt die Datei (gibt die Struktur frei)
-void file_close(FILE* f);
+#ifdef __cplusplus
+extern "C" void file_close(FILE* f);
+#else
+           void file_close(FILE* f);
+#endif
  
 #endif  // __ISO9660_H__
  
