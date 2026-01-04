@@ -176,7 +176,11 @@ jobs:
           $pass   = $env:IRC_PASS
           if([string]::IsNullOrWhiteSpace($pass)) { throw "IRC_PASS fehlt (GitHub Secret)!" }
 
-          $msg = "✅ Release erstellt: ${{ github.event.release.tag_name }}"
+          $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById("W. Europe Standard Time")
+          $berlin = [System.TimeZoneInfo]::ConvertTimeFromUtc([DateTime]::UtcNow, $tz)
+          $stamp  = "v{0:yyyy-MM-dd_HH:mm}" -f $berlin
+          
+          $msg = "✅ New Release created: $stamp"
 
           $client = [System.Net.Sockets.TcpClient]::new()
           $client.Connect($server, $port)
