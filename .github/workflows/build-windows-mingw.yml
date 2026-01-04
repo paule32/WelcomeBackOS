@@ -158,102 +158,104 @@ jobs:
 
             Run:   https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
       
-      - name: Send IRC notification (debug)
+      - name: Send IRC notification (NickServ)
         shell: pwsh
+        env:
+          IRC_SERVER: irc.eu.libera.chat
+          IRC_PORT: "6667"
+          IRC_NICK: dBaseBot
+          IRC_USER: dBaseBot
+          IRC_CHAN: "#dBase.de"
+          IRC_PASS: ${{ secrets.IRC_PASS }}
         run: |
-            $server = "irc.eu.libera.chat"
-            $port   = 6667
-            $nick   = "dBaseBot"
-            $chan   = "#dBase.de"
-            
-            $msg    = "✅ Release: ${{ github.event.release.tag_name }}"
+          $server = $env:IRC_SERVER
+          $port   = [int]$env:IRC_PORT
+          $nick   = $env:IRC_NICK
+          $user   = $env:IRC_USER
+          $chan   = $env:IRC_CHAN
+          $pass   = $env:IRC_PASS
+          if([string]::IsNullOrWhiteSpace($pass)) { throw "IRC_PASS fehlt (GitHub Secret)!" }
 
-            $client = [System.Net.Sockets.TcpClient]::new()
-            $client.Connect($server,$port)
+          $msg = "✅ Release erstellt: ${{ github.event.release.tag_name }}"
 
-            $stream = $client.GetStream()
-            $reader = [System.IO.StreamReader]::new($stream)
-            $writer = [System.IO.StreamWriter]::new($stream)
-            $writer.NewLine="`r`n"; $writer.AutoFlush=$true
-
-            $writer.WriteLine("NICK $nick")
-            $writer.WriteLine("USER $nick 0 * :GitHub Release Bot")
-
-            $joined = $false
-            $deadline = (Get-Date).AddSeconds(25)
-
-            while((Get-Date) -lt $deadline){
-            if($stream.DataAvailable) {
-                $line = $reader.ReadLine()
-                if($null -eq $line) { break }
-                
-                Write-Host "IRC < $line"
-
-                if($line -match '^PING :(.*)$'){
-                    $writer.WriteLine("PONG :$($Matches[1])")
-                    Write-Host "IRC > PONG"
-                    continue
-                }
-
-                # 001 = Welcome (registriert)
-                if($line -match " 001 $nick "){
-                    $writer.WriteLine("JOIN $chan")
-                    Write-Host "IRC > JOIN $chan"
-                    continue
-                }
-
-                # JOIN bestätigt -> jetzt erst schreiben
-                if($line -match "JOIN :?$([regex]::Escape($chan))"){
-                    $joined = $true
-                    $writer.WriteLine("PRIVMSG $chan :$msg")
-                    Write-Host "IRC > PRIVMSG $chan"
-                    break
-                }
-
-                # Fehlermeldungen sichtbar machen
-                if($line -match " 4\d\d " -or $line -match " 5\d\d "){
-                    Write-Host "IRC ERROR DETECTED"
-                }
-            } else {
-                Start-Sleep -Milliseconds 150
-                }
-            }
-
-            $writer.WriteLine("QUIT :bye")
-            $reader.Dispose(); $writer.Dispose(); $stream.Dispose(); $client.Close()
-
-            if(-not $joined) {
-                Write-Error "Konnte Channel nicht sicher joinen/keine Bestätigung erhalten. Siehe Log oben."
-                exit 1
-            }
-
-      - name: Send IRC notification (PowerShell)
-        if: success()
-        shell: pwsh
-        run: |
-          $server = "irc.eu.libera.chat"
-          $port   = 6667
-          $nick   = "dBaseBot"
-          $chan   = "#dBase.de"
-
-          $msg    = "Neues Release erstellt: neu"
-
-          $client = [System.Net.Sockets.TcpClient]::new($server, $port)
+          $client = [System.Net.Sockets.TcpClient]::new()
+          $client.Connect($server, $port)
           $stream = $client.GetStream()
+          $reader = [System.IO.StreamReader]::new($stream)
           $writer = [System.IO.StreamWriter]::new($stream)
           $writer.NewLine = "`r`n"
           $writer.AutoFlush = $true
 
-          $writer.WriteLine("NICK $nick")
-          $writer.WriteLine("USER $nick 0 * :GitHub Release Bot")
-          Start-Sleep -Seconds 2
-          $writer.WriteLine("JOIN $chan")
-          Start-Sleep -Seconds 2
-          $writer.WriteLine("PRIVMSG $chan :$msg")
-          Start-Sleep -Seconds 1
-          $writer.WriteLine("QUIT")
+          function Send-Line([string]$s){
+            Write-Host "IRC > $s"
+            $writer.WriteLine($s)
+          }
 
-          $writer.Dispose()
-          $stream.Dispose()
-          $client.Close()
-          
+          Send-Line "NICK $nick"
+          Send-Line "USER $user 0 * :GitHub Release Bot"
+
+          $identified = $false
+          $joined = $false
+          $deadline = (Get-Date).AddSeconds(35)
+
+          while((Get-Date) -lt $deadline){
+            if(-not $stream.DataAvailable){
+              Start-Sleep -Milliseconds 120
+              continue
+            }
+
+            $line = $reader.ReadLine()
+            if($null -eq $line) { break }
+            Write-Host "IRC < $line"
+
+            # PING/PONG
+            if($line -match '^PING :(.*)$'){
+              Send-Line "PONG :$($Matches[1])"
+              continue
+            }
+
+            # Welcome -> jetzt NickServ IDENTIFY
+            if($line -match " 001 $nick "){
+              Send-Line "PRIVMSG NickServ :IDENTIFY $pass"
+              continue
+            }
+
+            # Viele Services melden so etwas (Text variiert je nach Network)
+            if($line -match '(identified|You are now identified|SASL authentication successful|now recognized)'){
+              $identified = $true
+              Send-Line "JOIN $chan"
+              continue
+            }
+
+            # Falls der Server nicht explizit bestätigt, nach kurzem Warten trotzdem joinen
+            if(-not $identified -and $line -match "NickServ"){
+              # nichts erzwingen, nur weiter lesen
+              continue
+            }
+
+            # JOIN bestätigt -> dann Nachricht senden
+            if($line -match "JOIN :?$([regex]::Escape($chan))"){
+              $joined = $true
+              Send-Line "PRIVMSG $chan :$msg"
+              break
+            }
+
+            # Harte Fehler sichtbar machen
+            if($line -match " 4\d\d " -or $line -match " 5\d\d "){
+              throw "IRC Fehler: $line"
+            }
+
+            # Wenn wir schon länger warten und keine Identify-Bestätigung kommt:
+            if(-not $identified -and (Get-Date) -gt $deadline.AddSeconds(-20)){
+              # Versuch: trotzdem JOIN (manche Netze bestätigen Identify nicht klar)
+              $identified = $true
+              Send-Line "JOIN $chan"
+            }
+          }
+
+          Send-Line "QUIT :bye"
+          $reader.Dispose(); $writer.Dispose(); $stream.Dispose(); $client.Close()
+
+          if(-not $joined){
+            throw "Keine JOIN-Bestätigung erhalten -> Nachricht evtl. nie gesendet. Siehe Log."
+          }
