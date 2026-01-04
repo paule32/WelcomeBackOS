@@ -157,7 +157,76 @@ jobs:
             ISO:   ${{ env.ISO_PATH }}
 
             Run:   https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      
+      - name: Send IRC notification (debug)
+        shell: pwsh
+        run: |
+            $server = "irc.eu.libera.chat"
+            $port   = 6667
+            $nick   = "dBaseBot"
+            $chan   = "#dBase.de"
             
+            $msg    = "✅ Release: ${{ github.event.release.tag_name }}"
+
+            $client = [System.Net.Sockets.TcpClient]::new()
+            $client.Connect($server,$port)
+
+            $stream = $client.GetStream()
+            $reader = [System.IO.StreamReader]::new($stream)
+            $writer = [System.IO.StreamWriter]::new($stream)
+            $writer.NewLine="`r`n"; $writer.AutoFlush=$true
+
+            $writer.WriteLine("NICK $nick")
+            $writer.WriteLine("USER $nick 0 * :GitHub Release Bot")
+
+            $joined = $false
+            $deadline = (Get-Date).AddSeconds(25)
+
+            while((Get-Date) -lt $deadline){
+            if($stream.DataAvailable) {
+                $line = $reader.ReadLine()
+                if($null -eq $line) { break }
+                
+                Write-Host "IRC < $line"
+
+                if($line -match '^PING :(.*)$'){
+                    $writer.WriteLine("PONG :$($Matches[1])")
+                    Write-Host "IRC > PONG"
+                    continue
+                }
+
+                # 001 = Welcome (registriert)
+                if($line -match " 001 $nick "){
+                    $writer.WriteLine("JOIN $chan")
+                    Write-Host "IRC > JOIN $chan"
+                    continue
+                }
+
+                # JOIN bestätigt -> jetzt erst schreiben
+                if($line -match "JOIN :?$([regex]::Escape($chan))"){
+                    $joined = $true
+                    $writer.WriteLine("PRIVMSG $chan :$msg")
+                    Write-Host "IRC > PRIVMSG $chan"
+                    break
+                }
+
+                # Fehlermeldungen sichtbar machen
+                if($line -match " 4\d\d " -or $line -match " 5\d\d "){
+                    Write-Host "IRC ERROR DETECTED"
+                }
+            } else {
+                Start-Sleep -Milliseconds 150
+                }
+            }
+
+            $writer.WriteLine("QUIT :bye")
+            $reader.Dispose(); $writer.Dispose(); $stream.Dispose(); $client.Close()
+
+            if(-not $joined) {
+                Write-Error "Konnte Channel nicht sicher joinen/keine Bestätigung erhalten. Siehe Log oben."
+                exit 1
+            }
+
       - name: Send IRC notification (PowerShell)
         if: success()
         shell: pwsh
@@ -166,7 +235,8 @@ jobs:
           $port   = 6667
           $nick   = "dBaseBot"
           $chan   = "#dBase.de"
-          $msg    = "✅ Neues Release erstellt: ${{ github.event.release.tag_name }}"
+
+          $msg    = "Neues Release erstellt: neu"
 
           $client = [System.Net.Sockets.TcpClient]::new($server, $port)
           $stream = $client.GetStream()
