@@ -323,13 +323,29 @@ jobs:
                 name: ${{ env.ARTIFACT_CD_NAME }}
                 path: ${{ env.ISO_PATH }}
             
-            - name: Convert CD to USB iso image
+            - name: Convert CD to USB iso image BIOS
               run: |
-                cd build/bin
+                rm -rf build/bin/bootusb_bios.img
                 ls -la
-                cp bootcd.iso bootusb.img
+                cp build/bin/bootcd.iso build/bin/bootusb_bios.img
+                ls -la build/bin/
+                isohybrid build/bin/bootusb_bios.img
+            
+            - name: Convert CD to USB iso image UEFI
+              run: |
+                rm -rf build/bin/bootusb_uefi.img
                 ls -la
-                isohybrid bootusb.img || true
+                cp build/bin/bootcd.iso build/bin/bootusb_uefi.img
+                ls -la build/bin
+                isohybrid --uefi build/bin/bootusb_uefi.img
+            
+            - name: Convert CD to USB iso image GPT + EFI
+              run: |
+                rm -rf build/bin/bootusb_gpt.img
+                ls -la
+                cp build/bin/bootcd.iso build/bin/bootusb_gpt.img
+                ls -la build/bin
+                isohybrid --uefi --gpt build/bin/bootusb_gpt.img
             
             - name: Upload packed outputs
               uses: actions/upload-artifact@v4
@@ -337,5 +353,7 @@ jobs:
                 name: ${{ env.ARTIFACT_USB_NAME }}
                 path: |
                     build/bin/bootcd.iso
-                    build/bin/bootusb.img
+                    build/bin/bootusb_bios.img
+                    build/bin/bootusb_uefi.img
+                    build/bin/bootusb_gpt.img
  
