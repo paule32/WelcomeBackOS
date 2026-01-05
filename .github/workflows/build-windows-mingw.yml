@@ -325,10 +325,11 @@ jobs:
             
             - name: Convert CD to USB iso image
               run: |
-                rm -rf "${{ env.USB_PATH }}"
-                install -m 0644 "${{ env.ISO_PATH }}" "${{ env.USB_PATH }}"
-                file "${{ env.USB_PATH }}"
-                isohybrid ${{ env.USB_PATH }} || true
+                cd build/bin
+                ls -la
+                cp bootcd.iso bootusb.img
+                ls -la
+                isohybrid bootusb.img || true
             
             - name: Upload packed outputs
               uses: actions/upload-artifact@v4
