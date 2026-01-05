@@ -324,14 +324,16 @@ jobs:
             
             - name: Verify ISO exists
               run: |
-                ls  -la
                 ls  -la ${{ env.ISO_PATH }}
                 test -f ${{ env.ISO_PATH }}
             
             - name: Convert CD to USB iso image
               run: |
+                echo "copy"
                 cp ${{ env.ISO_PATH }} ${{ env.USB_PATH }}
+                echo "hybrid"
                 isohybrid ${{ env.USB_PATH }} || true
+                echo "done."
             
             - name: Upload packed outputs
               uses: actions/upload-artifact@v4
