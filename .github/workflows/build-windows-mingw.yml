@@ -93,24 +93,24 @@ jobs:
       - name: Create & push timestamp tag (vYYYY_mm_dd_HH_mm)
         shell: msys2 {0}
         run: |
-          set -euxo pipefail
-
-          export TZ=Europe/Berlin
-          TAG="$(date +v%Y_%m_%d_%H_%M)"
-
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Kollision vermeiden (z.B. Re-Run in derselben Minute)
-          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
-            echo "Tag ${TAG} existiert bereits. Bitte erneut starten (nächste Minute) oder Format erweitern."
-            exit 1
-          fi
-
-          git tag -a "${TAG}" -m "Automated build ${TAG}"
-          git push origin "${TAG}"
-
-          echo "RELEASE_TAG=${TAG}" >> "$GITHUB_ENV"
+            set -euxo pipefail
+            
+            export TZ=Europe/Berlin
+            TAG="$(date +v%Y_%m_%d_%H_%M)"
+            
+            git config user.name  "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            
+            # Kollision vermeiden (z.B. Re-Run in derselben Minute)
+            if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+                echo "Tag ${TAG} existiert bereits. Bitte erneut starten (nächste Minute) oder Format erweitern."
+                exit 1
+            fi
+            
+            git tag -a "${TAG}" -m "Automated build ${TAG}"
+            git push origin "${TAG}"
+            
+            echo "RELEASE_TAG=${TAG}" >> "$GITHUB_ENV"
 
       # 2) Release erstellen + ISO anhängen
       - name: Create GitHub Release + upload bootcd.iso
@@ -145,17 +145,17 @@ jobs:
           secure: false                           # 465 meist true; bei 587 ggf. false
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
-
+        
           to: ${{ secrets.NOTIFY_TO_EMAIL }}
           from: "GitHub Actions <${{ secrets.SMTP_USERNAME }}>"
           subject: "✅ Boot ISO Release erstellt: ${{ env.RELEASE_TAG }}"
           body: |
             Build & Release erfolgreich
-
+            
             Repo:  ${{ github.repository }}
             Tag:   ${{ env.RELEASE_TAG }}
             ISO:   ${{ env.ISO_PATH }}
-
+            
             Run:   https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
       
       - name: Send IRC notification (NickServ)
@@ -165,101 +165,128 @@ jobs:
           IRC_PORT: "6667"
           IRC_NICK: dBaseBot
           IRC_USER: dBaseBot
-          IRC_CHAN: "#dBase.de"
           IRC_PASS: ${{ secrets.IRC_PASS }}
-        run: |
-          $server = $env:IRC_SERVER
-          $port   = [int]$env:IRC_PORT
-          $nick   = $env:IRC_NICK
-          $user   = $env:IRC_USER
-          $chan   = $env:IRC_CHAN
-          $pass   = $env:IRC_PASS
-          if([string]::IsNullOrWhiteSpace($pass)) { throw "IRC_PASS fehlt (GitHub Secret)!" }
-
-          $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById("W. Europe Standard Time")
-          $berlin = [System.TimeZoneInfo]::ConvertTimeFromUtc([DateTime]::UtcNow, $tz)
-          $stamp  = "v{0:yyyy-MM-dd_HH:mm}" -f $berlin
           
-          $msg = "✅ New Release created: $stamp"
-
-          $client = [System.Net.Sockets.TcpClient]::new()
-          $client.Connect($server, $port)
-          $stream = $client.GetStream()
-          $reader = [System.IO.StreamReader]::new($stream)
-          $writer = [System.IO.StreamWriter]::new($stream)
-          $writer.NewLine = "`r`n"
-          $writer.AutoFlush = $true
-
-          function Send-Line([string]$s){
-            Write-Host "IRC > $s"
-            $writer.WriteLine($s)
-          }
-
-          Send-Line "NICK $nick"
-          Send-Line "USER $user 0 * :GitHub Release Bot"
-
-          $identified = $false
-          $joined = $false
-          $deadline = (Get-Date).AddSeconds(35)
-
-          while((Get-Date) -lt $deadline){
-            if(-not $stream.DataAvailable){
-              Start-Sleep -Milliseconds 120
-              continue
+          IRC_CHAN_DE: "#dBase.de"
+          IRC_CHAN_EN: "#dBase"
+        run: |
+            $server = $env:IRC_SERVER
+            $port   = [int]$env:IRC_PORT
+            $nick   = $env:IRC_NICK
+            $user   = $env:IRC_USER
+            $pass   = $env:IRC_PASS
+            
+            if([string]::IsNullOrWhiteSpace($pass)) {
+                throw "IRC_PASS fehlt (GitHub Secret)!"
             }
-
-            $line = $reader.ReadLine()
-            if($null -eq $line) { break }
-            Write-Host "IRC < $line"
-
-            # PING/PONG
-            if($line -match '^PING :(.*)$'){
-              Send-Line "PONG :$($Matches[1])"
-              continue
+            
+            $tag = "${{ github.event.release.tag_name }}"
+            $url = "${{ github.event.release.html_url }}"
+            
+            $chanDE = $env:IRC_CHAN_DE
+            $chanEN = $env:IRC_CHAN_EN
+            
+            # Europe/Berlin Zeitstempel: yyyy-mm-dd_HH:mm
+            $tz     = [System.TimeZoneInfo]::FindSystemTimeZoneById("W. Europe Standard Time")
+            $berlin = [System.TimeZoneInfo]::ConvertTimeFromUtc([DateTime]::UtcNow, $tz)
+            $stamp  = "v{0:yyyy-MM-dd_HH:mm}" -f $berlin
+            
+            $msgDE = "✅ Neues Release erfolgreich erstellt, und veröffentlicht: $tag - $url"
+            $msgEN = "✅ New Release created, and published successfully: $tag - $url"
+            
+            $client = [System.Net.Sockets.TcpClient]::new()
+            $client.Connect($server, $port)
+            $stream = $client.GetStream()
+            $reader = [System.IO.StreamReader]::new($stream)
+            $writer = [System.IO.StreamWriter]::new($stream)
+            $writer.NewLine = "`r`n"
+            $writer.AutoFlush = $true
+            
+            function Send-Line([string]$s) {
+                Write-Host "IRC > $s"
+                $writer.WriteLine($s)
             }
-
-            # Welcome -> jetzt NickServ IDENTIFY
-            if($line -match " 001 $nick "){
-              Send-Line "PRIVMSG NickServ :IDENTIFY $pass"
-              continue
+            
+            Send-Line "NICK $nick"
+            Send-Line "USER $user 0 * :GitHub Release Bot"
+            
+            $identified = $false
+            $joinedDE   = $false
+            $joinedEN   = $false
+            
+            $deadline   = (Get-Date).AddSeconds(45)
+            
+            while ((Get-Date) -lt $deadline) {
+                if (-not $stream.DataAvailable) {
+                    Start-Sleep -Milliseconds 120
+                    continue
+                }
+                
+                $line = $reader.ReadLine()
+                if ($null -eq $line) { break }
+                Write-Host "IRC < $line"
+                
+                # PING/PONG
+                if($line -match '^PING :(.*)$'){
+                    Send-Line "PONG :$($Matches[1])"
+                    continue
+                }
+                
+                # Welcome -> jetzt NickServ IDENTIFY
+                if ($line -match " 001 $nick " -and -not $identified) {
+                    Send-Line "PRIVMSG NickServ :IDENTIFY $pass"
+                    continue
+                }
+                
+                # Viele Services melden so etwas (Text variiert je nach Network)
+                if ($line -match '(identified|You are now identified|SASL authentication successful|now recognized)') {
+                    $identified = $true
+                    Send-Line "JOIN $chanDE"
+                    Send-Line "JOIN $chanEN"
+                    continue
+                }
+                
+                # Falls der Server nicht explizit bestätigt, nach kurzem Warten trotzdem joinen
+                if (-not $identified -and $line -match "NickServ") {
+                    # nichts erzwingen, nur weiter lesen
+                    continue
+                }
+                
+                if($line -match "JOIN :?$([regex]::Escape($chanDE))"){ $joinedDE = $true }
+                if($line -match "JOIN :?$([regex]::Escape($chanEN))"){ $joinedEN = $true }
+                
+                # JOIN bestätigt -> dann Nachricht senden
+                # Sobald wir (mind.) den jeweiligen Join haben, senden wir die passende Sprache
+                if($joinedDE -and $msgDE){
+                    Send-Line "PRIVMSG $chanDE :$msgDE"
+                    $msgDE = $null
+                }
+                if($joinedEN -and $msgEN){
+                    Send-Line "PRIVMSG $chanEN :$msgEN"
+                    $msgEN = $null
+                }
+                
+                # Harte Fehler sichtbar machen
+                if ($line -match " 4\d\d " -or $line -match " 5\d\d ") {
+                    throw "IRC Fehler: $line"
+                }
+                
+                # Wenn wir schon länger warten und keine Identify-Bestätigung kommt:
+                if (-not $identified -and (Get-Date) -gt $deadline.AddSeconds(-20)) {
+                    # Versuch: trotzdem JOIN (manche Netze bestätigen Identify nicht klar)
+                    $identified = $true
+                    Send-Line "JOIN $chanDE"
+                }
+                
+                if(($joinedDE  -or [string]::IsNullOrEmpty($env:IRC_CHAN_DE)) -and
+                    ($joinedEN -or [string]::IsNullOrEmpty($env:IRC_CHAN_EN)) -and
+                    ($null -eq $msgDE) -and ($null -eq $msgEN)){
+                    break
+                }
             }
-
-            # Viele Services melden so etwas (Text variiert je nach Network)
-            if($line -match '(identified|You are now identified|SASL authentication successful|now recognized)'){
-              $identified = $true
-              Send-Line "JOIN $chan"
-              continue
+            
+            Send-Line "QUIT :bye"
+            $reader.Dispose(); $writer.Dispose(); $stream.Dispose(); $client.Close()
+            if(-not $joined) {
+                throw "Keine JOIN-Bestätigung erhalten -> Nachricht evtl. nie gesendet. Siehe Log."
             }
-
-            # Falls der Server nicht explizit bestätigt, nach kurzem Warten trotzdem joinen
-            if(-not $identified -and $line -match "NickServ"){
-              # nichts erzwingen, nur weiter lesen
-              continue
-            }
-
-            # JOIN bestätigt -> dann Nachricht senden
-            if($line -match "JOIN :?$([regex]::Escape($chan))"){
-              $joined = $true
-              Send-Line "PRIVMSG $chan :$msg"
-              break
-            }
-
-            # Harte Fehler sichtbar machen
-            if($line -match " 4\d\d " -or $line -match " 5\d\d "){
-              throw "IRC Fehler: $line"
-            }
-
-            # Wenn wir schon länger warten und keine Identify-Bestätigung kommt:
-            if(-not $identified -and (Get-Date) -gt $deadline.AddSeconds(-20)){
-              # Versuch: trotzdem JOIN (manche Netze bestätigen Identify nicht klar)
-              $identified = $true
-              Send-Line "JOIN $chan"
-            }
-          }
-
-          Send-Line "QUIT :bye"
-          $reader.Dispose(); $writer.Dispose(); $stream.Dispose(); $client.Close()
-
-          if(-not $joined){
-            throw "Keine JOIN-Bestätigung erhalten -> Nachricht evtl. nie gesendet. Siehe Log."
-          }
