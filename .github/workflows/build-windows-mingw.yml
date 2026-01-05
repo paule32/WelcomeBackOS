@@ -28,7 +28,6 @@ jobs:
         name: Boot-CD ISO   # Anzeige-Name (mit Leerzeichen ok)
         runs-on: windows-latest
         steps:
-            - run: echo "Create CD image on Windows"
             - name: Checkout Windows
               uses: actions/checkout@v4
               with:
@@ -306,9 +305,8 @@ jobs:
         runs-on: ubuntu-latest
         needs: BootISO_CD
         steps:
-            - run: echo "Create USB image on Linux"
-            - name: Checkout Linux
-              uses: actions/checkout@v4
+            - name: Create USB image on Linux
+            - uses: actions/checkout@v4
             
             - name Setup Linux Environment
               run: |
