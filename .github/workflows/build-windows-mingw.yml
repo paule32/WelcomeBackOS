@@ -17,7 +17,10 @@ permissions:
 
 env:
     SRC_DIR: src
+    
     ISO_PATH: build/bin/bootcd.iso
+    USB_PATH: build/bin/bootusb.img
+    
     ARTIFACT_CD_NAME: bootCD-iso
 
 jobs:
@@ -321,15 +324,14 @@ jobs:
             
             - name: Verify ISO exists
               run: |
-                ls -la
-                ls -la incoming
-                test -f incoming/bootcd.iso
+                ls  -la
+                ls  -la ${{ env.ISO_PATH }}
+                test -f ${{ env.ISO_PATH }}
             
             - name: Convert CD to USB iso image
               run: |
-                mkdir -p build/bin
-                cp incoming/bootcd.iso build/bin/bootcd.iso
-                cp build/bin/bootcd.iso build/bin/bootusb.img
+                cp ${{ env.ISO_PATH }} ${{ env.USB_PATH }}
+                isohybrid ${{ env.USB_PATH }} || true
             
             - name: Upload packed outputs
               uses: actions/upload-artifact@v4
