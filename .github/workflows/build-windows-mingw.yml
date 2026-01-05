@@ -322,11 +322,6 @@ jobs:
                 name: ${{ env.ARTIFACT_CD_NAME }}
                 path: ${{ env.ISO_PATH }}
             
-            - name: Verify ISO exists
-              run: |
-                ls  -la ${{ env.ISO_PATH }}
-                test -f ${{ env.ISO_PATH }}
-            
             - name: Convert CD to USB iso image
               run: |
                 echo "copy"
