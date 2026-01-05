@@ -309,10 +309,12 @@ jobs:
             - run: echo "Create USB image on Linux"
             - name: Checkout Linux
               uses: actions/checkout@v4
+            
+            - name Setup Linux Environment
               run: |
                 sudo apt-get update
                 sudo apt-get install -y syslinux-utils xorriso
-            
+                
             - name: Download bootcd.iso artifact
             - uses: actions/download-artifact@v4
               with:
