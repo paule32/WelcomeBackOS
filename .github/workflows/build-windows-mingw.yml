@@ -314,7 +314,7 @@ jobs:
                 sudo apt-get install -y syslinux-utils xorriso
                 
             - name: Download bootcd.iso artifact
-            - uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v4
               with:
                 name: ${{ env.ARTIFACT_CD_NAME }}
                 path: ${{ env.ISO_PATH }}
