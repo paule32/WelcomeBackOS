@@ -22,6 +22,7 @@ env:
     USB_PATH: build/bin/bootusb.img
     
     ARTIFACT_CD_NAME: bootCD-iso
+    ARTIFACT_USB_NAME: bootUSB-iso
 
 jobs:
     # -----------------------------------
@@ -331,7 +332,7 @@ jobs:
             - name: Upload packed outputs
               uses: actions/upload-artifact@v4
               with:
-                name: Boot CD / USB Image
+                name: ${{ env.ARTIFACT_USB_NAME }}
                 path: |
                     build/bin/bootcd.iso
                     build/bin/bootusb.img
