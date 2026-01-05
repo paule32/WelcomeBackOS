@@ -142,7 +142,7 @@ jobs:
                 }
 
             # 3) E-Mail nur bei Erfolg (nach erfolgreichem Release)
-            - name: Send email (success)
+            - name: Send email (when success)
               if: success()
               uses: dawidd6/action-send-mail@v3
               with:
