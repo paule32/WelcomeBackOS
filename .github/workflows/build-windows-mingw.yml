@@ -38,22 +38,22 @@ jobs:
               uses: msys2/setup-msys2@v2
               with:
                 msystem: MINGW32
-              update: true
-              install: >
-                mingw-w64-i686-gcc
-                mingw-w64-i686-binutils
-                mingw-w64-i686-gdb
-                make
-                nasm
-                xorriso
-                python
-                wget
-                gzip
-                gawk
-                coreutils
-                diffutils
-                file
-                git
+                update: true
+                install: >
+                    mingw-w64-i686-gcc
+                    mingw-w64-i686-binutils
+                    mingw-w64-i686-gdb
+                    make
+                    nasm
+                    xorriso
+                    python
+                    wget
+                    gzip
+                    gawk
+                    coreutils
+                    diffutils
+                    file
+                    git
 
             - name: Show tool versions
               shell: msys2 {0}
