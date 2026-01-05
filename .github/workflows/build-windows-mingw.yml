@@ -306,7 +306,7 @@ jobs:
         needs: BootISO_CD
         steps:
             - name: Create USB image on Linux
-            - uses: actions/checkout@v4
+              uses: actions/checkout@v4
             
             - name: Setup Linux Environment
               run: |
