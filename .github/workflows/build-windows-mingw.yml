@@ -325,11 +325,15 @@ jobs:
             
             - name: Convert CD to USB iso image BIOS
               run: |
-                rm -rf build/bin/bootusb_bios.img
-                ls -la
-                cp build/bin/bootcd.iso build/bin/bootusb_bios.img
-                ls -la build/bin/
-                isohybrid build/bin/bootusb_bios.img
+                rm -rf ./build/bin/bootusb_bios.img
+                ls -la ./
+                echo "iso dir"
+                ls -la ./build/bin
+                echo "iso file"
+                ls -la ./build/bin/bootcd.iso/
+                cp ./build/bin/bootcd.iso/bootcd.iso ./build/bin/bootusb_bios.img
+                ls -la ./build/bin
+                isohybrid ./build/bin/bootusb_bios.img
             
             - name: Convert CD to USB iso image UEFI
               run: |
