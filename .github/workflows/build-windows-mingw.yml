@@ -325,8 +325,9 @@ jobs:
             
             - name: Convert CD to USB iso image
               run: |
-                cp -r ${{ env.ISO_PATH }} ${{ env.USB_PATH }}
-                echo "start convert..."
+                rm -rf "${{ env.USB_PATH }}"
+                install -m 0644 "${{ env.ISO_PATH }}" "${{ env.USB_PATH }}"
+                file "${{ env.USB_PATH }}"
                 isohybrid ${{ env.USB_PATH }} || true
             
             - name: Upload packed outputs
