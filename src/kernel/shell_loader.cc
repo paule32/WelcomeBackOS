@@ -21,6 +21,8 @@ extern int  gfx_init(void);
 extern "C" void shell_main(void);
 extern "C" void mouse_poll(void);
 extern "C"  int mouse_install(void);
+extern "C" void test_app(void);
+
 //extern void wm_init(int,int,uint32_t,int);
 
 typedef struct {
@@ -68,15 +70,18 @@ void ps2_polling_enable(void)
 void enter_txt_shell(void)
 {
     printformat("in text shell.\n");
-    FILE *user_file = file_open("/textshell.elf");
+    test_app();
+    /*
+    FILE *user_file = file_open("/shell32.exe");
     if (!user_file) {
-        printformat("textshell.elf: not found.\n");
+        printformat("shell32.exe: not found.\n");
         return;
-    }
-    if (!elf32_load_nomap(user_file, 2, nullptr)) {
+    }*/
+    
+    /*if (!elf32_load_nomap(user_file, 2, nullptr)) {
         file_close(user_file);
         printformat("textshell program error.\n");
-    }
+    }*/
 }
 
 void enter_vid_shell(void)

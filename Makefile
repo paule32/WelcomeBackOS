@@ -168,10 +168,10 @@ OBJCOPY  := $(GCC_DIR)/$(CROSS)objcopy$(EXT)
 # LICENSE in the root directory of this reporsitory.
 # -----------------------------------------------------------------------------
 #.PHONY: confirm
-all: confirm clean setup $(BIN_DIR)/bootcd.iso
+all: confirm clean setup shell32 $(BIN_DIR)/bootcd.iso
 setup:
 	$(MKDIR) -p $(BUI_DIR) $(BUI_DIR)/bin $(BUI_DIR)/bin/content $(BUI_DIR)/hex
-	$(MKDIR) -p $(BIN_DIR)/content/img
+	$(MKDIR) -p $(BIN_DIR)/content/img $(BUI_DIR)/obj $(BUI_DIR)/obj/pe
 	$(COPY) $(IMG_DIR)/*.bmp $(BIN_DIR)/content/img
 	(   cd $(SRC_DIR)/fntres        ;\
         $(SRC_DIR)/fntres/build.sh  ;\
@@ -240,6 +240,8 @@ CFLAGS_C := -m32 -O1 -ffreestanding -Wall -Wextra \
             -nostdlib             \
             -nostartfiles         \
             -fno-stack-protector  \
+            -fno-unwind-tables    \
+            -fno-asynchronous-unwind-tables \
             -fno-builtin          \
             -fno-pic              \
             -mno-ms-bitfields     \
@@ -262,7 +264,7 @@ CFLAGS_CC:= -std=c++20  $(CFLAGS_C) \
             -fno-threadsafe-statics
 
 LDFLAGS  := -nostdlib -T $(COR_DIR)/kernel.ld -Map $(BIN_DIR)/kernel.map
-LDSHFLGS := -nostdlib -T $(U32_DIR)/shell32/shell.ld -Map $(BIN_DIR)/shell.map
+LDSHFLGS := -nostdlib -T $(U32_DIR)/shell32/shell32.ld -Map $(BIN_DIR)/shell32.map
 
 ASMFLAGS := -f win32 -O2 -DDOS_MODE=32
 ISOGUI   ?= 0
@@ -385,6 +387,7 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
         $(OBJ_DIR)/coff/kheap.o          \
         \
         $(OBJ_DIR)/coff/elf_loader.o     \
+        $(OBJ_DIR)/coff/pe_loader.o      \
         \
         $(RUN_CPO) \
         $(OBJ_DIR)/coff/kstl.o \
@@ -396,7 +399,7 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
 # *.o bject files for linkage stage of the shell ...
 # -----------------------------------------------------------------------------
 SHOBJS := \
-        $(OBJ_DIR)/elf/shell.o
+        $(OBJ_DIR)/coff/shell32.o
 
 ISO_FILES  := /boot2.bin /kernel.bin
 LBA        := $(COR_DIR)/lba.inc
@@ -458,13 +461,15 @@ define MOD-LBA
         done \
 	)    
 	@echo "VBE_INFO_ADDR   equ 0x0A00" >> $(LBA)
+    
 	$(AS) -DLBA_FILE=\"$(COR_DIR)/lba.inc\" -f bin $(COR_DIR)/boot/boot1.asm -o $(BIN_DIR)/content/boot1.bin
 	$(AS) -DLBA_FILE=\"$(COR_DIR)/lba.inc\" -f bin $(COR_DIR)/boot/boot2.asm -o $(BIN_DIR)/content/boot2.bin
-	@cd $(BIN_DIR)/content && \
+    
 	$(XORRISO) -as mkisofs -o $(BIN_DIR)/bootcd.iso  \
-        -b boot1.bin       \
-        -no-emul-boot      \
-        -boot-load-size 4  .
+        -b boot1.bin          \
+        -no-emul-boot         \
+        -boot-load-size 4     \
+        -V "BOOTCD" $(BIN_DIR)/content
     cd ..
     @echo "DONE"
 endef
@@ -499,8 +504,15 @@ endef
 $(eval $(call compile_rule,$(COR_DIR)))
 $(eval $(call compile_rule,$(COR_DIR)/fs/iso9660))
 $(eval $(call compile_rule,$(COR_DIR)/video))
+
+# -----------------------------------------------------------------------------
+# compile rule for program loaders ...
+# -----------------------------------------------------------------------------
 $(eval $(call compile_rule,$(COR_DIR)/loader/elf))
+$(eval $(call compile_rule,$(COR_DIR)/loader/pe))
+
 $(eval $(call compile_rule,$(SRC_DIR)/fntres))
+$(eval $(call compile_rule,$(SRC_DIR)/user32/shell32))
 
 DEPS := $(patsubst $(OBJ_DIR)/coff/%.o,$(DEP_DIR)/coff/%.d,$(OBJS))
 -include $(DEPS)
@@ -532,19 +544,13 @@ $(BIN)/INITRD.EXE: $(OBJ)/make_initrd.o
 	$(GCC) -m32 -mconsole -O2 -Wall -Wextra -o $@ $<
 	$(STRIP) $@
 # -----------------------------------------------------------------------------
-#
+# ELF shell32 application
 # -----------------------------------------------------------------------------
-$(OBJ_DIR)/elf/%.o: $(SRC_DIR)/user32/shell32/%.c
-	$(GCC) $(CFLAGS_C)  -c $< -o $@
-$(OBJ_DIR)/elf/%.o: $(SRC_DIR)/user32/shell32/%.cc
-	$(CPP) $(CFLAGS_CC) -c $< -o $@
-$(OBJ_DIR)/elf/shell.bin:   \
-    $(OBJ_DIR)/elf/user32.o \
-    $(SRC_DIR)/user32/shell32/shell.ld
-	$(LD) $(LDSHFLGS) -o  $(OBJ_DIR)/elf/shell.bin $(SHOBJS)
-$(BIN)/shell.elf:  $(OBJ_DIR)/elf/shell.bin
-	$(OBJCOPY) -O binary $(OBJ)/shell.bin $(BIN)/shell.exe
-shell: $(BIN)/shell.elf
+$(BIN_DIR)/content/shell32.exe: $(SHOBJS) \
+    $(SRC_DIR)/user32/shell32/shell32.ld
+	$(GCC) -m32 -mconsole $(CFLAGS_C) -o $(BIN_DIR)/content/shell32.exe $(SHOBJS)
+shell32:  $(BIN_DIR)/content/shell32.exe
+	strip $(BIN_DIR)/content/shell32.exe
 	echo "dodo"
 
 $(BIN_DIR)/bootcd.iso: \
@@ -558,6 +564,7 @@ $(BIN_DIR)/bootcd.iso: \
         $(COR_DIR)/create_iso.sh             ;\
 	)
 	$(MOD-LBA)
+	$(shell32)
 
 $(OBJ_DIR)/coff/int86_switch.bin: $(COR_DIR)/int86_switch.asm
 	$(AS) -f bin -o $(OBJ_DIR)/coff/int86_switch.bin $(COR_DIR)/int86_switch.asm
@@ -583,9 +590,9 @@ clean:
 # optional/bonus: QEMU boot for bootCD.iso ...
 # -----------------------------------------------------------------------------
 bootcd:
-	/mingw64/bin/qemu-system-x86_64.exe \
-    -drive file=$(BIN_DIR)/bootcd.iso,if=none,media=cdrom,id=cdrom0 \
-    -machine q35,i8042=on \
-    -device ich9-ahci,id=ahci0 \
-    -device ide-cd,drive=cdrom0,bus=ahci0.0 \
-    -boot d -m 512M
+	/mingw64/bin/qemu-system-i386.exe \
+        -drive file=$(BIN_DIR)/bootcd.iso,if=none,media=cdrom,id=cdrom0 \
+        -machine q35,i8042=on \
+        -device ich9-ahci,id=ahci0 \
+        -device ide-cd,drive=cdrom0,bus=ahci0.0 \
+        -boot d -m 512M
