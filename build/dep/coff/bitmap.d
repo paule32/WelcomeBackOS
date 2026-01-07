@@ -1,4 +1,4 @@
-T:/a/WelcomeBackOS/build/obj/coff/bitmap.o: \
+T:/a/WelcomeBackOS/build/obj/coff/bitmap.s: \
  T:/a/WelcomeBackOS/src/kernel/bitmap.cc \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \
  T:/a/WelcomeBackOS/src/kernel/include/kheap.h \

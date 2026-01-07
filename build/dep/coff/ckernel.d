@@ -1,4 +1,4 @@
-T:/a/WelcomeBackOS/build/obj/coff/ckernel.o: \
+T:/a/WelcomeBackOS/build/obj/coff/ckernel.s: \
  T:/a/WelcomeBackOS/src/kernel/ckernel.cc \
  T:/a/WelcomeBackOS/src/kernel/include/config.h \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \

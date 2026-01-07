@@ -1,4 +1,4 @@
-T:/a/WelcomeBackOS/build/obj/coff/elf_loader.o: \
+T:/a/WelcomeBackOS/build/obj/coff/elf_loader.s: \
  T:/a/WelcomeBackOS/src/kernel/loader/elf/elf_loader.c \
  T:/a/WelcomeBackOS/src/kernel/include/config.h \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \

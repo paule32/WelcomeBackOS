@@ -1,4 +1,4 @@
-T:/a/WelcomeBackOS/build/obj/coff/ahci.o: \
+T:/a/WelcomeBackOS/build/obj/coff/ahci.s: \
  T:/a/WelcomeBackOS/src/kernel/ahci.cc \
  T:/a/WelcomeBackOS/src/kernel/include/config.h \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \

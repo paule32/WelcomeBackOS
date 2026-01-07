@@ -1,4 +1,4 @@
-T:/a/WelcomeBackOS/build/obj/coff/iso9660.o: \
+T:/a/WelcomeBackOS/build/obj/coff/iso9660.s: \
  T:/a/WelcomeBackOS/src/kernel/fs/iso9660/iso9660.cc \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \
  T:/a/WelcomeBackOS/src/kernel/include/kheap.h \

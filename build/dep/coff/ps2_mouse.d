@@ -1,4 +1,4 @@
-T:/a/WelcomeBackOS/build/obj/coff/ps2_mouse.o: \
+T:/a/WelcomeBackOS/build/obj/coff/ps2_mouse.s: \
  T:/a/WelcomeBackOS/src/kernel/ps2_mouse.cc \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \
  T:/a/WelcomeBackOS/src/kernel/include/proto.h \

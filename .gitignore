@@ -11,3 +11,6 @@ log/
 *.hex
 *.iso
 *.zip
+/build/obj
+/build/dep
+/build/dep/coff

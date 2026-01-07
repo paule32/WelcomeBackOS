@@ -1,4 +1,4 @@
-T:/a/WelcomeBackOS/build/obj/coff/video.o: \
+T:/a/WelcomeBackOS/build/obj/coff/video.s: \
  T:/a/WelcomeBackOS/src/kernel/video.cc \
  T:/a/WelcomeBackOS/src/kernel/include/proto.h \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \

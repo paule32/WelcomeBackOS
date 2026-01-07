@@ -1,4 +1,4 @@
-T:/a/WelcomeBackOS/build/obj/coff/pe.o: \
+T:/a/WelcomeBackOS/build/obj/coff/pe.s: \
  T:/a/WelcomeBackOS/src/kernel/pe.cc \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \
  T:/a/WelcomeBackOS/src/kernel/include/kheap.h \

@@ -1,4 +1,4 @@
-T:/a/WelcomeBackOS/build/obj/coff/task.o: \
+T:/a/WelcomeBackOS/build/obj/coff/task.s: \
  T:/a/WelcomeBackOS/src/kernel/task.c \
  T:/a/WelcomeBackOS/src/kernel/include/task.h \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \

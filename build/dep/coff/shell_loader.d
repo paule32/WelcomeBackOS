@@ -1,4 +1,4 @@
-T:/a/WelcomeBackOS/build/obj/coff/shell_loader.o: \
+T:/a/WelcomeBackOS/build/obj/coff/shell_loader.s: \
  T:/a/WelcomeBackOS/src/kernel/shell_loader.cc \
  T:/a/WelcomeBackOS/src/kernel/include/config.h \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \

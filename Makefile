@@ -1,10 +1,12 @@
 # -----------------------------------------------------------------------------
 # \file  Makefile
-# \note  (c) 2025 by Jens Kallup - paule32
+# \note  (c) 2025, 2026 by Jens Kallup - paule32
 #        all rights reserved.
 # -----------------------------------------------------------------------------
 # we only support MinGW 32-bit and Linux Systems ...
 # -----------------------------------------------------------------------------
+.ONESHELL:
+SHELL   := /bin/sh
 CYGPATH := cygpath
 
 MAKE_VERSION_LINE := $(shell $(MAKE) --version 2>/dev/null | head -n 1)
@@ -140,25 +142,26 @@ endif
 # -----------------------------------------------------------------------------
 # GNU Toolchain binary avatar's ...
 # -----------------------------------------------------------------------------
-MAKE     := $(BLD_DIR)/make$(EXT)
-AS       := nasm
-ECHO     := $(BLD_DIR)/echo$(EXT)
-EXPORT   := $(BLD_DIR)/export$(EXT)
-GZIP     := $(BLD_DIR)/gzip$(EXT)
-RM       := $(BLD_DIR)/rm$(EXT)
-MKDIR    := $(BLD_DIR)/mkdir$(EXT)
-STRIP    := $(BLD_DIR)/strip$(EXT)
-COPY     := $(BLD_DIR)/cp$(EXT)
+MAKE     := $(shell command which make   )$(EXT)
+AS       := $(shell command which nasm   )$(EXT)
+ECHO     := $(shell command which echo   )$(EXT)
+GZIP     := $(shell command which gzip   )$(EXT)
+RM       := $(shell command which rm     )$(EXT)
+MKDIR    := $(shell command which mkdir  )$(EXT)
+STRIP    := $(shell command which strip  )$(EXT)
+COPY     := $(shell command which cp     )$(EXT)
 
-XORRISO  := $(BLD_DIR)/xorriso$(EXT)
-MFORMAT  := $(GCC_DIR)/mformat$(EXT)
-MCOPY    := $(GCC_DIR)/mcopy$(EXT)
+XORRISO  := $(shell command which xorriso)$(EXT)
+SED      := $(shell command which sed    )$(EXT)
 
-GCC      := $(GCC_DIR)/$(CROSS)gcc$(EXT)
-CPP      := $(GCC_DIR)/$(CROSS)g++$(EXT)
+MFORMAT  := $(shell command which mformat)$(EXT)
+MCOPY    := $(shell command which mcopy  )$(EXT)
 
-LD       := $(GCC_DIR)/$(CROSS)ld$(EXT)
-OBJCOPY  := $(GCC_DIR)/$(CROSS)objcopy$(EXT)
+GCC      := $(shell command which gcc    )$(EXT)
+CPP      := $(shell command which g++    )$(EXT)
+
+LD       := $(shell command which ld     )$(EXT)
+OBJCOPY  := $(shell command which objcopy)$(EXT)
 
 # -----------------------------------------------------------------------------
 # if you start "make" without arguments, then .PHONY does a round robin and
@@ -168,10 +171,11 @@ OBJCOPY  := $(GCC_DIR)/$(CROSS)objcopy$(EXT)
 # LICENSE in the root directory of this reporsitory.
 # -----------------------------------------------------------------------------
 #.PHONY: confirm
-all: confirm clean setup shell32 $(BIN_DIR)/bootcd.iso
+all: confirm clean setup $(BIN_DIR)/bootcd.iso shell32
 setup:
 	$(MKDIR) -p $(BUI_DIR) $(BUI_DIR)/bin $(BUI_DIR)/bin/content $(BUI_DIR)/hex
 	$(MKDIR) -p $(BIN_DIR)/content/img $(BUI_DIR)/obj $(BUI_DIR)/obj/pe
+	$(MKDIR) -p $(OBJ_DIR)/user32 $(OBJ_DIR)/user32/rtl
 	$(COPY) $(IMG_DIR)/*.bmp $(BIN_DIR)/content/img
 	(   cd $(SRC_DIR)/fntres        ;\
         $(SRC_DIR)/fntres/build.sh  ;\
@@ -398,8 +402,7 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the shell ...
 # -----------------------------------------------------------------------------
-SHOBJS := \
-        $(OBJ_DIR)/coff/shell32.o
+SHOBJS :=
 
 ISO_FILES  := /boot2.bin /kernel.bin
 LBA        := $(COR_DIR)/lba.inc
@@ -484,15 +487,25 @@ $(BIN_DIR)/content/boot2.bin:  $(COR_DIR)/boot/boot2.asm
 # compile all *.c, *.cc, and *.asm files to *.o bject files ...
 # -----------------------------------------------------------------------------
 define compile_rule
-$(OBJ_DIR)/coff/%.o: $(1)/%.c
+$(OBJ_DIR)/coff/%.s: $(1)/%.c
 	$(MKDIR) -p $(dir $$@) $(DEP_DIR)/coff/$(dir $$*)
-	$(GCC) $(CFLAGS_C) -MMD -MP \
+	$(GCC) -m32 $(CFLAGS_C) -MMD -MP \
+		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
+		-S $$< -o $$@
+$(OBJ_DIR)/coff/%.o: $(OBJ_DIR)/coff/%.s
+	$(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$<
+	$(GCC) -m32 $(CFLAGS_C)  -MMD -MP \
 		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
 		-c $$< -o $$@
 
-$(OBJ_DIR)/coff/%.o: $(1)/%.cc
+$(OBJ_DIR)/coff/%.s: $(1)/%.cc
 	$(MKDIR) -p $(dir $$@) $(DEP_DIR)/coff/$(dir $$*)
-	$(CPP) $(CFLAGS_CC) -MMD -MP \
+	$(CPP) -m32 $(CFLAGS_CC) -MMD -MP \
+		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
+		-S $$< -o $$@
+$(OBJ_DIR)/coff/%.o: $(OBJ_DIR)/coff/%.s
+	$(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$<
+	$(GCC) $(CFLAGS_C) -MMD -MP \
 		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
 		-c $$< -o $$@
 
@@ -546,17 +559,69 @@ $(BIN)/INITRD.EXE: $(OBJ)/make_initrd.o
 # -----------------------------------------------------------------------------
 # ELF shell32 application
 # -----------------------------------------------------------------------------
-$(BIN_DIR)/content/shell32.exe: $(SHOBJS) \
+define shell32_build
+    $(CPP) -m32 -mconsole $(CFLAGS_C)   \
+    -o $(OBJ_DIR)/user32/shell32/$(1).s \
+    -S $(SRC_DIR)/user32/shell32/$(1).$(2)
+
+    $(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" \
+    $(OBJ_DIR)/user32/shell32/$(1).s
+    
+    $(GCC) -m32 -mconsole $(CFLAGS_C)   \
+    -o $(OBJ_DIR)/user32/shell32/$(1).o \
+    -c $(OBJ_DIR)/user32/shell32/$(1).s
+    
+    $(eval SHOBJS += $(OBJ_DIR)/user32/shell32/$(1).o)
+endef
+$(BIN_DIR)/content/shell32.exe: shell32_importer $(SHOBJS) \
     $(SRC_DIR)/user32/shell32/shell32.ld
+	$(MKDIR) -p $(OBJ_DIR)/user32/shell32
+	$(call shell32_build,shell32,cc)
 	$(GCC) -m32 -mconsole $(CFLAGS_C) -o $(BIN_DIR)/content/shell32.exe $(SHOBJS)
+
 shell32:  $(BIN_DIR)/content/shell32.exe
 	strip $(BIN_DIR)/content/shell32.exe
 	echo "dodo"
+    
+define shell32_imports
+	mkdir -p $(OBJ_DIR)/user32/rtl
+	awk -v pat="$(2)" '
+BEGIN {
+    print "# include \"stdint.h\"";
+    print "# include \"proto.h\"";
+    print "";
+}
+$$0 ~ pat {
+    name=$$NF;
+    sub(/\(.*/, "", name);
+    printf "__attribute__((section(\".symbol\"), used))\n";
+    printf "uint32_t %s = %s;\n\n", name, $$1
+};
+'   $(BIN_DIR)/kernel.map  > $(OBJ_DIR)/user32/rtl/imp_$(2).c
+    
+	$(GCC) -m32 $(CFLAGS_C) -o $(OBJ_DIR)/user32/rtl/imp_$(2).s -S $(OBJ_DIR)/user32/rtl/imp_$(2).c
+	$(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d"          $(OBJ_DIR)/user32/rtl/imp_$(2).s
+	$(GCC) -m32 $(CFLAGS_C) -o $(OBJ_DIR)/user32/rtl/imp_$(2).o -c $(OBJ_DIR)/user32/rtl/imp_$(2).s
+	
+    $(GCC) -m32 $(CFLAGS_C) -o $(OBJ_DIR)/user32/rtl/rtl_$(1).s -S $(SRC_DIR)/user32/rtl/rtl_$(1).c
+	$(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d"          $(OBJ_DIR)/user32/rtl/rtl_$(1).s
+	$(GCC) -m32 $(CFLAGS_C) -o $(OBJ_DIR)/user32/rtl/rtl_$(1).o -c $(OBJ_DIR)/user32/rtl/rtl_$(1).s
+	
+    $(eval SHOBJS += $(OBJ_DIR)/user32/rtl/rtl_$(1).o)
+    $(eval SHOBJS += $(OBJ_DIR)/user32/rtl/imp_$(2).o)
+    
+    
+	echo $(SHOBJS)
+endef
+
+shell32_importer:
+	$(MKDIR) -p $(OBJ_DIR)/user32
+	$(call shell32_imports,ExitProcess,RtlExitProcess)
 
 $(BIN_DIR)/bootcd.iso: \
-    $(BIN_DIR)/content/boot1.bin $(BIN_DIR)/content/boot2.bin \
-    $(OBJ_DIR)/coff/int86_blob.o \
-    $(OBJ_DIR)/kernel.bin
+	$(BIN_DIR)/content/boot1.bin $(BIN_DIR)/content/boot2.bin \
+	$(OBJ_DIR)/coff/int86_blob.o \
+	$(OBJ_DIR)/kernel.bin
 	@(  export __BIN_DIR=$(BIN_DIR)          ;\
         export __COR_DIR=$(COR_DIR)          ;\
         export __OBJ_DIR=$(OBJ_DIR)/coff     ;\

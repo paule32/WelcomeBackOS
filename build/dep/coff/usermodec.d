@@ -1,4 +1,4 @@
-T:/a/WelcomeBackOS/build/obj/coff/usermodec.o: \
+T:/a/WelcomeBackOS/build/obj/coff/usermodec.s: \
  T:/a/WelcomeBackOS/src/kernel/usermodec.c \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \
  T:/a/WelcomeBackOS/src/kernel/include/syscall.h \

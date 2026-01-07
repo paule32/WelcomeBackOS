@@ -1,4 +1,4 @@
-T:/a/WelcomeBackOS/build/obj/coff/paging.o: \
+T:/a/WelcomeBackOS/build/obj/coff/paging.s: \
  T:/a/WelcomeBackOS/src/kernel/paging.cc \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \
  T:/a/WelcomeBackOS/src/kernel/include/proto.h \

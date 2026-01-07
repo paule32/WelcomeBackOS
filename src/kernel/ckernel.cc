@@ -204,3 +204,8 @@ extern "C" int vid_main()
     }
     return 0;
 }
+
+extern "C" RtlExitProcess(int exitcode)
+{
+    printformat("ExitCode == %d\n", exitcode);
+}

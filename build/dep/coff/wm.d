@@ -1,4 +1,4 @@
-T:/a/WelcomeBackOS/build/obj/coff/wm.o: \
+T:/a/WelcomeBackOS/build/obj/coff/wm.s: \
  T:/a/WelcomeBackOS/src/kernel/wm.cc \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \
  T:/a/WelcomeBackOS/src/kernel/include/proto.h \

@@ -1,4 +1,4 @@
-T:/a/WelcomeBackOS/build/obj/coff/vga.o: \
+T:/a/WelcomeBackOS/build/obj/coff/vga.s: \
  T:/a/WelcomeBackOS/src/kernel/video/vga.cc \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \
  T:/a/WelcomeBackOS/src/kernel/include/my_stdarg.h \
