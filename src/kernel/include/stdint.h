@@ -46,6 +46,14 @@ typedef int            INT;
 # define false 0
 # define true  1
 
+#ifndef FALSE
+# define FALSE 0
+#endif
+
+#ifndef TRUE
+# define TRUE 1
+#endif
+
 # define UINT_MAX 4294967295U
 
 # define NULL (void*)0

@@ -8,11 +8,14 @@
 //        All Rights Reserved.
 // ----------------------------------------------------------------------------
 # include "tv.h"
+# include "stdint.h"
+# include "TurboVision/inc/constArray.h"
+# include "TurboVision/inc/strings.h"
 
 namespace tvision
 {
     static constexpr
-    size_t _fast_utoa(uint32_t value, char *buffer) noexcept
+    size_t _fast_utoa(uint32_t value, char *buffer)
     {
         // Copyright(c) 2014-2016 Milo Yip (https://github.com/miloyip/itoa-benchmark)
         size_t digits =
@@ -34,8 +37,23 @@ namespace tvision
         return digits;
     }
 
-    char *fast_utoa(uint32_t value, char *buffer) {
+    char* fast_utoa(uint32_t value, char *buffer) {
         return buffer + _fast_utoa(value, buffer);
     }
 
-}
+    # define BTOA_CONSTEXPR     constexpr
+    # define BTOA_CONSTEXPR_VAR const
+
+    static BTOA_CONSTEXPR
+    btoa_lut_t init_btoa_lut()
+    {
+        btoa_lut_t res {};
+        for (uint32_t i = 0; i < 256; ++i)
+            res[i].digits = _fast_utoa(i, res[i].chars);
+        return res;
+    }
+
+extern BTOA_CONSTEXPR_VAR
+btoa_lut_t btoa_lut = init_btoa_lut();
+
+}   // namespace: tvision

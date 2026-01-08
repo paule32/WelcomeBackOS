@@ -13,6 +13,7 @@ void* krealloc  (void*,uint32_t);
 void  kfree     (void*);
 void* kmemcpy   (void*,const void*,uint32_t);
 void* kmemset   (void*,int        ,uint32_t);
+int   kmemcmp   (const void*      ,const void*,size_t);
 
 size_t kstrlen  (const char*);
 char*  kstrcat  (      char*,const char*);

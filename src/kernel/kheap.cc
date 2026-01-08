@@ -129,6 +129,18 @@ extern "C" char* kstrcat(char* dest, const char* src)
     return dest;
 }
 
+extern "C" int kmemcmp(const void *a, const void *b, size_t n)
+{
+    const uint8_t *p = (const uint8_t *)a;
+    const uint8_t *q = (const uint8_t *)b;
+
+    for (size_t i = 0; i < n; ++i) {
+        if (p[i] != q[i])
+            return (int)p[i] - (int)q[i];  // <0, 0, >0 wie in libc
+    }
+    return 0;
+}
+
 void kheap_init(void)
 {
     // Start of heap directly after the kernel

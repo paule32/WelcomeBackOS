@@ -260,9 +260,12 @@ CFLAGS_C := -m32 -O1 -ffreestanding -Wall -Wextra \
             -D__BUILD_DATE__=\"$(DATE_YMD)\" \
             -D__BUILD_TIME__=\"$(TIME_HMS)\" \
             -I$(SRC_DIR)/kernel/include      \
-            -I$(SRC_DIR)/user32              \
-            -I$(SRC_DIR)/user32/TurboVision          \
-            -I$(SRC_DIR)/user32/TurboVision/include  \
+            -I$(SRC_DIR)                \
+            -I$(SRC_DIR)/stl/inc        \
+            -I$(SRC_DIR)/stl/inc/string \
+            -I$(SRC_DIR)/user32                  \
+            -I$(SRC_DIR)/user32/TurboVision      \
+            -I$(SRC_DIR)/user32/TurboVision/inc  \
             -I$(SRC_DIR)/fntres
 
 CFLAGS_CC:= -std=c++20  $(CFLAGS_C) \

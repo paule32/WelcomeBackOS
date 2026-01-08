@@ -24,13 +24,12 @@ typedef int32_t  LONG     ;
 
 # define MAX_PATH 260
 
-#ifndef FALSE
-# define FALSE 0
-#endif
+static inline uint32_t MAKELONG(uint16_t low, uint16_t high) {
+    return (uint32_t)low | ((uint32_t)high << 16);
+}
+static inline uint16_t LOWORD(uint32_t v)  { return (uint16_t)(v & 0xFFFF); }
+static inline uint16_t HIWORD(uint32_t v)  { return (uint16_t)(v >>    16); }
 
-#ifndef TRUE
-# define TRUE 1
-#endif
 
 typedef struct _COORD {
     SHORT X;

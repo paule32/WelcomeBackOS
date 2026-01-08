@@ -11,6 +11,10 @@
 
 # include "tv.h"
 
+uint16_t THardwareInfo::biosSel  = 0x0040;
+uint16_t THardwareInfo::monoSel  = 0xB000;
+uint16_t THardwareInfo::colorSel = 0xB800;
+
 THardwareInfo::THardwareInfo()
 {
     
