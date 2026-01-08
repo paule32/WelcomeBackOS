@@ -21,5 +21,12 @@ SECTIONS
     .data   : { *(.data*)          }
     .bss    : { *(.bss*) *(COMMON) }
 
+    /DISCARD/ : {
+        *(.eh_frame)
+        *(.eh_frame.*)
+        *(.gcc_except_table)
+        *(.gcc_except_table.*)
+    }
+    
     ___end = .;
 }

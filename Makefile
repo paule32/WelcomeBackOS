@@ -1,12 +1,10 @@
 # -----------------------------------------------------------------------------
 # \file  Makefile
-# \note  (c) 2025, 2026 by Jens Kallup - paule32
+# \note  (c) 2025 by Jens Kallup - paule32
 #        all rights reserved.
 # -----------------------------------------------------------------------------
 # we only support MinGW 32-bit and Linux Systems ...
 # -----------------------------------------------------------------------------
-.ONESHELL:
-SHELL   := /bin/sh
 CYGPATH := cygpath
 
 MAKE_VERSION_LINE := $(shell $(MAKE) --version 2>/dev/null | head -n 1)
@@ -143,7 +141,7 @@ endif
 # GNU Toolchain binary avatar's ...
 # -----------------------------------------------------------------------------
 MAKE     := $(shell command which make   )$(EXT)
-AS       := $(shell command which nasm   )$(EXT)
+AS       := $(shell command which as     )$(EXT)
 ECHO     := $(shell command which echo   )$(EXT)
 GZIP     := $(shell command which gzip   )$(EXT)
 RM       := $(shell command which rm     )$(EXT)
@@ -171,11 +169,15 @@ OBJCOPY  := $(shell command which objcopy)$(EXT)
 # LICENSE in the root directory of this reporsitory.
 # -----------------------------------------------------------------------------
 #.PHONY: confirm
-all: confirm clean setup $(BIN_DIR)/bootcd.iso shell32
+all: confirm clean setup shell32 $(BIN_DIR)/bootcd.iso
 setup:
 	$(MKDIR) -p $(BUI_DIR) $(BUI_DIR)/bin $(BUI_DIR)/bin/content $(BUI_DIR)/hex
 	$(MKDIR) -p $(BIN_DIR)/content/img $(BUI_DIR)/obj $(BUI_DIR)/obj/pe
-	$(MKDIR) -p $(OBJ_DIR)/user32 $(OBJ_DIR)/user32/rtl
+	$(MKDIR) -p $(OBJ_DIR)/user32/TurboVision/platform
+	$(MKDIR) -p $(OBJ_DIR)/user32/TurboVision
+	$(MKDIR) -p $(OBJ_DIR)/user32/rtl
+	$(MKDIR) -p $(OBJ_DIR)/user32/shell32
+
 	$(COPY) $(IMG_DIR)/*.bmp $(BIN_DIR)/content/img
 	(   cd $(SRC_DIR)/fntres        ;\
         $(SRC_DIR)/fntres/build.sh  ;\
@@ -257,7 +259,10 @@ CFLAGS_C := -m32 -O1 -ffreestanding -Wall -Wextra \
             -Wno-missing-field-initializers  \
             -D__BUILD_DATE__=\"$(DATE_YMD)\" \
             -D__BUILD_TIME__=\"$(TIME_HMS)\" \
-            -I$(SRC_DIR)/kernel/include \
+            -I$(SRC_DIR)/kernel/include      \
+            -I$(SRC_DIR)/user32              \
+            -I$(SRC_DIR)/user32/TurboVision          \
+            -I$(SRC_DIR)/user32/TurboVision/include  \
             -I$(SRC_DIR)/fntres
 
 CFLAGS_CC:= -std=c++20  $(CFLAGS_C) \
@@ -297,11 +302,15 @@ BIN  := $(BASEDIR)/build/bin
 PART_START_SECTOR   := 2048
 USB_SIZE_MIB        := 64
 
+KERNEL_PASS  := 0
+SHELL32_PASS := 1
+
 # -----------------------------------------------------------------------------
 # source files for the C-kernel ...
 # -----------------------------------------------------------------------------
 SRC_SHELL       :=\
-        $(SRC)/user32/shell32/shell.cc
+        $(SRC)/user32/shell32/shell32.cc    \
+        $(SRC)/user32/rtl/rtl_ExitProcess.c
 
 RUN_CPO := \
         $(OBJ_DIR)/coff/cpp_runtime.o \
@@ -402,14 +411,15 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the shell ...
 # -----------------------------------------------------------------------------
-SHOBJS :=
+SHOBJS := \
+        $(OBJ_DIR)/user32/shell32/shell32.o              \
+        $(OBJ_DIR)/user32/TurboVision/Hardware.o         \
+        $(OBJ_DIR)/user32/TurboVision/platform/strings.o \
+        $(OBJ_DIR)/user32/rtl/rtl_ExitProcess.o
 
 ISO_FILES  := /boot2.bin /kernel.bin
 LBA        := $(COR_DIR)/lba.inc
 ISO        := $(BIN_DIR)/bootcd.iso
-
-#all: $(OBJ)/coff/data.o
-#$(BIN)/bootcd.iso
 
 # -----------------------------------------------------------------------------
 # Ziel-Datei mit den extrahierten Infos
@@ -457,16 +467,23 @@ define MOD-LBA
                 sub(/^\/+/      , "", name); \
                 sub(/\.[^./]*$$/, "", name); \
                 name = toupper(name); \
-                print name "_LBA     equ ", $$6 "   ; start LBA ", name; \
-                print name "_SECTORS equ ", $$8 "   ; 2048 * "   , $$8 ; \
+                print name "_LBA     equ ", $$6, "   ; start LBA ", name; \
+                print name "_SECTORS equ ", $$8, "   ; 2048 * "   , $$8 ; \
                 print "; -----------------------------------------------------"; \
             }   }'  >> $(LBA); \
         done \
 	)    
 	@echo "VBE_INFO_ADDR   equ 0x0A00" >> $(LBA)
     
-	$(AS) -DLBA_FILE=\"$(COR_DIR)/lba.inc\" -f bin $(COR_DIR)/boot/boot1.asm -o $(BIN_DIR)/content/boot1.bin
-	$(AS) -DLBA_FILE=\"$(COR_DIR)/lba.inc\" -f bin $(COR_DIR)/boot/boot2.asm -o $(BIN_DIR)/content/boot2.bin
+	nasm -DLBA_FILE=\"$(COR_DIR)/lba.inc\"  \
+        -f bin $(COR_DIR)/boot/boot1.asm    \
+        -o     $(BIN_DIR)/content/boot1.bin \
+        -l     $(BIN_DIR)/boot1.lst
+    
+	nasm -DLBA_FILE=\"$(COR_DIR)/lba.inc\"  \
+        -f bin $(COR_DIR)/boot/boot2.asm    \
+        -o     $(BIN_DIR)/content/boot2.bin \
+        -l     $(BIN_DIR)/boot2.lst
     
 	$(XORRISO) -as mkisofs -o $(BIN_DIR)/bootcd.iso  \
         -b boot1.bin          \
@@ -480,52 +497,60 @@ endef
 # loader to load the system from DOS console ...
 # -----------------------------------------------------------------------------
 $(BIN_DIR)/content/boot1.bin:  $(COR_DIR)/boot/boot1.asm
-	$(AS) -DLBA_FILE=\"$(COR_DIR)/lba.inc\" -f bin  $< -o $@
+	nasm -DLBA_FILE=\"$(COR_DIR)/lba.inc\" -f bin  $< -o $@
 $(BIN_DIR)/content/boot2.bin:  $(COR_DIR)/boot/boot2.asm
-	$(AS) -DLBA_FILE=\"$(COR_DIR)/lba.inc\" -f bin  $< -o $@
+	nasm -DLBA_FILE=\"$(COR_DIR)/lba.inc\" -f bin  $< -o $@
 # -----------------------------------------------------------------------------
 # compile all *.c, *.cc, and *.asm files to *.o bject files ...
 # -----------------------------------------------------------------------------
 define compile_rule
-$(OBJ_DIR)/coff/%.s: $(1)/%.c
+$(2)/%.s: $(3)/%.c
 	$(MKDIR) -p $(dir $$@) $(DEP_DIR)/coff/$(dir $$*)
 	$(GCC) -m32 $(CFLAGS_C) -MMD -MP \
 		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
 		-S $$< -o $$@
-$(OBJ_DIR)/coff/%.o: $(OBJ_DIR)/coff/%.s
-	$(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$<
-	$(GCC) -m32 $(CFLAGS_C)  -MMD -MP \
-		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
-		-c $$< -o $$@
+	@if [ "$(1)" = "$(SHELL32_PASS)" ]; then \
+        @echo "PASS=$(1) SHELL32_PASS=$(SHELL32_PASS)" ;\
+        $(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$@; \
+	fi
 
-$(OBJ_DIR)/coff/%.s: $(1)/%.cc
+$(2)/%.s: $(3)/%.cc
 	$(MKDIR) -p $(dir $$@) $(DEP_DIR)/coff/$(dir $$*)
 	$(CPP) -m32 $(CFLAGS_CC) -MMD -MP \
 		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
 		-S $$< -o $$@
-$(OBJ_DIR)/coff/%.o: $(OBJ_DIR)/coff/%.s
-	$(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$<
-	$(GCC) $(CFLAGS_C) -MMD -MP \
-		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
-		-c $$< -o $$@
+	@if [ "$(1)" = "$(SHELL32_PASS)" ]; then \
+        @echo "PASS=$(1) SHELL32_PASS=$(SHELL32_PASS)" ;\
+        $(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$@; \
+	fi
 
-$(OBJ_DIR)/coff/%.o: $(1)/%.asm
+$(2)/%.o: $(3)/%.s
+	$(GCC) -m32 $(CFLAGS_C) -c $$< -o $$(patsubst %.s,%.o,$$@)
+
+$(2)/%.o: $(3)/%.asm
 	$(MKDIR) -p $(dir $$@)
-	$(AS) $(ASMFLAGS) $$< -o $$@
+	nasm $(ASMFLAGS) $$< -o $$@
 endef
 
-$(eval $(call compile_rule,$(COR_DIR)))
-$(eval $(call compile_rule,$(COR_DIR)/fs/iso9660))
-$(eval $(call compile_rule,$(COR_DIR)/video))
+$(eval $(call compile_rule,$(KERNEL_PASS),$(OBJ_DIR)/coff,$(COR_DIR)))
+$(eval $(call compile_rule,$(KERNEL_PASS),$(OBJ_DIR)/coff,$(COR_DIR)/fs/iso9660))
+$(eval $(call compile_rule,$(KERNEL_PASS),$(OBJ_DIR)/coff,$(COR_DIR)/video))
 
 # -----------------------------------------------------------------------------
 # compile rule for program loaders ...
 # -----------------------------------------------------------------------------
-$(eval $(call compile_rule,$(COR_DIR)/loader/elf))
-$(eval $(call compile_rule,$(COR_DIR)/loader/pe))
+$(eval $(call compile_rule,$(KERNEL_PASS),$(OBJ_DIR)/coff,$(COR_DIR)/loader/elf))
+$(eval $(call compile_rule,$(KERNEL_PASS),$(OBJ_DIR)/coff,$(COR_DIR)/loader/pe))
 
-$(eval $(call compile_rule,$(SRC_DIR)/fntres))
-$(eval $(call compile_rule,$(SRC_DIR)/user32/shell32))
+$(eval $(call compile_rule,$(KERNEL_PASS),$(OBJ_DIR)/coff,$(SRC_DIR)/fntres))
+
+# -----------------------------------------------------------------------------
+# static RTL - run time library ...
+# -----------------------------------------------------------------------------
+$(eval $(call compile_rule,$(SHELL32_PASS),$(OBJ_DIR)/user32/TurboVision,$(SRC_DIR)/user32/TurboVision/src))
+$(eval $(call compile_rule,$(SHELL32_PASS),$(OBJ_DIR)/user32/TurboVision/platform,$(SRC_DIR)/user32/TurboVision/src/platform))
+$(eval $(call compile_rule,$(SHELL32_PASS),$(OBJ_DIR)/user32/rtl,$(SRC_DIR)/user32/rtl))
+$(eval $(call compile_rule,$(SHELL32_PASS),$(OBJ_DIR)/user32/shell32,$(SRC_DIR)/user32/shell32))
 
 DEPS := $(patsubst $(OBJ_DIR)/coff/%.o,$(DEP_DIR)/coff/%.d,$(OBJS))
 -include $(DEPS)
@@ -538,103 +563,40 @@ $(OBJ_DIR)/coff/kernel.o: $(OBJS) $(COR_DIR)/kernel.ld
 	  -Wl,-T,$(COR_DIR)/kernel.ld -Wl,-Map,$(BIN_DIR)/kernel.map \
 	  -o $@ $(OBJS)
 
-#	$(LD) $(LDFLAGS) -o $(OBJ_DIR)/coff/kernel.o $(OBJS)
 $(OBJ_DIR)/kernel.bin:  $(OBJ_DIR)/coff/kernel.o
 	$(OBJCOPY) -O binary $< $@
 # -----------------------------------------------------------------------------
-$(OBJ)/data.o: $(SRC)/initrd.dat $(SRC)/data.asm
-	$(AS) $(ASMFLAGS) $(SRC)/data.asm -o $(OBJ)/data.o
+# create PE32 shell32 application
 # -----------------------------------------------------------------------------
-# create the initial ram disk ...
-# -----------------------------------------------------------------------------
-$(SRC)/initrd.dat: $(BIN)/INITRD.EXE
-	$(BIN)/INITRD.EXE \
-    test1.txt   file1 \
-    test2.txt   file2 \
-    test3.txt   file3
-
-$(BIN)/INITRD.EXE: $(OBJ)/make_initrd.o
-	$(GCC) -m32 -mconsole -O2 -Wall -Wextra -o $@ $<
-	$(STRIP) $@
-# -----------------------------------------------------------------------------
-# ELF shell32 application
-# -----------------------------------------------------------------------------
-define shell32_build
-    $(CPP) -m32 -mconsole $(CFLAGS_C)   \
-    -o $(OBJ_DIR)/user32/shell32/$(1).s \
-    -S $(SRC_DIR)/user32/shell32/$(1).$(2)
-
-    $(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" \
-    $(OBJ_DIR)/user32/shell32/$(1).s
-    
-    $(GCC) -m32 -mconsole $(CFLAGS_C)   \
-    -o $(OBJ_DIR)/user32/shell32/$(1).o \
-    -c $(OBJ_DIR)/user32/shell32/$(1).s
-    
-    $(eval SHOBJS += $(OBJ_DIR)/user32/shell32/$(1).o)
-endef
-$(BIN_DIR)/content/shell32.exe: shell32_importer $(SHOBJS) \
+$(BIN_DIR)/content/shell32.exe: $(SHOBJS) \
     $(SRC_DIR)/user32/shell32/shell32.ld
-	$(MKDIR) -p $(OBJ_DIR)/user32/shell32
-	$(call shell32_build,shell32,cc)
 	$(GCC) -m32 -mconsole $(CFLAGS_C) -o $(BIN_DIR)/content/shell32.exe $(SHOBJS)
 
 shell32:  $(BIN_DIR)/content/shell32.exe
 	strip $(BIN_DIR)/content/shell32.exe
+	objcopy --remove-section .eh_frame     \
+            --remove-section .eh_frame_hdr \
+            --remove-section .gcc_except_table \
+            $(BIN_DIR)/content/shell32.exe \
+            $(BIN_DIR)/content/shell32.exe
 	echo "dodo"
-    
-define shell32_imports
-	mkdir -p $(OBJ_DIR)/user32/rtl
-	awk -v pat="$(2)" '
-BEGIN {
-    print "# include \"stdint.h\"";
-    print "# include \"proto.h\"";
-    print "";
-}
-$$0 ~ pat {
-    name=$$NF;
-    sub(/\(.*/, "", name);
-    printf "__attribute__((section(\".symbol\"), used))\n";
-    printf "uint32_t %s = %s;\n\n", name, $$1
-};
-'   $(BIN_DIR)/kernel.map  > $(OBJ_DIR)/user32/rtl/imp_$(2).c
-    
-	$(GCC) -m32 $(CFLAGS_C) -o $(OBJ_DIR)/user32/rtl/imp_$(2).s -S $(OBJ_DIR)/user32/rtl/imp_$(2).c
-	$(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d"          $(OBJ_DIR)/user32/rtl/imp_$(2).s
-	$(GCC) -m32 $(CFLAGS_C) -o $(OBJ_DIR)/user32/rtl/imp_$(2).o -c $(OBJ_DIR)/user32/rtl/imp_$(2).s
-	
-    $(GCC) -m32 $(CFLAGS_C) -o $(OBJ_DIR)/user32/rtl/rtl_$(1).s -S $(SRC_DIR)/user32/rtl/rtl_$(1).c
-	$(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d"          $(OBJ_DIR)/user32/rtl/rtl_$(1).s
-	$(GCC) -m32 $(CFLAGS_C) -o $(OBJ_DIR)/user32/rtl/rtl_$(1).o -c $(OBJ_DIR)/user32/rtl/rtl_$(1).s
-	
-    $(eval SHOBJS += $(OBJ_DIR)/user32/rtl/rtl_$(1).o)
-    $(eval SHOBJS += $(OBJ_DIR)/user32/rtl/imp_$(2).o)
-    
-    
-	echo $(SHOBJS)
-endef
-
-shell32_importer:
-	$(MKDIR) -p $(OBJ_DIR)/user32
-	$(call shell32_imports,ExitProcess,RtlExitProcess)
 
 $(BIN_DIR)/bootcd.iso: \
-	$(BIN_DIR)/content/boot1.bin $(BIN_DIR)/content/boot2.bin \
-	$(OBJ_DIR)/coff/int86_blob.o \
-	$(OBJ_DIR)/kernel.bin
+    $(BIN_DIR)/content/boot1.bin $(BIN_DIR)/content/boot2.bin \
+    $(OBJ_DIR)/coff/int86_blob.o \
+    $(OBJ_DIR)/kernel.bin
 	@(  export __BIN_DIR=$(BIN_DIR)          ;\
         export __COR_DIR=$(COR_DIR)          ;\
         export __OBJ_DIR=$(OBJ_DIR)/coff     ;\
-        export __BIN_AS=$(AS)                ;\
+        export __BIN_AS=nasm                 ;\
         $(COR_DIR)/create_iso.sh             ;\
 	)
 	$(MOD-LBA)
-	$(shell32)
 
 $(OBJ_DIR)/coff/int86_switch.bin: $(COR_DIR)/int86_switch.asm
-	$(AS) -f bin -o $(OBJ_DIR)/coff/int86_switch.bin $(COR_DIR)/int86_switch.asm
+	nasm -f bin -o $(OBJ_DIR)/coff/int86_switch.bin $(COR_DIR)/int86_switch.asm
 $(OBJ_DIR)/coff/int86_blob.o: $(OBJ_DIR)/coff/int86_switch.bin
-	$(AS) -DSWITCH_BLOB=\"$(OBJ_DIR)/coff/int86_switch.bin\" -f win32 -o $(OBJ_DIR)/coff/int86_blob.o $(COR_DIR)/int86_blob.asm
+	nasm -DSWITCH_BLOB=\"$(OBJ_DIR)/coff/int86_switch.bin\" -f win32 -o $(OBJ_DIR)/coff/int86_blob.o $(COR_DIR)/int86_blob.asm
 # -----------------------------------------------------------------------------
 # prepare font ...
 # -----------------------------------------------------------------------------

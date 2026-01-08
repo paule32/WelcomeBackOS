@@ -6,6 +6,7 @@
 # include "stdint.h"
 # include "proto.h"
 
+extern "C" void ExitProcess(int);
 extern "C" void shell_main(void)
 {
     // Testmarker, bevor wir springen:
@@ -13,5 +14,7 @@ extern "C" void shell_main(void)
     VGA[0] = 'K'; VGA[1] = 0x0F;
     VGA[2] = 'U'; VGA[3] = 0x0F;
     VGA[4] = 'L'; VGA[5] = 0x0F;
+    
+    ExitProcess(2);
     for(;;);
 }

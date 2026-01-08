@@ -14,3 +14,5 @@ log/
 /build/obj
 /build/dep
 /build/dep/coff
+/build
+/build/dep

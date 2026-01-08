@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 // \file  cpp_runtime.cc
-// \note  (c) 2025 by Jens Kallup - paule32
+// \note  (c) 2025, 2026 by Jens Kallup - paule32
 //        all rights reserved.
 // ----------------------------------------------------------------------------
 # include "stdint.h"

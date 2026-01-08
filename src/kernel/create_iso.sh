@@ -9,8 +9,17 @@ AS=$__BIN_AS
 objcopy -O binary ${OBJ_DIR}/kernel.o ${BIN_DIR}/kernel.bin
 ls -l ${BIN_DIR}
 
-${AS} -DLBA_FILE=\"${COR_DIR}/lba.inc\" -f bin ${COR_DIR}/boot/boot1.asm -o ${BIN_DIR}/content/boot1.bin
-${AS} -DLBA_FILE=\"${COR_DIR}/lba.inc\" -f bin ${COR_DIR}/boot/boot2.asm -o ${BIN_DIR}/content/boot2.bin
+nasm -DLBA_FILE="${COR_DIR}/lba.inc"    \
+    -f bin ${COR_DIR}/boot/boot1.asm    \
+    -o     ${BIN_DIR}/content/boot1.bin \
+    -l     ${BIN_DIR}/boot1.lst \
+    -s     ${BIN_DIR}/boot1.sym
+
+nasm -DLBA_FILE="${COR_DIR}/lba.inc"    \
+    -f bin ${COR_DIR}/boot/boot2.asm    \
+    -o     ${BIN_DIR}/content/boot2.bin \
+    -l     ${BIN_DIR}/boot2.lst \
+    -s     ${BIN_DIR}/boot2.sym
 
 dd if=/dev/zero of=${BIN_DIR}/hdd.img bs=1M count=16
 dd if=${BIN_DIR}/content/boot1.bin of=${BIN_DIR}/hdd.img bs=512 count=1 conv=notrunc

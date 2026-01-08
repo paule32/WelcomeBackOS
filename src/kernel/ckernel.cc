@@ -37,7 +37,7 @@ extern "C" void tasking_init(void);
 extern "C" void call_global_ctors(void);
 
 extern "C" void* __gxx_personality_v0(){return (void*)0;}
-extern int  graph_mode = 0;
+int  graph_mode = 0;
 
 extern uint32_t __end;
 
@@ -203,9 +203,4 @@ extern "C" int vid_main()
         asm volatile("hlt");
     }
     return 0;
-}
-
-extern "C" RtlExitProcess(int exitcode)
-{
-    printformat("ExitCode == %d\n", exitcode);
 }

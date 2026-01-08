@@ -34,11 +34,19 @@ typedef unsigned char   uint8_t;
 typedef uint32_t*     uintptr_t;
 typedef uint32_t      size_t;
 
+typedef uint32_t       DWORD;
+typedef int            BOOL;
+typedef unsigned char  BYTE;
+typedef unsigned short WORD;
+typedef int            INT;
+
 # undef false
 # undef true
 
 # define false 0
 # define true  1
+
+# define UINT_MAX 4294967295U
 
 # define NULL (void*)0
 

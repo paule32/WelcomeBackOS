@@ -1,8 +1,9 @@
 # include "stdint.h"
 
-extern uint32_t RtlExitProcess;
 void ExitProcess(int exitcode)
 {
-    typedef void (*cb_int_t)(int);
-    ((cb_int_t)(uintptr_t)&RtlExitProcess)(exitcode);
+    volatile char* VGA = (volatile char*)0xB8000;
+    VGA[10] = 'G'; VGA[11] = 0x0F;
+    VGA[12] = 'U'; VGA[13] = 0x0F;
+    VGA[14] = 'G'; VGA[15] = 0x0F;
 }
