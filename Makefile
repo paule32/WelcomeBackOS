@@ -177,7 +177,8 @@ setup:
 	$(MKDIR) -p $(OBJ_DIR)/user32/TurboVision
 	$(MKDIR) -p $(OBJ_DIR)/user32/rtl
 	$(MKDIR) -p $(OBJ_DIR)/user32/shell32
-
+	$(MKDIR) -p $(OBJ_DIR)/stl
+	
 	$(COPY) $(IMG_DIR)/*.bmp $(BIN_DIR)/content/img
 	(   cd $(SRC_DIR)/fntres        ;\
         $(SRC_DIR)/fntres/build.sh  ;\
@@ -307,6 +308,7 @@ USB_SIZE_MIB        := 64
 
 KERNEL_PASS  := 0
 SHELL32_PASS := 1
+STL32_PASS   := 2
 
 # -----------------------------------------------------------------------------
 # source files for the C-kernel ...
@@ -405,6 +407,9 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
         $(OBJ_DIR)/coff/elf_loader.o     \
         $(OBJ_DIR)/coff/pe_loader.o      \
         \
+        $(OBJ_DIR)/coff/clear_screen.o   \
+        $(OBJ_DIR)/coff/ksymbol_table.o  \
+        \
         $(RUN_CPO) \
         $(OBJ_DIR)/coff/kstl.o \
         \
@@ -416,9 +421,11 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
 # -----------------------------------------------------------------------------
 SHOBJS := \
         $(OBJ_DIR)/user32/shell32/shell32.o              \
+        $(OBJ_DIR)/user32/symbol_table.o                 \
         $(OBJ_DIR)/user32/TurboVision/Hardware.o         \
         $(OBJ_DIR)/user32/TurboVision/platform/strings.o \
-        $(OBJ_DIR)/user32/rtl/rtl_ExitProcess.o
+        $(OBJ_DIR)/user32/rtl/rtl_ExitProcess.o          \
+        $(OBJ_DIR)/stl/stl_init.o
 
 ISO_FILES  := /boot2.bin /kernel.bin
 LBA        := $(COR_DIR)/lba.inc
@@ -512,8 +519,7 @@ $(2)/%.s: $(3)/%.c
 	$(GCC) -m32 $(CFLAGS_C) -MMD -MP \
 		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
 		-S $$< -o $$@
-	@if [ "$(1)" = "$(SHELL32_PASS)" ]; then \
-        @echo "PASS=$(1) SHELL32_PASS=$(SHELL32_PASS)" ;\
+	@if [ "$(1)" = "$(SHELL32_PASS)" ] || [ "$(1)" = "$(STL32_PASS)" ]; then \
         $(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$@; \
 	fi
 
@@ -522,8 +528,7 @@ $(2)/%.s: $(3)/%.cc
 	$(CPP) -m32 $(CFLAGS_CC) -MMD -MP \
 		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
 		-S $$< -o $$@
-	@if [ "$(1)" = "$(SHELL32_PASS)" ]; then \
-        @echo "PASS=$(1) SHELL32_PASS=$(SHELL32_PASS)" ;\
+	@if [ "$(1)" = "$(SHELL32_PASS)" ] || [ "$(1)" = "$(STL32_PASS)" ]; then \
         $(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$@; \
 	fi
 
@@ -550,9 +555,16 @@ $(eval $(call compile_rule,$(KERNEL_PASS),$(OBJ_DIR)/coff,$(SRC_DIR)/fntres))
 # -----------------------------------------------------------------------------
 # static RTL - run time library ...
 # -----------------------------------------------------------------------------
+$(eval $(call compile_rule,$(STL32_PASS),$(OBJ_DIR)/stl,$(SRC_DIR)/stl/src))
+
+# -----------------------------------------------------------------------------
+# create TurboVision (BORLAND) text user interface ...
+# -----------------------------------------------------------------------------
 $(eval $(call compile_rule,$(SHELL32_PASS),$(OBJ_DIR)/user32/TurboVision,$(SRC_DIR)/user32/TurboVision/src))
 $(eval $(call compile_rule,$(SHELL32_PASS),$(OBJ_DIR)/user32/TurboVision/platform,$(SRC_DIR)/user32/TurboVision/src/platform))
 $(eval $(call compile_rule,$(SHELL32_PASS),$(OBJ_DIR)/user32/rtl,$(SRC_DIR)/user32/rtl))
+
+$(eval $(call compile_rule,$(SHELL32_PASS),$(OBJ_DIR)/user32,$(SRC_DIR)/user32))
 $(eval $(call compile_rule,$(SHELL32_PASS),$(OBJ_DIR)/user32/shell32,$(SRC_DIR)/user32/shell32))
 
 DEPS := $(patsubst $(OBJ_DIR)/coff/%.o,$(DEP_DIR)/coff/%.d,$(OBJS))

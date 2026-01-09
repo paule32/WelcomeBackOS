@@ -9,6 +9,8 @@
 # include "iso9660.h"
 # include "pe_loader.h"
 
+# include "ksymbol_table.h"
+
 // ---------- Helpers ----------
 static inline void pe_symtab_init(pe_symtab_t *t) {
     t->items = NULL;
@@ -148,9 +150,12 @@ bool pe32_load(FILE *f, pe_user_image_t *out)
     return true;
 }
 
-typedef void (*pe_entry_t)(void);
-void pe32_start_user(const pe_user_image_t *img) {
-    ((pe_entry_t)img->entry)();
+typedef void (*pe_entry_t)(uint32_t, kernel_symbol_t* syms);
+void pe32_start_user(const pe_user_image_t* img) {
+    ((pe_entry_t)img->entry)(
+        get_kernel_symbol_count(),
+        get_kernel_symbol_list ()
+    );
 }
 void test_app(void)
 {

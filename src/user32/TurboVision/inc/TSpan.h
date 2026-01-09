@@ -2,6 +2,10 @@
 // \file  TSpan.h
 // \note  (c) 2025, 2026 by Jens Kallup - paule32
 //        all rights reserved.
+//
+// \note  Turbo Vision - Version 2.0
+//        Copyright (c) 1994 by Borland International
+//        All Rights Reserved.
 // ----------------------------------------------------------------------------
 #ifndef __TVISION_TSPAN_H__
 #define __TVISION_TSPAN_H__

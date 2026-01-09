@@ -7,8 +7,8 @@
 //        Copyright (c) 1994 by Borland International
 //        All Rights Reserved.
 // ----------------------------------------------------------------------------
-#ifndef __STRINGS_H__
-#define __STRINGS_H__
+#ifndef __TURBOVISION_STRINGS_H__
+#define __TURBOVISION_STRINGS_H__
 
 # include "stdint.h"
 # include "math.h"
@@ -59,4 +59,4 @@ namespace tvision
 
 }   // namespace tvision
 
-#endif  // __STRINGS_H__
+#endif  // __TURBOVISION_STRINGS_H__

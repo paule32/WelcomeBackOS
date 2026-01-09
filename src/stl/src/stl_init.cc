@@ -1,16 +1,22 @@
 // ----------------------------------------------------------------------------
-// \file  kstl.cc
+// \file  stl_init.cc
 // \note  (c) 2025 by Jens Kallup - paule32
 //        all rights reserved.
 // ----------------------------------------------------------------------------
-# include "kstl.h"
+# include "stdint.h"
+# include "iostream.h"
 
 namespace std {
 
+void* kmalloc(uint32_t s) {
+    return (void*)s;
+}
+void kfree(void* p) {
+    p = nullptr;
+}
 // Diese beiden Symbole musst du im Kernel an deine kmalloc/kfree binden.
 // Wenn du sie nicht hast: mach simple wrapper um deinen Heap.
-extern "C" void* mini_malloc(size_t n) {
-    extern void* kmalloc(size_t);
+extern "C" void* mini_malloc(uint32_t n) {
     return kmalloc(n);
 }
 
