@@ -13,6 +13,7 @@ Discarded input sections
  .eh_frame      0x00000000       0x58 T:/a/WelcomeBackOS/build/obj/coff/pe.o
  .eh_frame      0x00000000      0x13c T:/a/WelcomeBackOS/build/obj/coff/wm.o
  .eh_frame      0x00000000      0x21c T:/a/WelcomeBackOS/build/obj/coff/kheap.o
+ .eh_frame      0x00000000       0xa8 T:/a/WelcomeBackOS/build/obj/coff/pe_loader.o
  .eh_frame      0x00000000       0x40 T:/a/WelcomeBackOS/build/obj/coff/ksymbol_table.o
  .gcc_except_table
                 0x00000000        0x4 T:/a/WelcomeBackOS/build/obj/coff/cpp_runtime.o
@@ -289,15 +290,15 @@ Linker script and memory map
  .text          0x000865c0      0x288 T:/a/WelcomeBackOS/build/obj/coff/elf_loader.o
                 0x000865c0                elf32_load_nomap
  .text          0x00086848      0x1fc T:/a/WelcomeBackOS/build/obj/coff/pe_loader.o
-                0x00086848                pe32_load
-                0x000869ca                pe32_start_user
-                0x000869f0                test_app
+                0x00086848                pe32_load(iso_file*, pe_user_image_t*)
+                0x000869ca                pe32_start_user(pe_user_image_t const*)
+                0x000869f0                test_app()
  *fill*         0x00086a44        0xc 
  .text          0x00086a50       0x50 T:/a/WelcomeBackOS/build/obj/coff/clear_screen.o
                 0x00086a50                clear_screen
  .text          0x00086aa0        0xc T:/a/WelcomeBackOS/build/obj/coff/ksymbol_table.o
-                0x00086aa0                get_kernel_symbol_list
-                0x00086aa6                get_kernel_symbol_count
+                0x00086aa0                get_kernel_symbol_list()
+                0x00086aa6                get_kernel_symbol_count()
  .text          0x00086aac       0x94 T:/a/WelcomeBackOS/build/obj/coff/cpp_runtime.o
                 0x00086aac                operator new(unsigned int)
                 0x00086acf                operator delete(void*)

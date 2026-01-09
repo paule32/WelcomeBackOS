@@ -1,5 +1,5 @@
 T:/a/WelcomeBackOS/build/obj/coff/pe_loader.s: \
- T:/a/WelcomeBackOS/src/kernel/loader/pe/pe_loader.c \
+ T:/a/WelcomeBackOS/src/kernel/loader/pe/pe_loader.cc \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \
  T:/a/WelcomeBackOS/src/kernel/include/proto.h \
  T:/a/WelcomeBackOS/src/kernel/include/stdint.h \

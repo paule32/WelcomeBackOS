@@ -22,10 +22,10 @@ static const uint32_t kernel_symbols_count =
     (uint32_t)(sizeof(kernel_symbols) /
                sizeof(kernel_symbols[0]));
 
-extern "C" kernel_symbol_t* get_kernel_symbol_list(void) {
+kernel_symbol_t* get_kernel_symbol_list(void) {
     return kernel_symbols;
 }
 
-extern "C" uint32_t get_kernel_symbol_count(void) {
+uint32_t get_kernel_symbol_count(void) {
     return kernel_symbols_count;
 }

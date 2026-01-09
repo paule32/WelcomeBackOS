@@ -21,58 +21,57 @@
     ((long)(((unsigned)(l)) | (((long)((unsigned)(h))) << 16)))
 #endif
 
-class THardwareInfo {
-public:
-    THardwareInfo() noexcept;
-    ~THardwareInfo();
+namespace tvision {
+    class THardwareInfo {
+    public:
+         THardwareInfo();
+        ~THardwareInfo();
 
-// screen functions
-    static uint16_t getScreenRows(void) noexcept;
-    static uint16_t getScreenCols(void) noexcept;
+    // screen functions
+        static uint16_t getScreenRows(void);
+        static uint16_t getScreenCols(void);
 
-    static uint16_t* getColorAddr(void) noexcept;
-    static uint16_t* getMonoAddr (void) noexcept;
-    
-    void cursorOn (void) noexcept;
-    void cursorOff(void) noexcept;
-    
-    static uint32_t getTickCount(void) noexcept;
-    static uint32_t getTickCountMs(void) noexcept;
-private:
-    static uint16_t colorSel;
-    static uint16_t monoSel ;
-    static uint16_t biosSel ;
-};
+        static uint16_t* getColorAddr(uint16_t);
+        static uint16_t* getMonoAddr (uint16_t);
+        
+        void cursorOn (void);
+        void cursorOff(void);
+        
+        static uint32_t getTickCount  (void);
+        static uint32_t getTickCountMs(void);
+    private:
+        static uint16_t colorSel;
+        static uint16_t monoSel ;
+        static uint16_t biosSel ;
+    };
 
-inline uint32_t THardwareInfo::getTickCount() noexcept {
-    return *(uint32_t *) MAKELONG( biosSel, 0x6C );
-}
-inline uint32_t THardwareInfo::getTickCountMs() noexcept {
-    return getTickCount() * 55;
-}
+    inline uint32_t THardwareInfo::getTickCount() {
+        return *(uint32_t *) MAKELONG( biosSel, 0x6C );
+    }
+    inline uint32_t THardwareInfo::getTickCountMs() {
+        return getTickCount() * 55;
+    }
 
-inline uint16_t THardwareInfo::getScreenRows(void) noexcept
-{
-    return 25;
-}
-inline uint16_t THardwareInfo::getScreenCols(void) noexcept
-{
-    return 80;
-}
+    inline uint16_t THardwareInfo::getScreenRows(void) {
+        return 25;
+    }
+    inline uint16_t THardwareInfo::getScreenCols(void) {
+        return 80;
+    }
 
-inline void THardwareInfo::cursorOn(void) noexcept {
-    
-}
-inline void THardwareInfo::cursorOff(void) noexcept {
-    
-}
+    inline void THardwareInfo::cursorOn(void) {
+        
+    }
+    inline void THardwareInfo::cursorOff(void) {
+        
+    }
 
-inline uint16_t* THardwareInfo::getColorAddr(void) {
-    return (uint16_t*)colorSel;
-}
-inline uint16_t* THardwareInfo::getMonoAddr(void) {
-    return (uint16_t*)monoSel;
-}
-
+    inline uint16_t* THardwareInfo::getColorAddr(uint16_t offset) {
+        return (uint16_t *) MAKELONG( colorSel, offset );
+    }
+    inline uint16_t* THardwareInfo::getMonoAddr(uint16_t offset) {
+        return (uint16_t *) MAKELONG( monoSel, offset );
+    }
+}   // namespace: tvision
 #endif  // __HARDWARE_H__
 

@@ -21,7 +21,7 @@ extern int  gfx_init(void);
 extern "C" void shell_main(void);
 extern "C" void mouse_poll(void);
 extern "C"  int mouse_install(void);
-extern "C" void test_app(void);
+extern     void test_app(void);
 
 //extern void wm_init(int,int,uint32_t,int);
 

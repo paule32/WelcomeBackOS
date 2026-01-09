@@ -56,6 +56,9 @@ typedef int            INT;
 
 # define UINT_MAX 4294967295U
 
+#ifdef __cplusplus
+# define NULL nullptr
+#else
 # define NULL (void*)0
-
+#endif  // __cplusplus
 #endif  // __STDINT_H__

@@ -21,8 +21,8 @@ typedef struct {
     uint16_t    func_sig;   // signature as id
 }   kernel_symbol_t;
 
-extern "C" kernel_symbol_t* get_kernel_symbol_list (void);
-extern "C" uint32_t         get_kernel_symbol_count(void);
+extern kernel_symbol_t* get_kernel_symbol_list (void);
+extern uint32_t         get_kernel_symbol_count(void);
 
 #ifdef IMPORT
 

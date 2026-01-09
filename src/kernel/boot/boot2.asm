@@ -21,6 +21,13 @@
     call print_base_str
 %endmacro
 
+%macro PRINT_HINT 2
+    mov di, (%1*80 + 8)*2
+    mov si, %2
+    mov bl, 0x4F
+    call print_base_str
+%endmacro
+
 BITS 16
 ORG 0x0500          ; Stage1 springt nach 0000:0500
 
@@ -75,7 +82,10 @@ boot_menu:
 
     mov ax, 0xB800
     mov es, ax
-
+    
+    ; hinweis
+    PRINT_HINT 1, note_str
+    
     ; menu bar
     mov di, (0*80 + 0) * 2
     mov ax, 0x07DB
@@ -437,6 +447,22 @@ print_base_str:
     stosw
     jmp .loop
     .endeDBstr:
+    ret
+
+print_hint_str:
+    push cs
+    pop ds
+    mov ax, 0xB800
+    mov es, ax
+    mov ah, bl
+    cld
+    .loop2:
+    lodsb
+    test al, al
+    jz .endeDCstr
+    stosw
+    jmp .loop2
+    .endeDCstr:
     ret
 
 ; ------------------------------------------------------------
@@ -934,6 +960,8 @@ msgDBASEvesa1024x728:   db " Start dBase 2026 Graphics-Mode 1024x728 ... ", 0
 ; ------------------------------------------------------------
 msgDBASE:               db " -=< dBASE 2026 >=- ",0
 msgDBASEenv:            db " Choose your Favorite Environment ", 0
+
+note_str: db "Hint:  You have to do tripple press ENTER-Key, to select Env ! ", 0
 
 share1: db "  ____  _   _    _    ____  _____      _    _    _    ____  _____  ", 0
 share2: db " / ___|| | | |  / \  |  _ \| ____|    | |  | |  / \  |  _ \| ____| ", 0
