@@ -30,7 +30,7 @@ extern "C" void enter_usermode(void);
 extern "C" void irq_init(void);
 extern "C" void idt_init(void);
 extern "C" void isr_init(void);
-extern "C" void gdt_init(uint32_t);
+extern "C" void gdt_init();
 extern "C" void syscall_init(void);
 extern "C" void tasking_init(void);
 
@@ -57,7 +57,7 @@ extern "C" int txt_main()
  
     paging_init();
     kheap_init();
- 
+
     //detect_memory();          // setzt max_mem
     
     uint32_t stack_top = kernel_stack_top;
@@ -66,14 +66,15 @@ extern "C" int txt_main()
     uint32_t reserved = ((uint32_t)&__end + 0xFFF) & ~0xFFF;
     if (reserved < kernel_stack_top) reserved = kernel_stack_top; // Stack schützen
     page_init(reserved);
-
+    
     // 3) aktuellen Stack als esp0 für TSS verwenden
     uint32_t esp;
     __asm__ volatile("mov %%esp, %0" : "=r"(esp));
-    gdt_init(esp);
+    gdt_init();
+
     isr_init();
     irq_init();
-    
+
     syscall_init();
     tasking_init();
 
@@ -138,8 +139,8 @@ extern "C" int vid_main()
 
     // 3) aktuellen Stack als esp0 für TSS verwenden
     uint32_t esp;
-    __asm__ volatile("mov %%esp, %0" : "=r"(esp));
-    gdt_init(esp);
+    //__asm__ volatile("mov %%esp, %0" : "=r"(esp));
+    gdt_init();
     isr_init();
     irq_init();
     

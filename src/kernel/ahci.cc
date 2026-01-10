@@ -386,13 +386,18 @@ int ahci_init(void)
     return -1;
 // A
     //printformat("ABAR phys: 0x%x\n", g_ahci.abar);
-    
+
     g_hba = (hba_mem_t *)mmio_map(g_ahci.abar, 4096); // mind. 4KB
 //  g_hba = (hba_mem_t *)(uintptr_t)g_ahci.abar;
-    
-    //printformat("g_hba Pointer (virt): 0x%x\n", (uint32_t)g_hba);
-    gfx_printf("AHCI-Version: 0x%x, Ports Implemented: 0x%x\n",
-            g_hba->vs, g_hba->pi);
+        
+    if (graph_mode == 1) {
+        printformat("g_hba Pointer (virt): 0x%x\n", (uint32_t)g_hba);
+        printformat("AHCI-Version: 0x%x, Ports Implemented: 0x%x\n",
+        g_hba->vs, g_hba->pi);
+    }   else {
+        gfx_printf("AHCI-Version: 0x%x, Ports Implemented: 0x%x\n",
+        g_hba->vs, g_hba->pi);
+    }
 // B
     // HBA einschalten (GHC.AE = 1)
     g_hba->ghc |= (1U << 31);

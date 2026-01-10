@@ -56,6 +56,8 @@ gdt_entry_t gdt[GDT_ENTRIES];
 gdt_ptr_t   gp;
 tss_entry_t tss_entry;
 
+extern uint32_t kernel_stack_top;
+
 static void gdt_set_gate(
          int num,
     uint32_t base,
@@ -94,11 +96,11 @@ static void write_tss(int num, uint16_t ss0, uint32_t esp0)
     tss_entry.iomap_base = sizeof(tss_entry_t);
 }
 
-void gdt_init(uint32_t kernel_stack_top)
+void gdt_init()
 {
     gp.limit = sizeof(gdt) - 1;
     gp.base  = (uint32_t)&gdt;
-    
+
     // 0: Null-Descriptor
     gdt_set_gate(0, 0, 0, 0, 0);
 

@@ -21,13 +21,6 @@
     call print_base_str
 %endmacro
 
-%macro PRINT_HINT 2
-    mov di, (%1*80 + 8)*2
-    mov si, %2
-    mov bl, 0x4F
-    call print_base_str
-%endmacro
-
 BITS 16
 ORG 0x0500          ; Stage1 springt nach 0000:0500
 
@@ -82,9 +75,6 @@ boot_menu:
 
     mov ax, 0xB800
     mov es, ax
-    
-    ; hinweis
-    PRINT_HINT 1, note_str
     
     ; menu bar
     mov di, (0*80 + 0) * 2
@@ -449,22 +439,6 @@ print_base_str:
     .endeDBstr:
     ret
 
-print_hint_str:
-    push cs
-    pop ds
-    mov ax, 0xB800
-    mov es, ax
-    mov ah, bl
-    cld
-    .loop2:
-    lodsb
-    test al, al
-    jz .endeDCstr
-    stosw
-    jmp .loop2
-    .endeDCstr:
-    ret
-
 ; ------------------------------------------------------------
 ; UI: Fill screen with char in AL and attr in AH
 ; ------------------------------------------------------------
@@ -499,7 +473,7 @@ main_bootmenu_loop:
     int 0x16
     jz  main_bootmenu_loop
 
-    ; Taste lesen: AH=scancode, AL=ascii (bei Pfeiltasten AL=0 oder 0xE0)
+    ; Taste lesen: AH=bios scancode, AL=ascii (bei Pfeiltasten AL=0 oder 0xE0)
     mov ah, 0x00
     int 0x16
 
@@ -648,13 +622,14 @@ enter_text_pm:
     a20_failed:
     mov si, msgA20FAIL
     call print_string
-    hlt
+    jmp $
     
     ; -------------------------------------------------
     ; GDT laden, Protected Mode aktivieren
     ; -------------------------------------------------
     A20ok:
     cli
+
     lgdt [gdt_descriptor]
     
     mov eax, cr0
@@ -905,7 +880,7 @@ pm_entry_kernel_2:
     ;mov dword [0xB8000], 0x07420741  ; "AB"
     mov esp, 0x0009F000   ; irgendein 32-Bit-Stack im oberen Bereich
     
-    ;mov dword [0xB8000], 0x072A072A  ; "**" (2 Zeichen) weiß auf schwarz
+    mov dword [0xB8000], 0x072A072A  ; "**" (2 Zeichen) weiß auf schwarz
     
     ; entrypoint steht als dword am Anfang des
     ; geladenen kernel.bin (kernel.ld)
@@ -961,8 +936,6 @@ msgDBASEvesa1024x728:   db " Start dBase 2026 Graphics-Mode 1024x728 ... ", 0
 msgDBASE:               db " -=< dBASE 2026 >=- ",0
 msgDBASEenv:            db " Choose your Favorite Environment ", 0
 
-note_str: db "Hint:  You have to do tripple press ENTER-Key, to select Env ! ", 0
-
 share1: db "  ____  _   _    _    ____  _____      _    _    _    ____  _____  ", 0
 share2: db " / ___|| | | |  / \  |  _ \| ____|    | |  | |  / \  |  _ \| ____| ", 0
 share3: db " \___ \| |_| | / _ \ | |_) |  _|      | |/\| | / _ \ | |_) |  _|   ", 0
@@ -974,10 +947,6 @@ msgVESA_failModeInfo:       db "[VESA] Error: ModeInfo."   , 0
 msgVESA_failUnsupported:    db "[VESA] Error: Unsupported.", 0
 msgVESA_failSetmode:        db "[VESA] Error: SetMode."    , 0
 
-
-vessatext_a: db "vESSA 1111", 13, 10, 0
-vessatext_b: db "vESSA CCCC", 13, 10, 0
-vessatext_c: db "gugu ",      13, 10, 0
 menuFlag db 4
 
 ; Puffer für VBE Mode Info (256 Byte reichen)

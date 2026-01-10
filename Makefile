@@ -244,7 +244,7 @@ confirm:
 # compiler flags ...
 # -----------------------------------------------------------------------------
 CFLAGS_C := -m32 -O1 -ffreestanding -Wall -Wextra \
-            -nostdlib             \
+            -nostdlib -fno-ident  \
             -nostartfiles         \
             -fno-stack-protector  \
             -fno-unwind-tables    \

@@ -22,12 +22,12 @@ static uint32_t page_table_next_free;
 
 static uint32_t* first_page_table;
 
-static uint32_t free_pages[PAGE_ENTRIES];
-static size_t   free_page_count = 0;
-
 # define MANAGED_MEMORY_BYTES (16 * 1024 * 1024)   // 16 MiB
 # define MAX_PAGES            (MANAGED_MEMORY_BYTES / PAGE_SIZE)
 # define BITMAP_SIZE_BYTES    (MAX_PAGES / 8)
+
+static uint32_t free_pages[MAX_PAGES];
+static size_t   free_page_count = 0;
 
 static uint8_t page_bitmap[BITMAP_SIZE_BYTES] __attribute__((aligned(16)));
 
@@ -109,6 +109,7 @@ void page_allocator_add_page(uint32_t phys_addr)
     if (free_page_count < MAX_PAGES) {
         free_pages[free_page_count++] = phys_addr;
     } else {
+        printformat("FC: %d, MAX: %d\n",free_page_count, MAX_PAGES);
         // Optional: Fehlerbehandlung (kein Platz mehr im freien Stack)
     }
 }
@@ -233,4 +234,7 @@ void paging_init(void)
 
     // kleiner Flush
     asm volatile("jmp .+2");
+    
+    volatile uint16_t* vga = (volatile uint16_t*)0xB8000;
+    vga[0] = 0x0F00 | 'L';
 }
