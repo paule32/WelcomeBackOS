@@ -9,13 +9,41 @@
 # include "proto.h"
 # include "kheap.h"
 
+# define DESKTOP
+# include "vga.h"
+
 extern "C" void clear_screen(void);
+extern "C" void clear_screen2(void);
 
 static kernel_symbol_t kernel_symbols[] = {
-    { "malloc",        (uintptr_t)&kmalloc      , KSIG_KMALLOC     },
-    { "free",          (uintptr_t)&kfree        , KSIG_KFREE       },
-    { "printformat",   (uintptr_t)&printformat  , KSIG_PRINTFORMAT },
-    { "ConsoleClear",  (uintptr_t)&clear_screen , KSIG_CLEARSCREEN },
+    { (uintptr_t)&kmalloc      , KSIG_KMALLOC__UINT32            },
+    { (uintptr_t)&kfree        , KSIG_KFREE__VOID_PTR            },
+    
+    { (uintptr_t)&printformat  , KSIG_PRINTFORMAT__CCHAR_PTR_ANY },
+    { (uintptr_t)&clear_screen , KSIG_CLEARSCREEN__VOID          },
+    
+    { (uintptr_t)&clear_screen , KSIG_CLEARSCREEN__VOID          },
+    
+    { (uintptr_t) static_cast<clear_screen2__void>( &clear_screen2), KSIG_CLEARSCREEN2__VOID },
+    
+    // ---------------------------------------------------------
+    // graphics: gfx_drawCicle
+    // ---------------------------------------------------------
+        
+    // ---------------------------------------------------------
+    // graphics: gfx_drawLine
+    // ---------------------------------------------------------
+
+    // ---------------------------------------------------------
+    // graphics: gfx_rectFill
+    // ---------------------------------------------------------
+    { (uintptr_t) static_cast<rectfill__u16ptriiiiitc >( &gfx_rectFill ), KSIG_GFX_RECTFiLL__UINT16_PTR_INT_INT_INT_INT_INT_TCOLOR },
+    { (uintptr_t) static_cast<rectfill__iiii_us       >( &gfx_rectFill ), KSIG_GFX_RECTFiLL__INT_INT_INT_INT_USHORT       },
+    { (uintptr_t) static_cast<rectfill__iiii_tc       >( &gfx_rectFill ), KSIG_GFX_RECTFiLL__INT_INT_INT_INT_TCOLOR       },
+    { (uintptr_t) static_cast<rectfill__ii_tc         >( &gfx_rectFill ), KSIG_GFX_RECTFiLL__INT_INT_TCOLOR               },
+    { (uintptr_t) static_cast<rectfill__pt_tc         >( &gfx_rectFill ), KSIG_GFX_RECTFiLL__TPOINT_REF_INT_PTR_TCOLOR    },
+    { (uintptr_t) static_cast<rectfill__pt_iptr_tc    >( &gfx_rectFill ), KSIG_GFX_RECTFiLL__TPOINT_REF_TCOLOR            },
+    { (uintptr_t) static_cast<rectfill__tr_tc         >( &gfx_rectFill ), KSIG_GFX_RECTFiLL__TRECT_REF_TCOLOR             },
 };
 
 static const uint32_t kernel_symbols_count =

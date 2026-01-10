@@ -12,16 +12,20 @@
 
 # include "stdint.h"
 # include "TurboVision/inc/TObject.h"
-# include "TurboVision/inc/TRect.h"
+# include "TurboVision/inc/TEvent.h"
 
-namespace tvision {
-    class TView: public TObject {
-    public:
-        enum phaseType  { phFocused, phPreProcess, phPostProcess };
-        enum selectMode { normalSelect, enterSelect, leaveSelect };
+typedef struct TView  TView;
+typedef struct TEvent TEvent;
 
-         TView(const TRect& bounds);
-        ~TView();
-    };
-}   // namespace: std
+struct TView {
+    int x, y, w, h;
+    // Geometrie später (TRect). Fürs Event-System reicht:
+    bool  selectable;
+    bool  focused;
+    TView *owner;         // Parent (Group)
+
+    void (*draw)(TView *self);
+    bool (*handleEvent)(TView *self, TEvent *ev);  // true = consumed
+};
+
 #endif  // __TVISION_TVIEW_H__

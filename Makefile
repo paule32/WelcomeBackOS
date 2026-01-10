@@ -246,17 +246,21 @@ confirm:
 CFLAGS_C := -m32 -O1 -ffreestanding -Wall -Wextra \
             -nostdlib -fno-ident  \
             -nostartfiles         \
+            -nostdinc             \
             -fno-stack-protector  \
             -fno-unwind-tables    \
             -fno-asynchronous-unwind-tables \
             -fno-builtin          \
             -fno-pic              \
+            -Wno-uninitialized    \
+            -Wno-maybe-uninitialized \
             -mno-ms-bitfields     \
             -Wno-unused-variable  \
             -Wno-unused-function  \
             -Wno-unused-parameter \
             -Wno-unused-value     \
             -Wno-sign-compare     \
+            -Wno-unused-but-set-parameter    \
             -Wno-missing-field-initializers  \
             -D__BUILD_DATE__=\"$(DATE_YMD)\" \
             -D__BUILD_TIME__=\"$(TIME_HMS)\" \
@@ -265,12 +269,16 @@ CFLAGS_C := -m32 -O1 -ffreestanding -Wall -Wextra \
             -I$(SRC_DIR)/stl/inc        \
             -I$(SRC_DIR)/stl/inc/string \
             -I$(SRC_DIR)/user32                  \
+            -I$(SRC_DIR)/user32/include          \
             -I$(SRC_DIR)/user32/TurboVision      \
             -I$(SRC_DIR)/user32/TurboVision/inc  \
             -I$(SRC_DIR)/fntres
 
 CFLAGS_CC:= -std=c++20  $(CFLAGS_C) \
-            -fexceptions -frtti     \
+            -nostdinc++             \
+            -fno-exceptions         \
+            -fno-rtti               \
+            -fno-use-cxa-atexit     \
             -Wno-write-strings      \
             -Wno-volatile           \
             -fno-use-cxa-atexit     \
@@ -421,6 +429,9 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
 # -----------------------------------------------------------------------------
 SHOBJS := \
         $(OBJ_DIR)/user32/shell32/shell32.o              \
+        $(OBJ_DIR)/user32/shell32/no_rtti.o              \
+        $(OBJ_DIR)/user32/shell32/Application.o          \
+        $(OBJ_DIR)/user32/shell32/shell32_app.o          \
         $(OBJ_DIR)/user32/symbol_table.o                 \
         $(OBJ_DIR)/user32/TurboVision/Hardware.o         \
         $(OBJ_DIR)/user32/TurboVision/platform/strings.o \

@@ -722,6 +722,12 @@ void gfx_rectFill(
     TColor col) {
     gfx_rectFill(pt.x, pt.y,col);
 }
+void gfx_rectFill(  // todo !
+    TPoint& pt,
+    int* addr,
+    TColor col) {
+    gfx_rectFill(pt.x, pt.y,col);
+}
 void gfx_rectFill(
     int x, int y,
     int w, int h,

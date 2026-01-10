@@ -15,7 +15,19 @@ static inline void outb(unsigned short port, unsigned char val)
 void clear_screen(void)
 {
     for (int i = 0; i < COLS * ROWS; i++)
-    VGA_MEM[i] = 0x0700 | ' ';
+    VGA_MEM[i] = 0x0700 | 0xB0;
+
+    // Cursor auf 0:0
+    outb(0x3D4, 0x0F);
+    outb(0x3D5, 0);
+    outb(0x3D4, 0x0E);
+    outb(0x3D5, 0);
+}
+
+void clear_screen2(void)
+{
+    for (int i = 0; i < COLS * ROWS; i++)
+    VGA_MEM[i] = 0x1F00 | 0xB0;
 
     // Cursor auf 0:0
     outb(0x3D4, 0x0F);

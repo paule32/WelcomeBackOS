@@ -14,6 +14,18 @@
 # include "TurboVision/inc/TPoint.h"
 
 namespace tvision {
+    #ifndef TVISION_MIN
+    #define TVISION_MIN
+    template <class T>
+    constexpr T min(T a, T b) { return (b < a) ? b : a; }
+    #endif  // TVISION_MIN
+
+    #ifndef TVISION_MAX
+    #define TVISION_MAX
+    template <class T>
+    constexpr T max(T a, T b) { return (a < b) ? b : a; }
+    #endif  // TVISION_MIN
+    
     class TRect {
     public:
         TRect(int ax, int ay, int bx, int by);
@@ -34,6 +46,8 @@ namespace tvision {
         bool isEmpty();
 
         TPoint a, b;
+        
+        int x,y, w,h;
     };
 
     inline TRect::TRect( int ax, int ay, int bx, int by) {
