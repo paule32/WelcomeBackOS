@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// \file  TObject.h
+// \file  TObject.cc
 // \note  (c) 2025, 2026 by Jens Kallup - paule32
 //        all rights reserved.
 //
@@ -7,16 +7,13 @@
 //        Copyright (c) 1994 by Borland International
 //        All Rights Reserved.
 // ----------------------------------------------------------------------------
-#ifndef __TVISION_TOBJECT_H__
-#define __TVISION_TOBJECT_H__
-
 # include "stdint.h"
+# include "TurboVision/inc/TObject.h"
 
 namespace tvision
 {
-    class TObject {
-    public:
-        TObject(void);
-    };
+    TObject::TObject(void)
+    {
+        
+    }
 }   // namespace: tvision
-#endif  // __TVISION_TOBJECT_H__

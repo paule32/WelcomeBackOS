@@ -9,15 +9,21 @@
 # include "stdint.h"
 
 # include "TurboVision/inc/TObject.h"
-# include "TurboVision/inc/TGroup.h"
-# include "TurboVision/inc/TEditView.h"
+//# include "TurboVision/inc/TGroup.h"
+//# include "TurboVision/inc/TEditView.h"
 
-struct TApplication {
-    TGroup    desktop;
-    bool      running;
-
-    TEditView left;
-    TEditView right;
-};
-
+namespace tvision
+{
+    class TApplication: public TObject
+    {
+    public:
+                 TApplication(void);
+        virtual ~TApplication() {}
+        
+        virtual void init();
+        int  run();
+    private:
+         bool running = false;
+    };
+}   // namespace: tvision
 #endif  // __TURBOVISION_TAPPLICATION_H__

@@ -12,19 +12,17 @@
 # define DESKTOP
 # include "vga.h"
 
-extern "C" void clear_screen(void);
-extern "C" void clear_screen2(void);
+extern "C" void clear_screen(unsigned char, unsigned char);
+extern "C" void settextcolor(unsigned char, unsigned char);
 
 static kernel_symbol_t kernel_symbols[] = {
     { (uintptr_t)&kmalloc      , KSIG_KMALLOC__UINT32            },
     { (uintptr_t)&kfree        , KSIG_KFREE__VOID_PTR            },
     
     { (uintptr_t)&printformat  , KSIG_PRINTFORMAT__CCHAR_PTR_ANY },
-    { (uintptr_t)&clear_screen , KSIG_CLEARSCREEN__VOID          },
     
-    { (uintptr_t)&clear_screen , KSIG_CLEARSCREEN__VOID          },
-    
-    { (uintptr_t) static_cast<clear_screen2__void>( &clear_screen2), KSIG_CLEARSCREEN2__VOID },
+    { (uintptr_t) static_cast<clear_screen__uc_uc>( &clear_screen ), KSIG_CLEARSCREEN__VOID  },
+    { (uintptr_t) static_cast<setTextColor__uc_uc>( &settextcolor ), KSIG_SETTEXTCOLOR_UC_UC },
     
     // ---------------------------------------------------------
     // graphics: gfx_drawCicle

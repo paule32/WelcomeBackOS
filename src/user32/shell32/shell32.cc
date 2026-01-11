@@ -11,7 +11,7 @@
 # include "ksymbol_table.h"
 
 extern     void kernel_symbols_init(void);
-extern     void clear_screen(void);
+extern     void clear_screen(unsigned char, unsigned char);
 
 extern "C" void app_run_demo(void);
 extern "C" void ExitProcess (int );
@@ -24,7 +24,7 @@ extern "C" void shell_main(
     kernel_symbols       = sym_table;
 
     kernel_symbols_init();
-    clear_screen();
+    clear_screen(0x1F, 0xB1);
     
     // Testmarker, bevor wir springen:
     volatile char* VGA = (volatile char*)0xB8000;

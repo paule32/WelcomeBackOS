@@ -430,9 +430,10 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
 SHOBJS := \
         $(OBJ_DIR)/user32/shell32/shell32.o              \
         $(OBJ_DIR)/user32/shell32/no_rtti.o              \
-        $(OBJ_DIR)/user32/shell32/Application.o          \
         $(OBJ_DIR)/user32/shell32/shell32_app.o          \
         $(OBJ_DIR)/user32/symbol_table.o                 \
+        $(OBJ_DIR)/user32/TurboVision/Application.o      \
+        $(OBJ_DIR)/user32/TurboVision/TObject.o          \
         $(OBJ_DIR)/user32/TurboVision/Hardware.o         \
         $(OBJ_DIR)/user32/TurboVision/platform/strings.o \
         $(OBJ_DIR)/user32/rtl/rtl_ExitProcess.o          \

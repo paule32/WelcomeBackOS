@@ -22,8 +22,9 @@ typedef enum {
     // text console
     // ---------------------------------------------------------
     KSIG_PRINTFORMAT__CCHAR_PTR_ANY,
+
     KSIG_CLEARSCREEN__VOID,
-    KSIG_CLEARSCREEN2__VOID,
+    KSIG_SETTEXTCOLOR_UC_UC,
     
     // ---------------------------------------------------------
     // graphics: gfx_drawCicle
@@ -70,7 +71,8 @@ using rectfill__pt_tc          = void(*)(TPoint&, TColor);
 using rectfill__pt_iptr_tc     = void(*)(TPoint&, int*, TColor);
 using rectfill__tr_tc          = void(*)(TRect&, TColor);
 
-using clear_screen2__void      = void(*)(void);
+using clear_screen__uc_uc      = void(*)(unsigned char, unsigned char);
+using setTextColor__uc_uc      = void(*)(unsigned char, unsigned char);
 
 #ifdef IMPORT
 
@@ -82,10 +84,10 @@ extern uint32_t         kernel_symbols_count;
 // ----------------------------------------------------------------------------
 typedef void* (*__imp__kmalloc__uint32_t            )(uint32_t);
 typedef void  (*__imp__kfree__void_ptr_t            )(void*);
-typedef int   (*__imp__printformat__cchar_ptr_any_t )(const char* fmt, ...);
-typedef void  (*__imp__clear_screen__void_t         )(void);
-typedef void  (*__imp__clear_screen2__void_t        )(void);
 
+typedef int   (*__imp__printformat__cchar_ptr_any_t )(const char* fmt, ...);
+typedef void  (*__imp__clear_screen__uc_uc_t        )(unsigned char, unsigned char);
+typedef void  (*__imp__setTextColor__uc_uc_t        )(unsigned char, unsigned char);
 // ----------------------------------------------------------------------------
 // graphics types ...
 // ----------------------------------------------------------------------------
@@ -115,8 +117,8 @@ extern __imp__printformat__cchar_ptr_any_t     __imp__printformat__cchar_ptr_any
 // ----------------------------------------------------------------------------
 // text screen Variablen (Funktionszeiger)
 // ----------------------------------------------------------------------------
-extern __imp__clear_screen__void_t    __imp__clear_screen__void;
-extern __imp__clear_screen2__void_t   __imp__clear_screen2__void;
+extern __imp__clear_screen__uc_uc_t   __imp__clear_screen__uc_uc;
+extern __imp__setTextColor__uc_uc_t   __imp__setTextColor__uc_uc;
 
 // ----------------------------------------------------------------------------
 // graphics variables ...

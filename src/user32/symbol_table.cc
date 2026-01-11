@@ -6,6 +6,7 @@
 # define IMPORT
 
 # include "stdint.h"
+# include "stdarg.h"
 # include "memory.h"
 
 # include "ksymbol_table.h"
@@ -52,8 +53,9 @@ __imp__kfree__void_ptr_t  __imp__kfree__void_ptr = nullptr;
 // text screen Variablen (Funktionszeiger)
 // ----------------------------------------------------------------------------
 __imp__printformat__cchar_ptr_any_t   __imp__printformat__cchar_ptr_any = nullptr;
-__imp__clear_screen__void_t           __imp__clear_screen__void = nullptr;
-__imp__clear_screen2__void_t          __imp__clear_screen2__void = nullptr;
+
+__imp__clear_screen__uc_uc_t          __imp__clear_screen__uc_uc = nullptr;
+__imp__setTextColor__uc_uc_t          __imp__setTextColor__uc_uc = nullptr;
 
 // ----------------------------------------------------------------------------
 // graphics variables ...
@@ -84,8 +86,9 @@ void kernel_symbols_init(void)
     IMPORT_SYM( KSIG_KFREE__VOID_PTR, kfree__void_ptr);
     
     IMPORT_SYM( KSIG_PRINTFORMAT__CCHAR_PTR_ANY, printformat__cchar_ptr_any );
-    IMPORT_SYM( KSIG_CLEARSCREEN__VOID, clear_screen__void );
-    IMPORT_SYM( KSIG_CLEARSCREEN2__VOID, clear_screen2__void );
+    
+    IMPORT_SYM( KSIG_CLEARSCREEN__VOID , clear_screen__uc_uc );
+    IMPORT_SYM( KSIG_SETTEXTCOLOR_UC_UC, setTextColor__uc_uc );
 
     // ---------------------------------------------------------
     // graphics: gfx_drawCicle
@@ -127,14 +130,25 @@ void free(void* ptr) {
     }
 }
 
-void clear_screen(void) {
-    if (__imp__clear_screen__void != nullptr) {
-       (__imp__clear_screen__void)();
+void clear_screen(unsigned char fg, unsigned char bg) {
+    if (__imp__clear_screen__uc_uc != nullptr) {
+       (__imp__clear_screen__uc_uc)(fg, bg);
     }
 }
 
-void clear_screen2(void) {
-    if (__imp__clear_screen2__void != nullptr) {
-       (__imp__clear_screen2__void)();
+void setTextColor(uint8_t fg, uint8_t bg)
+{
+    if (__imp__setTextColor__uc_uc != nullptr) {
+       (__imp__setTextColor__uc_uc)(fg, bg);
+    }
+}
+
+void printformat(const char* fmt, ...)
+{
+    if (__imp__printformat__cchar_ptr_any != nullptr) {
+        va_list ap;
+        va_start(ap, fmt);
+        (__imp__printformat__cchar_ptr_any)(fmt, ap);
+        va_end(ap);
     }
 }

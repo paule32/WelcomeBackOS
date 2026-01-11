@@ -6,6 +6,9 @@
 # include "stdint.h"
 
 # include "TurboVision/inc/TApplication.h"
+
+
+#ifdef __00__
 # include "TurboVision/inc/TView.h"
 # include "TurboVision/inc/TEvent.h"
 # include "TurboVision/inc/TCommandIDs.h"
@@ -348,12 +351,17 @@ static void app_handle(TApplication *app, TEvent *ev)
     draw_status("TAB wechseln | ESC quit | F1 help | Ctrl+C/V/X");
     app->desktop.base.draw((TView*)&app->desktop);
 }
+#endif
 
 extern "C" void app_run_demo(void)
 {
-    TApplication app;
-    app_init(&app);
-
+    using namespace tvision;
+    auto *app = new TApplication();
+    app->init();
+    app->run ();
+    
+    delete app;
+/*
     app.running = true;
     while (app.running) {
         TEvent ev;
@@ -365,7 +373,7 @@ extern "C" void app_run_demo(void)
         }
 
         app_handle(&app, &ev);
-    }
+    }*/
 
     // nach Quit: in eine harmlose Loop (oder zurück zu deinem Kernel-Menü)
     for (;;) { __asm__ volatile ("hlt"); }

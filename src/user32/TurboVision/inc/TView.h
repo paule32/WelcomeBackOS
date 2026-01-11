@@ -14,18 +14,21 @@
 # include "TurboVision/inc/TObject.h"
 # include "TurboVision/inc/TEvent.h"
 
-typedef struct TView  TView;
-typedef struct TEvent TEvent;
+namespace tvision
+{
+    class TEvent;
+    class TView: public TObject
+    {
+    public:
+        TRect rect;
+        
+        // Geometrie später (TRect). Fürs Event-System reicht:
+        bool  selectable;
+        bool  focused;
+        TView *owner;         // Parent (Group)
 
-struct TView {
-    int x, y, w, h;
-    // Geometrie später (TRect). Fürs Event-System reicht:
-    bool  selectable;
-    bool  focused;
-    TView *owner;         // Parent (Group)
-
-    void (*draw)(TView *self);
-    bool (*handleEvent)(TView *self, TEvent *ev);  // true = consumed
-};
-
+        void draw() virtual;
+        bool handleEvent(TEvent *ev);
+    };
+}   // namespace: tvision
 #endif  // __TVISION_TVIEW_H__
