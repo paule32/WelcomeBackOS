@@ -24,13 +24,15 @@ extern "C" void shell_main(
     kernel_symbols       = sym_table;
 
     kernel_symbols_init();
-    clear_screen(0x1F, 0xB1);
     
+    clear_screen(0x1F, 0xB1);
+    /*
     // Testmarker, bevor wir springen:
     volatile char* VGA = (volatile char*)0xB8000;
     VGA[0] = 'K'; VGA[1] = 0x0F;
     VGA[2] = 'U'; VGA[3] = 0x0F;
     VGA[4] = 'L'; VGA[5] = 0x0F;
+    */
     
     app_run_demo();
     

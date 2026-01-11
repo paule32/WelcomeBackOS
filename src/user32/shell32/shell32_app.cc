@@ -292,7 +292,7 @@ static void draw_status(const char *text)
     vga_printxy(1, VGA_H-1, text, 0x70);
 }
 
-static void app_init(TApplication *app)
+static void app_init____(TApplication *app)
 {
     // Desktop group init
     app->desktop.base.draw = group_draw;
@@ -357,10 +357,10 @@ extern "C" void app_run_demo(void)
 {
     using namespace tvision;
     auto *app = new TApplication();
-    app->init();
+    app->Init();
     app->run ();
     
-    delete app;
+    //delete app;
 /*
     app.running = true;
     while (app.running) {

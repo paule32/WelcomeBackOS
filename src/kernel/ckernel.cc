@@ -24,7 +24,9 @@ extern void* krealloc(void* ptr, uint32_t new_size);
 extern int atapi_read_sectors(uint32_t lba, uint32_t count, void *buffer);
 extern int  sata_read_sectors(uint32_t lba, uint32_t count, void *buffer);
 
+extern "C" void clear_screen(unsigned char, unsigned char);
 extern "C" void printformat(char*, ...);
+
 extern "C" void detect_memory(void);
 extern "C" void enter_usermode(void);
 extern "C" void irq_init(void);
@@ -92,7 +94,7 @@ extern "C" int txt_main()
         printformat("ATAPI: NOK\n");
         check_ahci();
     }
-
+    
     if (iso_mount() != 0) {
         printformat("ISO mount Error.\n");
     }   else {

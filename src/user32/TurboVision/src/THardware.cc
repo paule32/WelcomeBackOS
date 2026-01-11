@@ -10,8 +10,11 @@
 # define Uses_THardwareInfo
 
 # include "tv.h"
+# include "TurboVision/inc/TObject.h"
+# include "TurboVision/inc/THardware.h"
 
 namespace tvision {
+    
     uint16_t THardwareInfo::biosSel  = 0x0040;
     uint16_t THardwareInfo::monoSel  = 0xB000;
     uint16_t THardwareInfo::colorSel = 0xB800;

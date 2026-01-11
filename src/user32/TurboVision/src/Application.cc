@@ -13,15 +13,24 @@ namespace tvision
 {
     TApplication::TApplication(void)
     {
+        auto * desktop = new TDesktop();
+     }
+    TApplication::~TApplication()
+    {
+        delete desktop;
     }
-    void TApplication::init(void) {
+    
+    void TApplication::Init(void) {
         printformat("TApplication: init.\n");
     }
     
     int TApplication::run(void) {
+        
         running = true;
+        desktop->draw();
+        
         while (running) {
-            
+            desktop->menuBar->draw();
         }
         return 0;
     }

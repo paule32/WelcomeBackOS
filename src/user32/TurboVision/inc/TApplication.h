@@ -9,6 +9,7 @@
 # include "stdint.h"
 
 # include "TurboVision/inc/TObject.h"
+# include "TurboVision/inc/TDesktop.h"
 //# include "TurboVision/inc/TGroup.h"
 //# include "TurboVision/inc/TEditView.h"
 
@@ -18,12 +19,15 @@ namespace tvision
     {
     public:
                  TApplication(void);
-        virtual ~TApplication() {}
+        virtual ~TApplication();
         
-        virtual void init();
+        void Init();
         int  run();
+        
+        TDesktop * desktop = nullptr;
+        
     private:
-         bool running = false;
+        bool running = false;
     };
 }   // namespace: tvision
 #endif  // __TURBOVISION_TAPPLICATION_H__

@@ -434,7 +434,11 @@ SHOBJS := \
         $(OBJ_DIR)/user32/symbol_table.o                 \
         $(OBJ_DIR)/user32/TurboVision/Application.o      \
         $(OBJ_DIR)/user32/TurboVision/TObject.o          \
-        $(OBJ_DIR)/user32/TurboVision/Hardware.o         \
+        $(OBJ_DIR)/user32/TurboVision/TDesktop.o         \
+        $(OBJ_DIR)/user32/TurboVision/TMenuBar.o         \
+        $(OBJ_DIR)/user32/TurboVision/TStatusBar.o       \
+        $(OBJ_DIR)/user32/TurboVision/THardware.o        \
+        $(OBJ_DIR)/user32/TurboVision/rtc.o              \
         $(OBJ_DIR)/user32/TurboVision/platform/strings.o \
         $(OBJ_DIR)/user32/rtl/rtl_ExitProcess.o          \
         $(OBJ_DIR)/stl/stl_init.o

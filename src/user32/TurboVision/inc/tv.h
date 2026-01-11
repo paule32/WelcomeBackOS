@@ -622,7 +622,7 @@
 # include "config.h"
 
 #if defined( __INC_HARDWARE_H )
-# include "Hardware.h"
+# include "THardware.h"
 #endif
 
 #endif  // __TV_H__
