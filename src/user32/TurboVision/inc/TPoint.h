@@ -18,11 +18,19 @@ namespace tvision {
         TPoint& operator += (const TPoint& adder );
         TPoint& operator -= (const TPoint& subber);
         
-        friend TPoint operator - (const TPoint& one, const TPoint& two);
-        friend TPoint operator + (const TPoint& one, const TPoint& two);
+        TPoint  operator  - (const TPoint& rhs) const;
+        TPoint  operator  + (const TPoint& rhs) const;
+        TPoint  operator  * (const TPoint& rhs) const;
+        TPoint  operator  / (const TPoint& rhs) const;
+        TPoint  operator  ^ (const TPoint& rhs) const;
         
-        friend int operator == (const TPoint& one, const TPoint& two);
-        friend int operator != (const TPoint& one, const TPoint& two);
+        TPoint& operator  = (const TPoint& src);
+        
+        bool    operator  < (const TPoint& rhs) const;
+        bool    operator  > (const TPoint& rhs) const;
+               
+        bool    operator == (const TPoint& rhs) const;
+        bool    operator != (const TPoint& rhs) const;
 
         int x, y;
     };
@@ -40,31 +48,63 @@ namespace tvision {
         
         return *this;
     }
-
-    inline TPoint operator - ( const TPoint& one, const TPoint& two ) {
-        TPoint result;
+    
+    TPoint& TPoint::operator = (const TPoint& src) {
+        if (*this != src) {
+            x = src.x;
+            y = src.y;
+        }
         
-        result.x = one.x - two.x;
-        result.y = one.y - two.y;
-        
-        return result;
+        return *this;
     }
 
-    inline TPoint operator + ( const TPoint& one, const TPoint& two ) {
-        TPoint result;
-        
-        result.x = one.x + two.x;
-        result.y = one.y + two.y;
-        
-        return result;
+    inline TPoint TPoint::operator - (const TPoint& rhs) const {
+        return {
+            x - rhs.x,
+            y - rhs.y
+        };
     }
 
-    inline int operator == ( const TPoint& one, const TPoint& two ) {
-        return one.x == two.x && one.y == two.y;
+    inline TPoint TPoint::operator + (const TPoint& rhs) const {
+        return {
+            x + rhs.x,
+            y + rhs.y
+        };
+    }
+    
+    inline TPoint TPoint::operator * (const TPoint& rhs) const {
+        return {
+            x * rhs.x,
+            y * rhs.y
+        };
     }
 
-    inline int operator!= ( const TPoint& one, const TPoint& two ) {
-        return one.x != two.x || one.y != two.y;
+    inline TPoint TPoint::operator / (const TPoint& rhs) const {
+        return {
+            x / rhs.x,
+            y / rhs.y
+        };
+    }
+    
+    inline TPoint TPoint::operator ^ ( const TPoint& rhs) const {
+        return TPoint {
+            x + (rhs.x * rhs.x),
+            y + (rhs.y * rhs.y)
+        };
+    }
+    
+    inline bool TPoint::operator == (const TPoint& rhs) const {
+        return (
+            x == rhs.x &&
+            y == rhs.y
+        );
+    }
+
+    inline bool TPoint::operator != (const TPoint& rhs) const {
+        return (
+            x != rhs.x ||
+            y != rhs.y
+        );
     }
 
 }   // namespace: std

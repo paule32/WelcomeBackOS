@@ -949,6 +949,9 @@ msgVESA_failSetmode:        db "[VESA] Error: SetMode."    , 0
 
 menuFlag db 4
 
+sel dw 0
+top dw 0
+
 ; Puffer für VBE Mode Info (256 Byte reichen)
 vesa_mode_info:
     times 256 db 0

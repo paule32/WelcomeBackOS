@@ -438,7 +438,9 @@ SHOBJS := \
         $(OBJ_DIR)/user32/TurboVision/TMenuBar.o         \
         $(OBJ_DIR)/user32/TurboVision/TStatusBar.o       \
         $(OBJ_DIR)/user32/TurboVision/THardware.o        \
+        $(OBJ_DIR)/user32/TurboVision/TVideo.o           \
         $(OBJ_DIR)/user32/TurboVision/rtc.o              \
+        $(OBJ_DIR)/user32/TurboVision/util.o             \
         $(OBJ_DIR)/user32/TurboVision/platform/strings.o \
         $(OBJ_DIR)/user32/rtl/rtl_ExitProcess.o          \
         $(OBJ_DIR)/stl/stl_init.o

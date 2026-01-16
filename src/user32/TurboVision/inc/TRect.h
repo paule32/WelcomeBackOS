@@ -24,7 +24,7 @@ namespace tvision {
     #define TVISION_MAX
     template <class T>
     constexpr T max(T a, T b) { return (a < b) ? b : a; }
-    #endif  // TVISION_MIN
+    #endif  // TVISION_MAX
     
     class TRect {
     public:

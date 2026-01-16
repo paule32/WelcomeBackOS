@@ -5,7 +5,9 @@
 // ----------------------------------------------------------------------------
 # include "stdint.h"
 
+# include "TurboVision/inc/TObject.h"
 # include "TurboVision/inc/TApplication.h"
+# include "TurboVision/inc/TPoint.h"
 
 
 #ifdef __00__
@@ -353,9 +355,16 @@ static void app_handle(TApplication *app, TEvent *ev)
 }
 #endif
 
+extern "C" void printformat(const char* fmt, ...); 
 extern "C" void app_run_demo(void)
 {
     using namespace tvision;
+    TPoint pt1, pt2, pt3;
+    
+    pt1.x = 2;
+    pt2.x = 3;
+    pt3   = pt1 ^ pt2;
+    printformat("--> %d\n", pt3.x);
     auto *app = new TApplication();
     app->Init();
     app->run ();
