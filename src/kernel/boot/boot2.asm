@@ -6,6 +6,22 @@
 ; boot2.asm – Minimaler Stage2
 %include LBA_FILE
 
+; -------- VBE get mode info + set mode ----------
+; ES:DI muss auf einen 256-Byte ModeInfoBlock zeigen.
+
+VBE_MODE_640x400x256  equ 0x4100
+VBE_LFB_BIT           equ 0x4000
+
+MODEINFO_SIZE         equ 256
+
+; ModeInfoBlock offsets (VBE 2.0+ relevant)
+MI_ModeAttributes     equ 0x00    ; word
+MI_XResolution        equ 0x12    ; word
+MI_YResolution        equ 0x14    ; word
+MI_BitsPerPixel       equ 0x19    ; byte
+MI_PhysBasePtr        equ 0x28    ; dword
+MI_LinBytesPerScanLn  equ 0x32    ; word (linear bytes per scanline)
+
 %ifndef ISOGUI
     %define ISOGUI 0    ; default text input
 %endif
@@ -577,6 +593,9 @@ on_enter:
     cmp ah, 2
     je enter_vesa_800x600_pm
     
+    cmp ah, 3
+    je c64_start
+    
     jmp main_bootmenu_loop
 
 enter_vesa_800x600_pm:
@@ -606,6 +625,92 @@ enter_vesa_800x600_pm:
     jmp 0x08:pm_entry_kernel_1    ; 0x08 = Code-Segment-Selector
 
 
+c64_start:
+    push ds
+    push es
+
+    ; --- Read mode info (4F01h) into modeinfo ---
+    push cs
+    pop  ds
+;    mov ax, ds
+;    mov es, ax
+    
+    ; 1) Mode-Info holen
+    sti
+    mov ax, 0x4F01   ; VBE-Funktion: Get Mode Info
+    mov cx, VBE_MODE_640x400x256   ; gewünschter Modus: 0x0100
+    xor bx, bx
+    mov es, bx
+    mov di, 0x2000  ; ES -> 0x2000 -> ES:DI = 0000:2000 (phys 0x00002000)
+    int 0x10
+    
+    cmp ax, 0x004F
+    jne __fail
+
+    mov ax, 0x4F02
+    mov bx, VBE_MODE_640x400x256
+    int 0x10
+    
+    cmp ax, 0x004F
+    jne __fail_setmode
+
+    jmp ooo
+    ; Optional: quick sanity checks
+    ; bpp == 8 ?
+    mov al, [es:di + MI_BitsPerPixel]
+    cmp al, 8
+    jne __fail
+
+    ; xres == 640, yres == 400 ?
+    mov ax, [es:di + MI_XResolution]
+    cmp ax, 640
+    jne __fail
+    mov ax, [es:di + MI_YResolution]
+    cmp ax, 400
+    jne __fail
+
+    ; --- Try set mode with LFB ---
+    mov ax, 0x4F02
+    mov bx, VBE_MODE_640x400x256 | VBE_LFB_BIT
+    int 0x10
+    cmp ax, 0x004F
+    je  __ok
+
+    ; fallback banked
+    mov ax, 0x4F02
+    mov bx, VBE_MODE_640x400x256
+    int 0x10
+    cmp ax, 0x004F
+    jne __fail
+    ooo:
+    __ok:
+    pop es
+    pop ds
+    
+    clc
+    
+    ; -------------------------------------------------
+    ; A20 aktivieren
+    ; -------------------------------------------------
+    call enable_a20
+    call check_a20
+    jz a20_failed          ; ZF=1 -> aus
+    
+    cli
+    lgdt [gdt_descriptor]
+    
+    mov eax, cr0
+    or  eax, 1             ; PE-Bit setzen
+    mov cr0, eax
+
+    ; Far Jump in 32-Bit-Code (pm_entry)
+    jmp 0x08:pm_entry_kernel_3    ; 0x08 = Code-Segment-Selector
+
+    __fail:
+    pop es
+    pop ds
+    stc
+    ret
     
 enter_text_pm:
     ; -------------------------------------------------
@@ -811,36 +916,36 @@ set_vesa_mode_800x600:
     int 0x10
     
     cmp ax, 0x004F
-    jne .fail_setmode
+    jne __fail_setmode
     
     mov ax, 0x4F02
     mov bx, 0x4114
     int 0x10
     
     cmp ax, 0x004F
-    jne .fail_setmode
+    jne __fail_setmode
 
     ret
 
-.fail_controller:
+__fail_controller:
     mov si, msgVESA_failController
     call print_string
-    jmp .failVESA
-.fail_modeinfo:
+    jmp __failVESA
+__fail_modeinfo:
     mov si, msgVESA_failModeInfo
     call print_string
-    jmp .failVESA
-.fail_unsupported:
+    jmp __failVESA
+__fail_unsupported:
     mov si, msgVESA_failUnsupported
     call print_string
-    jmp .failVESA
-.fail_setmode:
+    jmp __failVESA
+__fail_setmode:
     ;mov ax, 3
     ;int 0x10
     mov si, msgVESA_failSetmode
     call print_string
     jmp $
-.failVESA:
+__failVESA:
     pop es
     pop ds
     popad
@@ -885,6 +990,20 @@ pm_entry_kernel_2:
     ; entrypoint steht als dword am Anfang des
     ; geladenen kernel.bin (kernel.ld)
     mov eax, [0x00080004]
+    jmp eax
+
+BITS 32
+pm_entry_kernel_3:
+    ; Segmente im Protected Mode setzen
+    mov ax, 0x10          ; Data-Segment-Selector
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov fs, ax
+    mov gs, ax
+
+    mov esp, 0x0009F000   ; irgendein 32-Bit-Stack im oberen Bereich
+    mov eax, [0x00080008]
     jmp eax
 
 ;---------------------------------------------------------

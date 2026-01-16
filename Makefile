@@ -422,7 +422,8 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
         $(OBJ_DIR)/coff/kstl.o \
         \
         $(OBJ_DIR)/coff/roboto12x16.o   \
-        $(OBJ_DIR)/coff/testfont.o
+        $(OBJ_DIR)/coff/testfont.o      \
+        $(OBJ_DIR)/coff/petschii.o
 
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the shell ...

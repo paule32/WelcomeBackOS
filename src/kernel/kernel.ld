@@ -15,6 +15,7 @@ SECTIONS
     .text : {
         LONG(_vid_main);    /* kernel 1 */
         LONG(_txt_main);    /* kernel 2 */
+        LONG(_c64_main);    /* kernel 3 */
 
         __code_start = .;
         *(.text .text.*)

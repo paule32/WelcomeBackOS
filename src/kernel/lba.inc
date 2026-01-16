@@ -2,10 +2,10 @@
 ; DONT CHANGE THIS FILE - all modifieds will be lost.  
 ; -----------------------------------------------------
 TEST_LBA       equ 0
-BOOT2_LBA     equ  583    ; start LBA  BOOT2
+BOOT2_LBA     equ  587    ; start LBA  BOOT2
 BOOT2_SECTORS equ  2    ; 2048 *  2
 ; -----------------------------------------------------
 KERNEL_LBA     equ  552    ; start LBA  KERNEL
-KERNEL_SECTORS equ  27    ; 2048 *  27
+KERNEL_SECTORS equ  31    ; 2048 *  31
 ; -----------------------------------------------------
 VBE_INFO_ADDR   equ 0x0A00
