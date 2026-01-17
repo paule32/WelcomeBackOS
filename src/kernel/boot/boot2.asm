@@ -9,7 +9,8 @@
 ; -------- VBE get mode info + set mode ----------
 ; ES:DI muss auf einen 256-Byte ModeInfoBlock zeigen.
 
-VBE_MODE_640x400x256  equ 0x4100
+VBE_MODE_640x400x256  equ 0x4100    ; 256 color
+VBE_MODE_640x480x256  equ 0x4111    ; 65k color
 VBE_LFB_BIT           equ 0x4000
 
 MODEINFO_SIZE         equ 256
@@ -395,6 +396,19 @@ ui_draw_texte:
     call ui_text_init
     mov bl, 0x1F
     call ui_draw_options_C
+    ;
+    call ui_text_init
+    mov bl, 0x1F
+    call ui_draw_options_D
+    
+    ; spacer line
+    mov di, (10*80 + 14) * 2
+    mov ax, 0x1E00 | '-'
+    mov cx, 52
+    .draw1:
+    stosw
+    loop .draw1
+
     ret
 
 ui_text_init:
@@ -435,7 +449,13 @@ ui_draw_options_B:
 ui_draw_options_C:
     mov  di, (11*80 + 16)*2
     mov  ah, bl
-    mov  si, msgDBASEvesa1024x728
+    mov  si, msgSTARTvesaC64
+    jmp  ui_puts_at
+    ret
+ui_draw_options_D:
+    mov  di, (12*80 + 16)*2
+    mov  ah, bl
+    mov  si, msgSTARTvesaAmiga
     jmp  ui_puts_at
     ret
     
@@ -510,9 +530,6 @@ main_bootmenu_loop:
 on_up:
     call ui_draw_texte
     mov ah, [menuFlag]
-
-    cmp ah, 4
-    je .print_optionB4
     
     cmp ah, 1
     je .print_optionB1
@@ -522,6 +539,28 @@ on_up:
     
     cmp ah, 3
     je .print_optionB3
+    
+    cmp ah, 4
+    je .print_optionB4
+    
+    cmp ah, 5
+    je .print_optionB1
+    
+    jmp main_bootmenu_loop
+    
+    .print_optionB1:
+    .print_optionB5:
+    mov bl, 0x2F
+    call ui_draw_options_D
+    mov ah, 4
+    mov [menuFlag], ah
+    jmp main_bootmenu_loop
+    
+    .print_optionB4:
+    mov bl, 0x2F
+    call ui_draw_options_C
+    mov ah, 3
+    mov [menuFlag], ah
     jmp main_bootmenu_loop
     
     .print_optionB3:
@@ -530,19 +569,11 @@ on_up:
     mov ah, 2
     mov [menuFlag], ah
     jmp main_bootmenu_loop
-    
+
     .print_optionB2:
     mov bl, 0x2F
     call ui_draw_options_A
     mov ah, 1
-    mov [menuFlag], ah
-    jmp main_bootmenu_loop
-
-    .print_optionB4:
-    .print_optionB1:
-    mov bl, 0x2F
-    call ui_draw_options_C
-    mov ah, 3
     mov [menuFlag], ah
     jmp main_bootmenu_loop
     
@@ -550,7 +581,7 @@ on_down:
     call ui_draw_texte
     mov ah, [menuFlag]
     
-    cmp ah, 4
+    cmp ah, 5
     je .print_optionAdown0
     
     cmp ah, 1
@@ -561,10 +592,13 @@ on_down:
     
     cmp ah, 3
     je .print_optionAdown3
+    
+    cmp ah, 4
+    je .print_optionAdown4
     jmp main_bootmenu_loop
     
+    
     .print_optionAdown0:
-    .print_optionAdown3:
     mov bl, 0x2F
     call ui_draw_options_A
     mov ah, 1
@@ -585,6 +619,20 @@ on_down:
     mov [menuFlag], ah
     jmp main_bootmenu_loop
     
+    .print_optionAdown3:
+    mov bl, 0x2F
+    call ui_draw_options_D
+    mov ah, 4
+    mov [menuFlag], ah
+    jmp main_bootmenu_loop
+    
+    .print_optionAdown4:
+    mov bl, 0x2F
+    call ui_draw_options_A
+    mov ah, 1
+    mov [menuFlag], ah
+    jmp main_bootmenu_loop
+    
 on_enter:
     mov ah, [menuFlag]
     cmp ah, 1
@@ -595,6 +643,9 @@ on_enter:
     
     cmp ah, 3
     je c64_start
+    
+    cmp ah, 4
+    je amiga_start
     
     jmp main_bootmenu_loop
 
@@ -625,6 +676,64 @@ enter_vesa_800x600_pm:
     jmp 0x08:pm_entry_kernel_1    ; 0x08 = Code-Segment-Selector
 
 
+amiga_start:
+    push ds
+    push es
+
+    ; --- Read mode info (4F01h) into modeinfo ---
+    push cs
+    pop  ds
+    mov ax, ds
+    mov es, ax
+    
+    ; 1) Mode-Info holen
+    sti
+    mov ax, 0x4F01   ; VBE-Funktion: Get Mode Info
+    mov cx, VBE_MODE_640x480x256   ; gewünschter Modus: 0x0100
+    xor bx, bx
+    mov es, bx
+    mov di, 0x2000  ; ES -> 0x2000 -> ES:DI = 0000:2000 (phys 0x00002000)
+    int 0x10
+    
+    cmp ax, 0x004F
+    jne a__fail
+
+    mov ax, 0x4F02
+    mov bx, VBE_MODE_640x480x256
+    int 0x10
+    
+    cmp ax, 0x004F
+    jne __fail_setmode
+
+    a__ok:
+    pop es
+    pop ds
+    
+    clc
+    
+    ; -------------------------------------------------
+    ; A20 aktivieren
+    ; -------------------------------------------------
+    call enable_a20
+    call check_a20
+    jz a20_failed          ; ZF=1 -> aus
+    
+    cli
+    lgdt [gdt_descriptor]
+    
+    mov eax, cr0
+    or  eax, 1             ; PE-Bit setzen
+    mov cr0, eax
+
+    ; Far Jump in 32-Bit-Code (pm_entry)
+    jmp 0x08:pm_entry_kernel_4    ; 0x08 = Code-Segment-Selector
+
+    a__fail:
+    pop es
+    pop ds
+    stc
+    ret
+
 c64_start:
     push ds
     push es
@@ -632,8 +741,8 @@ c64_start:
     ; --- Read mode info (4F01h) into modeinfo ---
     push cs
     pop  ds
-;    mov ax, ds
-;    mov es, ax
+    mov ax, ds
+    mov es, ax
     
     ; 1) Mode-Info holen
     sti
@@ -671,7 +780,7 @@ c64_start:
 
     ; --- Try set mode with LFB ---
     mov ax, 0x4F02
-    mov bx, VBE_MODE_640x400x256 | VBE_LFB_BIT
+    mov bx, VBE_MODE_640x400x256
     int 0x10
     cmp ax, 0x004F
     je  __ok
@@ -989,7 +1098,7 @@ pm_entry_kernel_2:
     
     ; entrypoint steht als dword am Anfang des
     ; geladenen kernel.bin (kernel.ld)
-    mov eax, [0x00080004]
+    mov eax, [0x00080000 + 4]
     jmp eax
 
 BITS 32
@@ -1003,7 +1112,21 @@ pm_entry_kernel_3:
     mov gs, ax
 
     mov esp, 0x0009F000   ; irgendein 32-Bit-Stack im oberen Bereich
-    mov eax, [0x00080008]
+    mov eax, [0x00080000 + 8]
+    jmp eax
+
+BITS 32
+pm_entry_kernel_4:
+    ; Segmente im Protected Mode setzen
+    mov ax, 0x10          ; Data-Segment-Selector
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov fs, ax
+    mov gs, ax
+
+    mov esp, 0x0009F000   ; irgendein 32-Bit-Stack im oberen Bereich
+    mov eax, [0x00080000 + 12]
     jmp eax
 
 ;---------------------------------------------------------
@@ -1050,7 +1173,9 @@ dap_lba_high    dd 0
 ; ------------------------------------------------------------
 msgDBASEtextmode80x25:  db " Start dBase 2026 Text-Mode 80x25        ... ", 0
 msgDBASEvesa800x600:    db " Start dBase 2026 Graphics-Mode  800x600 ... ", 0
-msgDBASEvesa1024x728:   db " Start dBase 2026 Graphics-Mode 1024x728 ... ", 0
+
+msgSTARTvesaC64:        db " Start Commodore C-64      Simulator     ... ", 0
+msgSTARTvesaAmiga:      db " Start Commodore AMIGA 500 Simulator     ... ", 0
 ; ------------------------------------------------------------
 msgDBASE:               db " -=< dBASE 2026 >=- ",0
 msgDBASEenv:            db " Choose your Favorite Environment ", 0
@@ -1066,7 +1191,7 @@ msgVESA_failModeInfo:       db "[VESA] Error: ModeInfo."   , 0
 msgVESA_failUnsupported:    db "[VESA] Error: Unsupported.", 0
 msgVESA_failSetmode:        db "[VESA] Error: SetMode."    , 0
 
-menuFlag db 4
+menuFlag db 5
 
 sel dw 0
 top dw 0

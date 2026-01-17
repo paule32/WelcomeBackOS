@@ -220,6 +220,91 @@ for (int l = 0; l < 256; l++) {
     }*/
 }
 
+static inline uint16_t rgb565(uint8_t r, uint8_t g, uint8_t b) {
+    return (uint16_t)(((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3));
+}
+
+typedef unsigned int addr_t;   // 32-bit
+
+static inline void fillSpan16(volatile uint16_t *dst, int count, uint16_t color)
+{
+    __asm__ __volatile__ (
+        "cld\n\t"
+        "rep stosw"
+        : "+D"(dst), "+c"(count)
+        : "a"(color)
+        : "memory"
+    );
+}
+
+void fillRect16_fast(int x, int y, int w, int h, uint16_t color565)
+{
+    if (x < 0) { w += x; x = 0; }
+    if (y < 0) { h += y; y = 0; }
+
+    if (x + w > lfb_xres) w = lfb_xres - x;
+    if (y + h > lfb_yres) h = lfb_yres - y;
+    if (w <= 0 || h <= 0) return;
+
+    // lfb_base MUSS eine Adresse sein, keine Pointer-Arithmetik mit falschem Typ
+    addr_t base = (addr_t)lfb_base;      // lfb_base kann int/ptr sein – wir machen eine Zahl draus
+    addr_t off  = (addr_t)(y * lfb_pitch + x * 2);
+
+    volatile uint8_t *row8 = (volatile uint8_t *)(base + off);
+
+    for (int j = 0; j < h; j++) {
+        fillSpan16((volatile uint16_t*)row8, w, color565);
+        row8 += lfb_pitch;              // pitch ist BYTES!
+    }
+}
+extern "C" int ami_main()
+{
+    idt_init();
+ 
+    paging_init();
+    kheap_init();
+
+    //detect_memory();          // setzt max_mem
+    
+    uint32_t stack_top = kernel_stack_top;
+    uint32_t stack_bottom = stack_top - (64*1024);
+
+    uint32_t reserved = ((uint32_t)&__end + 0xFFF) & ~0xFFF;
+    if (reserved < kernel_stack_top) reserved = kernel_stack_top; // Stack schützen
+    page_init(reserved);
+    
+    // 3) aktuellen Stack als esp0 für TSS verwenden
+    uint32_t esp;
+    __asm__ volatile("mov %%esp, %0" : "=r"(esp));
+    gdt_init();
+
+    isr_init();
+    irq_init();
+
+    syscall_init();
+    tasking_init();
+    
+    const vbe_info_t* mi = ((const vbe_info_t*)0x00002000);
+
+    lfb_base  = mi->phys_base;
+    lfb_pitch = mi->pitch; 
+    lfb_bpp   = mi->bpp ;
+    
+    lfb_xres  = mi->xres;
+    lfb_yres  = mi->yres;
+    
+    size_t fb_bytes = (size_t)lfb_pitch * (size_t)lfb_yres;
+
+    // WICHTIG: phys -> virt mappen
+    uintptr_t lfb_virt = (uintptr_t)mmio_map(lfb_base, (uint32_t)fb_bytes);
+
+    // Ab jetzt IMMER die virtuelle Adresse zum Schreiben benutzen!
+    lfb_base = (uint32_t)lfb_virt;
+    
+    
+    fillRect16_fast(0,0,lfb_xres,lfb_yres,rgb565(255,255,255));
+    for (;;);
+}
 // c64 kernel
 extern "C" int c64_main()
 {

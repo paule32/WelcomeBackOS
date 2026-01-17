@@ -160,9 +160,39 @@ void pe32_start_user(const pe_user_image_t* img) {
 void test_app(void)
 {
     pe_user_image_t img;
-    FILE *f = file_open("shell32.exe");
+    FILE *f = file_open("shell/dosshell.exe");
     if (!f) {
-        printformat("shell32.exe could not open.\n");
+        printformat("dos32shell.exe could not open.\n");
+        return;
+    }
+    if (pe32_load(f, &img)) {
+        pe32_start_user(&img);
+        file_close(f);
+        return;
+    }
+}
+
+void load_c64shell(void)
+{
+    pe_user_image_t img;
+    FILE *f = file_open("shell/conshell.exe");
+    if (!f) {
+        printformat("conshell.exe could not open.\n");
+        return;
+    }
+    if (pe32_load(f, &img)) {
+        pe32_start_user(&img);
+        file_close(f);
+        return;
+    }
+}
+
+void load_amishell(void)
+{
+    pe_user_image_t img;
+    FILE *f = file_open("shell/amishell.exe");
+    if (!f) {
+        printformat("amishell.exe could not open.\n");
         return;
     }
     if (pe32_load(f, &img)) {

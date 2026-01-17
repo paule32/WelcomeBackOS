@@ -21,7 +21,11 @@ extern int  gfx_init(void);
 extern "C" void shell_main(void);
 extern "C" void mouse_poll(void);
 extern "C"  int mouse_install(void);
+
 extern     void test_app(void);
+
+extern     void load_c64shell(void);
+extern     void load_amishell(void);
 
 //extern void wm_init(int,int,uint32_t,int);
 
@@ -67,6 +71,16 @@ void ps2_polling_enable(void)
     pic_mask_irq(12);  // Mouse IRQ12
 }
 
+void enter_ami_shell(void)
+{
+    load_amishell();
+    for (;;);
+}
+void enter_c64_shell(void)
+{
+    load_c64shell();
+    for (;;);
+}
 void enter_txt_shell(void)
 {
     printformat("in text shell.\n");
@@ -207,7 +221,13 @@ extern "C" void enter_shell(void)
 {
     if (graph_mode == 1) {
         enter_txt_shell();
-    }   else {
+    }   else
+    if (graph_mode == 2) {
         enter_vid_shell();
+    }   else
+    if (graph_mode == 3) {
+        enter_c64_shell();
+    }   else {
+        enter_ami_shell();
     }
 }

@@ -169,16 +169,22 @@ OBJCOPY  := $(shell command which objcopy)$(EXT)
 # LICENSE in the root directory of this reporsitory.
 # -----------------------------------------------------------------------------
 #.PHONY: confirm
-all: confirm clean setup shell32 $(BIN_DIR)/bootcd.iso
+all: confirm clean setup dosshell $(BIN_DIR)/bootcd.iso
 setup:
-	$(MKDIR) -p $(BUI_DIR) $(BUI_DIR)/bin $(BUI_DIR)/bin/content $(BUI_DIR)/hex
-	$(MKDIR) -p $(BIN_DIR)/content/img $(BUI_DIR)/obj $(BUI_DIR)/obj/pe
-	$(MKDIR) -p $(OBJ_DIR)/user32/TurboVision/platform
-	$(MKDIR) -p $(OBJ_DIR)/user32/TurboVision
-	$(MKDIR) -p $(OBJ_DIR)/user32/rtl
-	$(MKDIR) -p $(OBJ_DIR)/user32/shell32
-	$(MKDIR) -p $(OBJ_DIR)/stl
-	
+	@(	$(MKDIR) -p $(BUI_DIR) $(BUI_DIR)/bin $(BUI_DIR)/bin/content $(BUI_DIR)/hex ;\
+        $(MKDIR) -p $(BIN_DIR)/content/img                  ;\
+        $(MKDIR) -p $(BIN_DIR)/content/img/shell            ;\
+        $(MKDIR) -p $(BUI_DIR)/obj                          ;\
+        $(MKDIR) -p $(BUI_DIR)/obj/pe                       ;\
+        $(MKDIR) -p $(OBJ_DIR)/user32/TurboVision/platform  ;\
+        $(MKDIR) -p $(OBJ_DIR)/user32/TurboVision           ;\
+        $(MKDIR) -p $(OBJ_DIR)/user32/rtl                   ;\
+        $(MKDIR) -p $(OBJ_DIR)/user32/dosshell              ;\
+        $(MKDIR) -p $(OBJ_DIR)/user32/winshell              ;\
+        $(MKDIR) -p $(OBJ_DIR)/user32/conshell              ;\
+        $(MKDIR) -p $(OBJ_DIR)/user32/amishell              ;\
+        $(MKDIR) -p $(OBJ_DIR)/stl                           \
+	)
 	$(COPY) $(IMG_DIR)/*.bmp $(BIN_DIR)/content/img
 	(   cd $(SRC_DIR)/fntres        ;\
         $(SRC_DIR)/fntres/build.sh  ;\
@@ -285,7 +291,11 @@ CFLAGS_CC:= -std=c++20  $(CFLAGS_C) \
             -fno-threadsafe-statics
 
 LDFLAGS  := -nostdlib -T $(COR_DIR)/kernel.ld -Map $(BIN_DIR)/kernel.map
-LDSHFLGS := -nostdlib -T $(U32_DIR)/shell32/shell32.ld -Map $(BIN_DIR)/shell32.map
+
+LDSHFLGS := -nostdlib -T $(U32_DIR)/dosshell/dosshell.ld -Map $(BIN_DIR)/dosshell.map
+LDWHFLGS := -nostdlib -T $(U32_DIR)/winshell/winshell.ld -Map $(BIN_DIR)/winshell.map
+LDCHFLGS := -nostdlib -T $(U32_DIR)/conshell/conshell.ld -Map $(BIN_DIR)/conshell.map
+LDAHFLGS := -nostdlib -T $(U32_DIR)/conshell/amishell.ld -Map $(BIN_DIR)/amishell.map
 
 ASMFLAGS := -f win32 -O2 -DDOS_MODE=32
 ISOGUI   ?= 0
@@ -314,15 +324,15 @@ BIN  := $(BASEDIR)/build/bin
 PART_START_SECTOR   := 2048
 USB_SIZE_MIB        := 64
 
-KERNEL_PASS  := 0
-SHELL32_PASS := 1
-STL32_PASS   := 2
+KERNEL_PASS   := 0
+DOSSHELL_PASS := 1
+STL32_PASS    := 2
 
 # -----------------------------------------------------------------------------
 # source files for the C-kernel ...
 # -----------------------------------------------------------------------------
 SRC_SHELL       :=\
-        $(SRC)/user32/shell32/shell32.cc    \
+        $(SRC)/user32/dosshell/dosshell.cc    \
         $(SRC)/user32/rtl/rtl_ExitProcess.c
 
 RUN_CPO := \
@@ -428,10 +438,10 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of the shell ...
 # -----------------------------------------------------------------------------
-SHOBJS := \
-        $(OBJ_DIR)/user32/shell32/shell32.o              \
-        $(OBJ_DIR)/user32/shell32/no_rtti.o              \
-        $(OBJ_DIR)/user32/shell32/shell32_app.o          \
+DOS32OBJS := \
+        $(OBJ_DIR)/user32/dosshell/dosshell.o            \
+        $(OBJ_DIR)/user32/dosshell/no_rtti.o             \
+        $(OBJ_DIR)/user32/dosshell/dosshell_app.o        \
         $(OBJ_DIR)/user32/symbol_table.o                 \
         $(OBJ_DIR)/user32/TurboVision/Application.o      \
         $(OBJ_DIR)/user32/TurboVision/TObject.o          \
@@ -445,6 +455,28 @@ SHOBJS := \
         $(OBJ_DIR)/user32/TurboVision/platform/strings.o \
         $(OBJ_DIR)/user32/rtl/rtl_ExitProcess.o          \
         $(OBJ_DIR)/stl/stl_init.o
+
+# -----------------------------------------------------------------------------
+# *.o bject files for linkage stage of the C64 simulator ...
+# -----------------------------------------------------------------------------
+WIN32OBJS := \
+        $(OBJ_DIR)/user32/winshell/winshell.o \
+        $(OBJ_DIR)/user32/no_rtti.o           \
+        $(OBJ_DIR)/coff/video.o               \
+        $(OBJ_DIR)/coff/vga.o                 \
+        $(OBJ_DIR)/coff/bitmap.o
+
+# -----------------------------------------------------------------------------
+# *.o bject files for linkage stage of c64 kernel ...
+# -----------------------------------------------------------------------------
+CON32OBJS := \
+        $(OBJ_DIR)/user32/conshell/conshell.o
+
+# -----------------------------------------------------------------------------
+# *.o bject files for linkage stage of c64 kernel ...
+# -----------------------------------------------------------------------------
+AMI32OBJS := \
+        $(OBJ_DIR)/user32/amishell/amishell.o
 
 ISO_FILES  := /boot2.bin /kernel.bin
 LBA        := $(COR_DIR)/lba.inc
@@ -533,58 +565,63 @@ $(BIN_DIR)/content/boot2.bin:  $(COR_DIR)/boot/boot2.asm
 # compile all *.c, *.cc, and *.asm files to *.o bject files ...
 # -----------------------------------------------------------------------------
 define compile_rule
-$(2)/%.s: $(3)/%.c
+$(OBJ_DIR)/$(1)%.s: $(2)/%.c
 	$(MKDIR) -p $(dir $$@) $(DEP_DIR)/coff/$(dir $$*)
 	$(GCC) -m32 $(CFLAGS_C) -MMD -MP \
 		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
 		-S $$< -o $$@
-	@if [ "$(1)" = "$(SHELL32_PASS)" ] || [ "$(1)" = "$(STL32_PASS)" ]; then \
-        $(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$@; \
-	fi
-
-$(2)/%.s: $(3)/%.cc
+	#@if [ "$(1)" = "$(DOSSHELL_PASS)" ] || [ "$(1)" = "$(STL32_PASS)" ]; then \
+    #    $(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$@; \
+	#fi
+    
+$(OBJ_DIR)/$(1)%.s: $(2)/%.cc
 	$(MKDIR) -p $(dir $$@) $(DEP_DIR)/coff/$(dir $$*)
 	$(CPP) -m32 $(CFLAGS_CC) -MMD -MP \
 		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
 		-S $$< -o $$@
-	@if [ "$(1)" = "$(SHELL32_PASS)" ] || [ "$(1)" = "$(STL32_PASS)" ]; then \
-        $(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$@; \
-	fi
+	#@if [ "$(1)" = "$(DOSSHELL_PASS)" ] || [ "$(1)" = "$(STL32_PASS)" ]; then \
+    #    $(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$@; \
+	#fi
 
-$(2)/%.o: $(3)/%.s
+$(OBJ_DIR)/$(1)%.o: $(2)/%.s
 	$(GCC) -m32 $(CFLAGS_C) -c $$< -o $$(patsubst %.s,%.o,$$@)
 
-$(2)/%.o: $(3)/%.asm
+$(OBJ_DIR)/$(1)%.o: $(2)/%.asm
 	$(MKDIR) -p $(dir $$@)
 	nasm $(ASMFLAGS) $$< -o $$@
 endef
 
-$(eval $(call compile_rule,$(KERNEL_PASS),$(OBJ_DIR)/coff,$(COR_DIR)))
-$(eval $(call compile_rule,$(KERNEL_PASS),$(OBJ_DIR)/coff,$(COR_DIR)/fs/iso9660))
-$(eval $(call compile_rule,$(KERNEL_PASS),$(OBJ_DIR)/coff,$(COR_DIR)/video))
+$(eval $(call compile_rule,coff,$(COR_DIR)))
+$(eval $(call compile_rule,coff,$(COR_DIR)/fs/iso9660))
+$(eval $(call compile_rule,coff,$(COR_DIR)/video))
 
 # -----------------------------------------------------------------------------
 # compile rule for program loaders ...
 # -----------------------------------------------------------------------------
-$(eval $(call compile_rule,$(KERNEL_PASS),$(OBJ_DIR)/coff,$(COR_DIR)/loader/elf))
-$(eval $(call compile_rule,$(KERNEL_PASS),$(OBJ_DIR)/coff,$(COR_DIR)/loader/pe))
+$(eval $(call compile_rule,coff,$(COR_DIR)/loader/elf))
+$(eval $(call compile_rule,coff,$(COR_DIR)/loader/pe))
 
-$(eval $(call compile_rule,$(KERNEL_PASS),$(OBJ_DIR)/coff,$(SRC_DIR)/fntres))
+$(eval $(call compile_rule,coff,$(SRC_DIR)/fntres))
 
 # -----------------------------------------------------------------------------
 # static RTL - run time library ...
 # -----------------------------------------------------------------------------
-$(eval $(call compile_rule,$(STL32_PASS),$(OBJ_DIR)/stl,$(SRC_DIR)/stl/src))
+$(eval $(call compile_rule,stl,$(SRC_DIR)/stl/src))
 
 # -----------------------------------------------------------------------------
 # create TurboVision (BORLAND) text user interface ...
 # -----------------------------------------------------------------------------
-$(eval $(call compile_rule,$(SHELL32_PASS),$(OBJ_DIR)/user32/TurboVision,$(SRC_DIR)/user32/TurboVision/src))
-$(eval $(call compile_rule,$(SHELL32_PASS),$(OBJ_DIR)/user32/TurboVision/platform,$(SRC_DIR)/user32/TurboVision/src/platform))
-$(eval $(call compile_rule,$(SHELL32_PASS),$(OBJ_DIR)/user32/rtl,$(SRC_DIR)/user32/rtl))
+$(eval $(call compile_rule,user32/TurboVision,$(SRC_DIR)/user32/TurboVision/src))
+$(eval $(call compile_rule,user32/TurboVision/platform,$(SRC_DIR)/user32/TurboVision/src/platform))
+$(eval $(call compile_rule,user32/rtl,$(SRC_DIR)/user32/rtl))
 
-$(eval $(call compile_rule,$(SHELL32_PASS),$(OBJ_DIR)/user32,$(SRC_DIR)/user32))
-$(eval $(call compile_rule,$(SHELL32_PASS),$(OBJ_DIR)/user32/shell32,$(SRC_DIR)/user32/shell32))
+$(eval $(call compile_rule,user32,$(SRC_DIR)/user32))
+
+$(eval $(call compile_rule,user32/dosshell,$(SRC_DIR)/user32/dosshell))
+$(eval $(call compile_rule,user32/winshell,$(SRC_DIR)/user32/winshell))
+
+$(eval $(call compile_rule,user32/conshell,$(SRC_DIR)/user32/conshell))
+$(eval $(call compile_rule,user32/amishell,$(SRC_DIR)/user32/amishell))
 
 DEPS := $(patsubst $(OBJ_DIR)/coff/%.o,$(DEP_DIR)/coff/%.d,$(OBJS))
 -include $(DEPS)
@@ -602,19 +639,54 @@ $(OBJ_DIR)/kernel.bin:  $(OBJ_DIR)/coff/kernel.o
 # -----------------------------------------------------------------------------
 # create PE32 shell32 application
 # -----------------------------------------------------------------------------
-$(BIN_DIR)/content/shell32.exe: $(SHOBJS) \
-    $(SRC_DIR)/user32/shell32/shell32.ld
-	$(GCC) -m32 -mconsole $(CFLAGS_C) -o $(BIN_DIR)/content/shell32.exe $(SHOBJS)
+$(BIN_DIR)/content/shell/dosshell.exe: $(DOS32OBJS) \
+    $(SRC_DIR)/user32/dosshell/dosshell.ld
+	$(GCC) -m32 -mconsole $(CFLAGS_C) -o $@ $(DOS32OBJS)
 
-shell32:  $(BIN_DIR)/content/shell32.exe
-	strip $(BIN_DIR)/content/shell32.exe
+dosshell: $(BIN_DIR)/content/shell/dosshell.exe
+	strip $(BIN_DIR)/content/shell/dosshell.exe
 	objcopy --remove-section .eh_frame     \
             --remove-section .eh_frame_hdr \
-            --remove-section .gcc_except_table \
-            $(BIN_DIR)/content/shell32.exe \
-            $(BIN_DIR)/content/shell32.exe
-	echo "dodo"
+            --remove-section .gcc_except_table    \
+            $(BIN_DIR)/content/shell/dosshell.exe \
+            $(BIN_DIR)/content/shell/dosshell.exe
+# -----------------------------------------------------------------------------
+$(BIN_DIR)/content/shell/winshell.exe: $(WIN32OBJS) \
+    $(SRC_DIR)/user32/winshell/winshell.ld
+	$(GCC) -m32 -mconsole $(CFLAGS_C) -o $@ $(WIN32OBJS)
 
+winshell: $(BIN_DIR)/content/shell/winshell.exe
+	strip $(BIN_DIR)/content/shell/winshell.exe
+	objcopy --remove-section .eh_frame     \
+            --remove-section .eh_frame_hdr \
+            --remove-section .gcc_except_table    \
+            $(BIN_DIR)/content/shell/winshell.exe \
+            $(BIN_DIR)/content/shell/winshell.exe
+# -----------------------------------------------------------------------------
+$(BIN_DIR)/content/shell/conshell.exe: $(WIN32OBJS) \
+    $(SRC_DIR)/user32/conshell/conshell.ld
+	$(GCC) -m32 -mconsole $(CFLAGS_C) -o $@ $(WIN32OBJS)
+
+conshell: $(BIN_DIR)/content/shell/conshell.exe
+	strip $(BIN_DIR)/content/shell/conshell.exe
+	objcopy --remove-section .eh_frame     \
+            --remove-section .eh_frame_hdr \
+            --remove-section .gcc_except_table    \
+            $(BIN_DIR)/content/shell/conshell.exe \
+            $(BIN_DIR)/content/shell/conshell.exe
+# -----------------------------------------------------------------------------
+$(BIN_DIR)/content/shell/conshell.exe: $(AMI32OBJS) \
+    $(SRC_DIR)/user32/conshell/amishell.ld
+	$(GCC) -m32 -mconsole $(CFLAGS_C) -o $@ $(AMI32OBJS)
+
+amishell: $(BIN_DIR)/content/shell/amishell.exe
+	strip $(BIN_DIR)/content/shell/amishell.exe
+	objcopy --remove-section .eh_frame     \
+            --remove-section .eh_frame_hdr \
+            --remove-section .gcc_except_table    \
+            $(BIN_DIR)/content/shell/amishell.exe \
+            $(BIN_DIR)/content/shell/amishell.exe
+# -----------------------------------------------------------------------------
 $(BIN_DIR)/bootcd.iso: \
     $(BIN_DIR)/content/boot1.bin $(BIN_DIR)/content/boot2.bin \
     $(OBJ_DIR)/coff/int86_blob.o \
@@ -645,6 +717,7 @@ $(HEX_DIR)/unifont.hex:        \
 clean:
 	$(RM)   -rf $(BUI_DIR)/bin
 	$(MKDIR) -p $(BUI_DIR)/bin/content
+	$(MKDIR) -p $(BUI_DIR)/bin/content/shell
 	$(MKDIR) -p $(BUI_DIR)/{obj/coff,obj/elf,obj/inc}
 
 # -----------------------------------------------------------------------------
