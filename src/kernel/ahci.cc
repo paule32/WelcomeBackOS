@@ -109,6 +109,11 @@ typedef struct {
     uint32_t abar;  // physische Adresse der HBA-MMIO-Struktur
 } ahci_controller_t;
 
+extern void fillRect16_fast(int x, int y, int w, int h, uint16_t color565);
+static inline uint16_t rgb565(uint8_t r, uint8_t g, uint8_t b) {
+    return (uint16_t)(((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3));
+}
+
 // statische Puffer (aligned nötig)
 static uint8_t g_clb[1024] __attribute__((aligned(1024)));
 static uint8_t g_fis[256]  __attribute__((aligned(256)));
@@ -469,7 +474,7 @@ int check_ahci(void)
         #endif
         return -1;
     }
-
+/*
     #if (ISOGUI == 0)
         #if (ISOLANG == LANG_ENU)
             printformat("First Byte of LBA 0: 0x%x\n", buf[0]);
@@ -483,5 +488,6 @@ int check_ahci(void)
             gfx_printf("Erstes Byte von LBA 0: 0x%x\n", buf[0]);
         #endif
     #endif
+*/
     return 0;
 }

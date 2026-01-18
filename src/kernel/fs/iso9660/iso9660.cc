@@ -112,8 +112,9 @@ int iso_init(iso_read_sectors_t reader)
 
 extern "C" int iso_mount(void)
 {
-    if (!iso_read_sectors)
-    return -1;
+    if (!iso_read_sectors) {
+        return -1;
+    }
 
     // PVD liegt bei LBA 16
     uint8_t* buf = (uint8_t*)kmalloc(2048);

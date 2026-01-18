@@ -10,7 +10,7 @@
 ; ES:DI muss auf einen 256-Byte ModeInfoBlock zeigen.
 
 VBE_MODE_640x400x256  equ 0x4100    ; 256 color
-VBE_MODE_640x480x256  equ 0x4111    ; 65k color
+VBE_MODE_800x600      equ 0x4114
 VBE_LFB_BIT           equ 0x4000
 
 MODEINFO_SIZE         equ 256
@@ -689,7 +689,7 @@ amiga_start:
     ; 1) Mode-Info holen
     sti
     mov ax, 0x4F01   ; VBE-Funktion: Get Mode Info
-    mov cx, VBE_MODE_640x480x256   ; gewünschter Modus: 0x0100
+    mov cx, VBE_MODE_800x600
     xor bx, bx
     mov es, bx
     mov di, 0x2000  ; ES -> 0x2000 -> ES:DI = 0000:2000 (phys 0x00002000)
@@ -699,7 +699,7 @@ amiga_start:
     jne a__fail
 
     mov ax, 0x4F02
-    mov bx, VBE_MODE_640x480x256
+    mov bx, VBE_MODE_800x600
     int 0x10
     
     cmp ax, 0x004F

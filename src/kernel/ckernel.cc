@@ -226,7 +226,7 @@ static inline uint16_t rgb565(uint8_t r, uint8_t g, uint8_t b) {
 
 typedef unsigned int addr_t;   // 32-bit
 
-static inline void fillSpan16(volatile uint16_t *dst, int count, uint16_t color)
+void fillSpan16(volatile uint16_t *dst, int count, uint16_t color)
 {
     __asm__ __volatile__ (
         "cld\n\t"
@@ -257,13 +257,41 @@ void fillRect16_fast(int x, int y, int w, int h, uint16_t color565)
         row8 += lfb_pitch;              // pitch ist BYTES!
     }
 }
+
+typedef struct {
+    int w, h;
+    uint32_t pitch;     // bytes per row
+    uint16_t* pixels;   // RGB565
+} sprite565_t2;
+
+void check_iso_mount()
+{
+    if (check_atapi() == 0) {
+        // ATAPI (IDE) gefunden
+        printformat("ATAPI: OK.\n");
+        fillRect16_fast(100,10,130,130,rgb565(250,255,0));
+    }   else {
+        printformat("ATAPI: NOK\n");
+        check_ahci();
+    }
+    /*
+    if (iso_mount() != 0) {
+        //printformat("ISO mount Error.\n");
+        
+    }   else {
+        
+        //printformat("ISO mount successfully.\n");
+    }*/
+}
 extern "C" int ami_main()
 {
+    graph_mode = 4;
+    
     idt_init();
  
     paging_init();
     kheap_init();
-
+ 
     //detect_memory();          // setzt max_mem
     
     uint32_t stack_top = kernel_stack_top;
@@ -272,42 +300,42 @@ extern "C" int ami_main()
     uint32_t reserved = ((uint32_t)&__end + 0xFFF) & ~0xFFF;
     if (reserved < kernel_stack_top) reserved = kernel_stack_top; // Stack schützen
     page_init(reserved);
-    
+
     // 3) aktuellen Stack als esp0 für TSS verwenden
     uint32_t esp;
-    __asm__ volatile("mov %%esp, %0" : "=r"(esp));
+    //__asm__ volatile("mov %%esp, %0" : "=r"(esp));
     gdt_init();
-
     isr_init();
     irq_init();
-
+    
     syscall_init();
     tasking_init();
     
-    const vbe_info_t* mi = ((const vbe_info_t*)0x00002000);
-
-    lfb_base  = mi->phys_base;
-    lfb_pitch = mi->pitch; 
-    lfb_bpp   = mi->bpp ;
+    // ------------------------------
+    // vesa 0x114: 800 x 600 x 16bpp
+    // ------------------------------
+    gfx_init();
     
-    lfb_xres  = mi->xres;
-    lfb_yres  = mi->yres;
+    // ------------------------------
+    // global c++ constructor's init.
+    // ------------------------------
+    call_global_ctors();
+    check_iso_mount();
     
-    size_t fb_bytes = (size_t)lfb_pitch * (size_t)lfb_yres;
-
-    // WICHTIG: phys -> virt mappen
-    uintptr_t lfb_virt = (uintptr_t)mmio_map(lfb_base, (uint32_t)fb_bytes);
-
-    // Ab jetzt IMMER die virtuelle Adresse zum Schreiben benutzen!
-    lfb_base = (uint32_t)lfb_virt;
+    __asm__ volatile("sti");
+    enter_usermode();
     
-    
-    fillRect16_fast(0,0,lfb_xres,lfb_yres,rgb565(255,255,255));
-    for (;;);
+    // Hierher kommt man normalerweise nicht mehr zurück
+    for (;;) {
+        asm volatile("hlt");
+    }
+    return 0;
 }
+
 // c64 kernel
 extern "C" int c64_main()
 {
+    graph_mode = 3;
     idt_init();
  
     paging_init();
@@ -401,6 +429,8 @@ extern "C" int txt_main()
 
     settextcolor(14,0);
     
+    check_iso_mount();
+    /*
     if (check_atapi() == 0) {
         // ATAPI (IDE) gefunden
         printformat("ATAPI: OK.\n");
@@ -413,7 +443,7 @@ extern "C" int txt_main()
         printformat("ISO mount Error.\n");
     }   else {
         printformat("ISO mount successfully.\n");
-    }
+    }*/
 
     __asm__ volatile("sti");
     
@@ -492,6 +522,8 @@ extern "C" int vid_main()
     
     settextcolor(14,0);
     
+    check_iso_mount();
+    /*
     if (check_atapi() == 0) {
         // ATAPI (IDE) gefunden
         gfx_printf("ATAPI: OK.\n");
@@ -504,7 +536,7 @@ extern "C" int vid_main()
         gfx_printf("ISO mount Error.\n");
     }   else {
         gfx_printf("ISO mount successfully.\n");
-    }
+    }*/
 
     __asm__ volatile("sti");
     

@@ -71,9 +71,24 @@ void ps2_polling_enable(void)
     pic_mask_irq(12);  // Mouse IRQ12
 }
 
+
+extern "C" bool bmp_show_from_iso_16bpp565(
+    const char* path,
+    uint8_t* lfb,
+    uint32_t pitch,
+    int screen_w, int screen_h,
+    int dst_x, int dst_y);
+
 void enter_ami_shell(void)
 {
-    load_amishell();
+    //load_amishell();
+    
+    int xpos = (lfb_xres - 280) / 2;
+    int ypos = (lfb_yres - 280) / 2;
+    
+    gfx_clear(gfx_rgbColor(255,255,255));
+    bmp_show_from_iso_16bpp565("/img/amigawb.bmp",(uint8_t*)lfb_base,lfb_pitch,lfb_xres,lfb_yres,xpos,ypos);
+    
     for (;;);
 }
 void enter_c64_shell(void)

@@ -171,9 +171,12 @@ OBJCOPY  := $(shell command which objcopy)$(EXT)
 #.PHONY: confirm
 all: confirm clean setup dosshell $(BIN_DIR)/bootcd.iso
 setup:
-	@(	$(MKDIR) -p $(BUI_DIR) $(BUI_DIR)/bin $(BUI_DIR)/bin/content $(BUI_DIR)/hex ;\
+	@(	$(MKDIR) -p $(BUI_DIR)                              ;\
+        $(MKDIR) -p $(BUI_DIR)/hex                          ;\
+        $(MKDIR) -p $(BUI_DIR)/bin                          ;\
+        $(MKDIR) -p $(BUI_DIR)/bin/content                  ;\
         $(MKDIR) -p $(BIN_DIR)/content/img                  ;\
-        $(MKDIR) -p $(BIN_DIR)/content/img/shell            ;\
+        $(MKDIR) -p $(BIN_DIR)/content/shell                ;\
         $(MKDIR) -p $(BUI_DIR)/obj                          ;\
         $(MKDIR) -p $(BUI_DIR)/obj/pe                       ;\
         $(MKDIR) -p $(OBJ_DIR)/user32/TurboVision/platform  ;\

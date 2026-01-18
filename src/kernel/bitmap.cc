@@ -10,9 +10,9 @@
 #define BI_RGB       0
 #define BI_BITFIELDS 3
 
-extern uint32_t file_read (FILE* f, void* buf, uint32_t len);
-extern int      file_seek (FILE* f, uint32_t new_pos);
-extern void     file_close(FILE* f);
+extern uint32_t  file_read (FILE* f, void* buf, uint32_t len);
+extern int       file_seek (FILE* f, uint32_t new_pos);
+extern void      file_close(FILE* f);
 
 # define BI_RGB       0
 # define BI_BITFIELDS 3
@@ -41,11 +41,24 @@ typedef struct __attribute__((packed)) {
     uint32_t biClrImportant;
 } BMP_INFOHDR;
 
+typedef struct __attribute__((packed)) {
+    uint8_t b, g, r, a;       // BMP Palette: B,G,R,0
+} RGBQUAD;
+
 typedef struct {
     int w, h;
     uint32_t pitch;     // bytes per row
     uint16_t* pixels;   // RGB565
 } sprite565_t;
+
+typedef unsigned int addr_t; // 32-bit
+
+static inline uint16_t bgr_to_565(uint8_t b, uint8_t g, uint8_t r) {
+    return (uint16_t)(((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3));
+}
+static inline uint16_t rgb565(uint8_t r, uint8_t g, uint8_t b) {
+    return (uint16_t)(((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3));
+}
 
 static bool read_exact(FILE* f, void* buf, uint32_t len) {
     uint32_t got = file_read(f, buf, len);
