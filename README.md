@@ -2,10 +2,10 @@
 (c) 2025, 2026 Jens Kallup – paule32
 Alle Rechte vorbehalten.
 
-<p>![preview](docs/assets/img/screen001.png)</p>
-<p>![preview](docs/assets/img/screen002.png)</p>
-<p>![preview](docs/assets/img/screen003.png)</p>
-<p>![preview](docs/assets/img/screen004.png)</p>
+![preview](docs/assets/img/screen001.png) <br>
+![preview](docs/assets/img/screen002.png) <br>
+![preview](docs/assets/img/screen003.png) <br>
+![preview](docs/assets/img/screen004.png) <br>
 
 ## Current System Status: 2025-12-14
 
