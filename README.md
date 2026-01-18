@@ -2,7 +2,11 @@
 (c) 2025, 2026 Jens Kallup – paule32
 Alle Rechte vorbehalten.
 
-![preview](docs/assets/img/dbase_tui.png)
+<p>![preview](docs/assets/img/screen001.png)</p>
+<p>![preview](docs/assets/img/screen002.png)</p>
+<p>![preview](docs/assets/img/screen003.png)</p>
+<p>![preview](docs/assets/img/screen004.png)</p>
+
 ## Current System Status: 2025-12-14
 
 ## 1️ Bootprozess: Stage 1 & Stage 2 erfolgreich implementiert
