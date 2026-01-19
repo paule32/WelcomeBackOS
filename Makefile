@@ -443,8 +443,8 @@ OBJS := $(OBJ_DIR)/coff/ckernel.o        \
 # -----------------------------------------------------------------------------
 DOS32OBJS := \
         $(OBJ_DIR)/user32/dosshell/dosshell.o            \
-        $(OBJ_DIR)/user32/dosshell/no_rtti.o             \
         $(OBJ_DIR)/user32/dosshell/dosshell_app.o        \
+        $(OBJ_DIR)/user32/no_rtti.o                      \
         $(OBJ_DIR)/user32/symbol_table.o                 \
         $(OBJ_DIR)/user32/TurboVision/Application.o      \
         $(OBJ_DIR)/user32/TurboVision/TObject.o          \

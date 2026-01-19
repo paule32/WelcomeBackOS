@@ -7,6 +7,7 @@
 #define __KSYMBOL_TABLE_H__
 
 # include "stdint.h"
+# include "iso9660.h"
 
 # define DESKTOP
 # include "vga.h"
