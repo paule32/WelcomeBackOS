@@ -169,7 +169,7 @@ OBJCOPY  := $(shell command which objcopy)$(EXT)
 # LICENSE in the root directory of this reporsitory.
 # -----------------------------------------------------------------------------
 #.PHONY: confirm
-all: confirm clean setup dosshell $(BIN_DIR)/bootcd.iso
+all: confirm clean setup dosshell winshell $(BIN_DIR)/bootcd.iso
 setup:
 	@(	$(MKDIR) -p $(BUI_DIR)                              ;\
         $(MKDIR) -p $(BUI_DIR)/hex                          ;\
@@ -467,7 +467,10 @@ WIN32OBJS := \
         $(OBJ_DIR)/user32/no_rtti.o           \
         $(OBJ_DIR)/coff/video.o               \
         $(OBJ_DIR)/coff/vga.o                 \
-        $(OBJ_DIR)/coff/bitmap.o
+        $(OBJ_DIR)/coff/math.o                \
+        $(OBJ_DIR)/coff/bitmap.o              \
+        $(OBJ_DIR)/user32/symbol_table.o      \
+        $(OBJ_DIR)/coff/roboto12x16.o
 
 # -----------------------------------------------------------------------------
 # *.o bject files for linkage stage of c64 kernel ...
@@ -481,9 +484,9 @@ CON32OBJS := \
 AMI32OBJS := \
         $(OBJ_DIR)/user32/amishell/amishell.o
 
-ISO_FILES  := /boot2.bin /kernel.bin
-LBA        := $(COR_DIR)/lba.inc
-ISO        := $(BIN_DIR)/bootcd.iso
+ISO_FILES := /boot2.bin /kernel.bin
+LBA       := $(COR_DIR)/lba.inc
+ISO       := $(BIN_DIR)/bootcd.iso
 
 # -----------------------------------------------------------------------------
 # Ziel-Datei mit den extrahierten Infos
@@ -573,18 +576,18 @@ $(OBJ_DIR)/$(1)%.s: $(2)/%.c
 	$(GCC) -m32 $(CFLAGS_C) -MMD -MP \
 		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
 		-S $$< -o $$@
-	#@if [ "$(1)" = "$(DOSSHELL_PASS)" ] || [ "$(1)" = "$(STL32_PASS)" ]; then \
-    #    $(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$@; \
-	#fi
+	@if [ "$(1)" = "$(DOSSHELL_PASS)" ] || [ "$(1)" = "$(STL32_PASS)" ]; then \
+        $(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$@; \
+	fi
     
 $(OBJ_DIR)/$(1)%.s: $(2)/%.cc
 	$(MKDIR) -p $(dir $$@) $(DEP_DIR)/coff/$(dir $$*)
 	$(CPP) -m32 $(CFLAGS_CC) -MMD -MP \
 		-MF $(DEP_DIR)/coff/$$*.d -MT $$@ \
 		-S $$< -o $$@
-	#@if [ "$(1)" = "$(DOSSHELL_PASS)" ] || [ "$(1)" = "$(STL32_PASS)" ]; then \
-    #    $(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$@; \
-	#fi
+	@if [ "$(1)" = "$(DOSSHELL_PASS)" ] || [ "$(1)" = "$(STL32_PASS)" ]; then \
+        $(SED) -i "/^[[:space:]]*\.ident[[:space:]]*\"GCC:/d" $$@; \
+	fi
 
 $(OBJ_DIR)/$(1)%.o: $(2)/%.s
 	$(GCC) -m32 $(CFLAGS_C) -c $$< -o $$(patsubst %.s,%.o,$$@)

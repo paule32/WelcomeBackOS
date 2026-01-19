@@ -9,6 +9,7 @@
 # include "stdarg.h"
 # include "memory.h"
 
+# include "iso9660.h"
 # include "ksymbol_table.h"
 
 kernel_symbol_t *kernel_symbols       = nullptr;
@@ -49,6 +50,11 @@ const kernel_symbol_t* ksym_find_sig(kernel_sig_t sig)
 __imp__kmalloc__uint32_t  __imp__kmalloc__uint32 = nullptr;
 __imp__kfree__void_ptr_t  __imp__kfree__void_ptr = nullptr;
 
+__imp__kmemsetw__ushort_ptr_ushort_int_t __imp__kmemsetw__ushort_ptr_ushort_int = nullptr;
+__imp__kmemcpy__void_ptr_cvoid_ptr_int_t __imp__kmemcpy__void_ptr_cvoid_ptr_int = nullptr;
+
+__imp__mmio_map__int_int_t __imp__mmio_map__int_int = nullptr;
+
 // ----------------------------------------------------------------------------
 // text screen Variablen (Funktionszeiger)
 // ----------------------------------------------------------------------------
@@ -56,6 +62,19 @@ __imp__printformat__cchar_ptr_any_t   __imp__printformat__cchar_ptr_any = nullpt
 
 __imp__clear_screen__uc_uc_t          __imp__clear_screen__uc_uc = nullptr;
 __imp__setTextColor__uc_uc_t          __imp__setTextColor__uc_uc = nullptr;
+
+// ----------------------------------------------------------------------------
+// string convertion function types
+// ----------------------------------------------------------------------------
+__imp__kitoa__int_char_t        __imp__kitoa__int_char    = nullptr;
+__imp__ki2hex__uint_char_int_t  __imp__ki2hex__uint_char_int = nullptr;
+
+// ----------------------------------------------------------------------------
+// file operation function's typs ...
+// ----------------------------------------------------------------------------
+__imp__file_open__cchar_t                 __imp__file_open__cchar                = nullptr;
+__imp__file_read__fileptr_void_ptr_int_t  __imp__file_read__fileptr_void_ptr_int = nullptr;
+__imp__file_close__fileptr_t              __imp__file_close__fileptr             = nullptr;
 
 // ----------------------------------------------------------------------------
 // graphics variables ...
@@ -84,12 +103,28 @@ void kernel_symbols_init(void)
     
     IMPORT_SYM( KSIG_KMALLOC__UINT32, kmalloc__uint32);
     IMPORT_SYM( KSIG_KFREE__VOID_PTR, kfree__void_ptr);
+    IMPORT_SYM( KSIG_KMEMSETW__USHORT_PTR_USHORT_INT, kmemsetw__ushort_ptr_ushort_int);
+    IMPORT_SYM( KSIG_KMEMCPY__VOID_PTR_CVOID_PTR_INT, kmemcpy__void_ptr_cvoid_ptr_int);
     
+    IMPORT_SYM( KSIG_MMIO_MAP__INT_INT, mmio_map__int_int);
     IMPORT_SYM( KSIG_PRINTFORMAT__CCHAR_PTR_ANY, printformat__cchar_ptr_any );
     
     IMPORT_SYM( KSIG_CLEARSCREEN__VOID , clear_screen__uc_uc );
     IMPORT_SYM( KSIG_SETTEXTCOLOR_UC_UC, setTextColor__uc_uc );
 
+    // ---------------------------------------------------------
+    // string convertion functions ...
+    // ---------------------------------------------------------
+    IMPORT_SYM( KSIG_KITOA__INT_CHAR, kitoa__int_char);
+    IMPORT_SYM( KSIG_KI2HEX__UINT_CHAR_INT, ki2hex__uint_char_int);
+    
+    // ---------------------------------------------------------
+    // file operation function's ...
+    // ---------------------------------------------------------
+    IMPORT_SYM( KSIG_FILEOPEN__CCHAR   , file_open__cchar );
+    IMPORT_SYM( KSIG_FILECLOSE__FILEPTR, file_close__fileptr );
+    IMPORT_SYM( KSIG_FILEREAD__FILEPTR_VOID_PTR_INT, file_read__fileptr_void_ptr_int);
+    
     // ---------------------------------------------------------
     // graphics: gfx_drawCicle
     // ---------------------------------------------------------
@@ -118,9 +153,9 @@ void kernel_symbols_init(void)
 // ----------------------------------------------------------------------------
 // standard functions for common usage:
 // ----------------------------------------------------------------------------
-void* malloc(uint32_t count) {
+void* malloc(uint32_t size) {
     if (__imp__kmalloc__uint32 != nullptr) {    // todo !
-       return (__imp__kmalloc__uint32)(count);
+       return (__imp__kmalloc__uint32)(size);
     }  return nullptr;
 }
 
@@ -128,6 +163,27 @@ void free(void* ptr) {
     if (__imp__kfree__void_ptr != nullptr) {
        (__imp__kfree__void_ptr)(ptr);
     }
+}
+
+extern "C" USHORT* kmemsetw(USHORT* dest, USHORT val, size_t count) {
+    if (__imp__kmemsetw__ushort_ptr_ushort_int != nullptr) {
+        return (__imp__kmemsetw__ushort_ptr_ushort_int)(dest, val, count);
+    }   return nullptr;
+}
+
+void* mmio_map(uint32_t phys, uint32_t size) {
+    if (__imp__mmio_map__int_int != nullptr) {
+        return (__imp__mmio_map__int_int)(phys, size);
+    }   return nullptr;
+}
+
+extern "C" void  kfree(void* ptr) { free(ptr); }
+extern "C" void* kmalloc(uint32_t size) { return malloc(size); }
+
+extern "C" void* kmemcpy(void* dst, const void* src, uint32_t n) {
+    if (__imp__kmemcpy__void_ptr_cvoid_ptr_int != nullptr) {
+        return (__imp__kmemcpy__void_ptr_cvoid_ptr_int)(dst, src, n);
+    }   return nullptr;
 }
 
 void clear_screen(unsigned char fg, unsigned char bg) {
@@ -150,5 +206,37 @@ void printformat(const char* fmt, ...)
         va_start(ap, fmt);
         (__imp__printformat__cchar_ptr_any)(fmt, ap);
         va_end(ap);
+    }
+}
+
+FILE* file_open(const char *path) {
+    if (__imp__file_open__cchar != nullptr) {
+        return (__imp__file_open__cchar)(path);
+    }   return nullptr;
+}
+void file_close(FILE* fd)
+{
+    if (__imp__file_close__fileptr != nullptr) {
+       (__imp__file_close__fileptr)(fd);
+    }
+}
+
+extern "C" uint32_t file_read(FILE* fd, void* buf, uint32_t len)
+{
+    if (__imp__file_read__fileptr_void_ptr_int != nullptr) {
+        return (__imp__file_read__fileptr_void_ptr_int)(fd, buf, len);
+    }   return 0;
+}
+
+
+extern "C" void kitoa(int value, char* valuestring) {
+    if (__imp__kitoa__int_char != nullptr) {
+       (__imp__kitoa__int_char)(value, valuestring);
+    }
+}
+
+extern "C" void ki2hex(UINT val, char* dest, int len) {
+    if (__imp__ki2hex__uint_char_int != nullptr) {
+       (__imp__ki2hex__uint_char_int)(val, dest, len);
     }
 }

@@ -17,6 +17,9 @@ typedef enum {
     // ---------------------------------------------------------
     KSIG_KMALLOC__UINT32,
     KSIG_KFREE__VOID_PTR,
+    KSIG_KMEMSETW__USHORT_PTR_USHORT_INT,
+    KSIG_KMEMCPY__VOID_PTR_CVOID_PTR_INT,
+    KSIG_MMIO_MAP__INT_INT,
     
     // ---------------------------------------------------------
     // text console
@@ -25,6 +28,19 @@ typedef enum {
 
     KSIG_CLEARSCREEN__VOID,
     KSIG_SETTEXTCOLOR_UC_UC,
+    
+    // ---------------------------------------------------------
+    // string convertation functions
+    // ---------------------------------------------------------
+    KSIG_KITOA__INT_CHAR,
+    KSIG_KI2HEX__UINT_CHAR_INT,
+    
+    // ---------------------------------------------------------
+    // file operation functions
+    // ---------------------------------------------------------
+    KSIG_FILEOPEN__CCHAR,
+    KSIG_FILEREAD__FILEPTR_VOID_PTR_INT,
+    KSIG_FILECLOSE__FILEPTR,
     
     // ---------------------------------------------------------
     // graphics: gfx_drawCicle
@@ -85,9 +101,27 @@ extern uint32_t         kernel_symbols_count;
 typedef void* (*__imp__kmalloc__uint32_t            )(uint32_t);
 typedef void  (*__imp__kfree__void_ptr_t            )(void*);
 
+typedef USHORT* (*__imp__kmemsetw__ushort_ptr_ushort_int_t)(USHORT*,USHORT,int);
+typedef void*   (*__imp__kmemcpy__void_ptr_cvoid_ptr_int_t)(void*,const void*,int);
+typedef void*   (*__imp__mmio_map__int_int_t)(uint32_t, uint32_t);
+
 typedef int   (*__imp__printformat__cchar_ptr_any_t )(const char* fmt, ...);
 typedef void  (*__imp__clear_screen__uc_uc_t        )(unsigned char, unsigned char);
 typedef void  (*__imp__setTextColor__uc_uc_t        )(unsigned char, unsigned char);
+
+// ----------------------------------------------------------------------------
+// string convertion function types ...
+// ----------------------------------------------------------------------------
+typedef void  (*__imp__kitoa__int_char_t )(int, char*);
+typedef void  (*__imp__ki2hex__uint_char_int_t )(UINT, char*, int);
+
+// ----------------------------------------------------------------------------
+// file operation types ...
+// ----------------------------------------------------------------------------
+typedef FILE*    (*__imp__file_open__cchar_t )(const char*);
+typedef uint32_t (*__imp__file_read__fileptr_void_ptr_int_t)(FILE*,void*,int);
+typedef void     (*__imp__file_close__fileptr_t)(FILE*);
+
 // ----------------------------------------------------------------------------
 // graphics types ...
 // ----------------------------------------------------------------------------
@@ -109,10 +143,25 @@ typedef void  (*__imp__gfx_rectFill__TRect_ref_TColor_t                      )(T
 // ----------------------------------------------------------------------------
 // memory Variablen (Funktionszeiger)
 // ----------------------------------------------------------------------------
-extern __imp__kmalloc__uint32_t        __imp__kmalloc__uint32;
-extern __imp__kfree__void_ptr_t        __imp__kfree__void_ptr;
+extern __imp__kmalloc__uint32_t                 __imp__kmalloc__uint32;
+extern __imp__kfree__void_ptr_t                 __imp__kfree__void_ptr;
+extern __imp__kmemcpy__void_ptr_cvoid_ptr_int_t __imp__kmemcpy__void_ptr_cvoid_ptr_int;
+extern __imp__mmio_map__int_int_t               __imp__mmio_map__int_int;
 
-extern __imp__printformat__cchar_ptr_any_t     __imp__printformat__cchar_ptr_any;
+extern __imp__printformat__cchar_ptr_any_t      __imp__printformat__cchar_ptr_any;
+
+// ----------------------------------------------------------------------------
+// string convertion function types ...
+// ----------------------------------------------------------------------------
+extern __imp__kitoa__int_char_t       __imp__kitoa__int_char;
+extern __imp__ki2hex__uint_char_int_t __imp__k2hex__uint_char_int;
+
+// ----------------------------------------------------------------------------
+// file operation function types ...
+// ----------------------------------------------------------------------------
+extern __imp__file_open__cchar_t                    __imp__file_open__cchar;
+extern __imp__file_read__fileptr_void_ptr_int_t     __imp__file_read__fileptr_void_ptr_int;
+extern __imp__file_close__fileptr_t                 __imp__file_close__fileptr;
 
 // ----------------------------------------------------------------------------
 // text screen Variablen (Funktionszeiger)

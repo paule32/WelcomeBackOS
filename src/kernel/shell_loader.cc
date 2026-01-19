@@ -100,12 +100,12 @@ void enter_txt_shell(void)
 {
     printformat("in text shell.\n");
     test_app();
-    /*
-    FILE *user_file = file_open("/shell32.exe");
+
+    FILE *user_file = file_open("/shell/dosshell.exe");
     if (!user_file) {
-        printformat("shell32.exe: not found.\n");
+        printformat("dosshell.exe: not found.\n");
         return;
-    }*/
+    }
     
     /*if (!elf32_load_nomap(user_file, 2, nullptr)) {
         file_close(user_file);
