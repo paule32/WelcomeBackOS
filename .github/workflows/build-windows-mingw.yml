@@ -164,139 +164,139 @@ jobs:
                   ISO:   ${{ env.ISO_PATH }}
                   Run:   https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-            - name: Send IRC notification (NickServ)
-              shell: pwsh
-              env:
-                IRC_SERVER: irc.eu.libera.chat
-                IRC_PORT: "6667"
-                IRC_NICK: dBaseBot
-                IRC_USER: dBaseBot
-                IRC_PASS: ${{ secrets.IRC_PASS }}
-                
-                IRC_CHAN_DE: "#dBase.de"
-                IRC_CHAN_EN: "#dBase"
-              run: |
-                $server = $env:IRC_SERVER
-                $port   = [int]$env:IRC_PORT
-                $nick   = $env:IRC_NICK
-                $user   = $env:IRC_USER
-                $pass   = $env:IRC_PASS
-                
-                if([string]::IsNullOrWhiteSpace($pass)) {
-                    throw "IRC_PASS fehlt (GitHub Secret)!"
-                }
-                
-                $chanDE = $env:IRC_CHAN_DE
-                $chanEN = $env:IRC_CHAN_EN
-                
-                # Europe/Berlin Zeitstempel: yyyy-mm-dd_HH:mm
-                $tz     = [System.TimeZoneInfo]::FindSystemTimeZoneById("W. Europe Standard Time")
-                $berlin = [System.TimeZoneInfo]::ConvertTimeFromUtc([DateTime]::UtcNow, $tz)
-                
-                $stamp  = "v{0:yyyy-MM-dd_HH:mm}" -f $berlin
-                $url    = "https://github.com/paule32/WelcomeBackOS"
-                
-                $msgDE = "✅ Neues Release erfolgreich erstellt, und veröffentlicht: $stamp - $url"
-                $msgEN = "✅ New Release created, and published successfully: $stamp - $url"
-                
-                $client = [System.Net.Sockets.TcpClient]::new()
-                $client.Connect($server, $port)
-                $stream = $client.GetStream()
-                $reader = [System.IO.StreamReader]::new($stream)
-                $writer = [System.IO.StreamWriter]::new($stream)
-                $writer.NewLine = "`r`n"
-                $writer.AutoFlush = $true
-                
-                function Send-Line([string]$s) {
-                    Write-Host "IRC > $s"
-                    $writer.WriteLine($s)
-                }
-                
-                Send-Line "NICK $nick"
-                Send-Line "USER $user 0 * :GitHub Release Bot"
-                
-                $identified = $false
-                $joinedDE   = $false
-                $joinedEN   = $false
-                
-                $deadline   = (Get-Date).AddSeconds(45)
-                
-                while ((Get-Date) -lt $deadline) {
-                    if (-not $stream.DataAvailable) {
-                        Start-Sleep -Milliseconds 120
-                        continue
-                    }
-                    
-                    $line = $reader.ReadLine()
-                    if ($null -eq $line) { break }
-                    Write-Host "IRC < $line"
-                    
-                    # PING/PONG
-                    if ($line -match '^PING :(.*)$') {
-                        Send-Line "PONG :$($Matches[1])"
-                        continue
-                    }
-                    
-                    # Welcome -> jetzt NickServ IDENTIFY
-                    if ($line -match " 001 $nick " -and -not $identified) {
-                        Send-Line "PRIVMSG NickServ :IDENTIFY $pass"
-                        continue
-                    }
-                    
-                    # Viele Services melden so etwas (Text variiert je nach Network)
-                    if ($line -match '(identified|You are now identified|SASL authentication successful|now recognized)') {
-                        $identified = $true
-                        Send-Line "JOIN $chanDE"
-                        Send-Line "JOIN $chanEN"
-                        continue
-                    }
-                    
-                    if (-not $identified -and $line -match '(identified|You are now identified|now recognized|SASL authentication successful)') {
-                        $identified = $true
-                        Send-Line "JOIN $chanDE"
-                        Send-Line "JOIN $chanEN"
-                        continue
-                    }
-                    
-                    # Fallback: manche Netze bestätigen Identify nicht eindeutig -> nach kurzer Zeit trotzdem joinen
-                    if(-not $identified -and (Get-Date) -gt $deadline.AddSeconds(-30)){
-                        $identified = $true
-                        Send-Line "JOIN $chanDE"
-                        Send-Line "JOIN $chanEN"
-                    }
-                    
-                    if ($line -match "JOIN :?$([regex]::Escape($chanDE))") { $joinedDE = $true }
-                    if ($line -match "JOIN :?$([regex]::Escape($chanEN))") { $joinedEN = $true }
-                    
-                    # JOIN bestätigt -> dann Nachricht senden
-                    # Sobald wir (mind.) den jeweiligen Join haben, senden wir die passende Sprache
-                    if ($joinedDE -and $msgDE) {
-                        Send-Line "PRIVMSG $chanDE :$msgDE"
-                        $msgDE = $null
-                    }
-                    if ($joinedEN -and $msgEN) {
-                        Send-Line "PRIVMSG $chanEN :$msgEN"
-                        $msgEN = $null
-                    }
-                    
-                    # Harte Fehler sichtbar machen
-                    if ($line -match " 4\d\d " -or $line -match " 5\d\d ") {
-                        throw "IRC Fehler: $line"
-                    }
-                    
-                    # Wenn wir schon länger warten und keine Identify-Bestätigung kommt:
-                    if (-not $identified -and (Get-Date) -gt $deadline.AddSeconds(-20)) {
-                        # Versuch: trotzdem JOIN (manche Netze bestätigen Identify nicht klar)
-                        $identified = $true
-                        Send-Line "JOIN $chanDE"
-                    }
-                    
-                    if(($joinedDE  -or [string]::IsNullOrEmpty($env:IRC_CHAN_DE)) -and
-                        ($joinedEN -or [string]::IsNullOrEmpty($env:IRC_CHAN_EN)) -and
-                        ($null -eq $msgDE) -and ($null -eq $msgEN)){
-                        break
-                    }
-                }
-                
-                Send-Line "QUIT :bye"
-                $reader.Dispose(); $writer.Dispose(); $stream.Dispose(); $client.Close()
+            #- name: Send IRC notification (NickServ)
+            #  shell: pwsh
+            #  env:
+            #    IRC_SERVER: irc.eu.libera.chat
+            #    IRC_PORT: "6667"
+            #    IRC_NICK: dBaseBot
+            #    IRC_USER: dBaseBot
+            #    IRC_PASS: ${{ secrets.IRC_PASS }}
+            #    
+            #    IRC_CHAN_DE: "#dBase.de"
+            #    IRC_CHAN_EN: "#dBase"
+            #  run: |
+            #    $server = $env:IRC_SERVER
+            #    $port   = [int]$env:IRC_PORT
+            #    $nick   = $env:IRC_NICK
+            #    $user   = $env:IRC_USER
+            #    $pass   = $env:IRC_PASS
+            #    
+            #    if([string]::IsNullOrWhiteSpace($pass)) {
+            #        throw "IRC_PASS fehlt (GitHub Secret)!"
+            #    }
+            #    
+            #    $chanDE = $env:IRC_CHAN_DE
+            #    $chanEN = $env:IRC_CHAN_EN
+            #    
+            #    # Europe/Berlin Zeitstempel: yyyy-mm-dd_HH:mm
+            #    $tz     = [System.TimeZoneInfo]::FindSystemTimeZoneById("W. Europe Standard Time")
+            #    $berlin = [System.TimeZoneInfo]::ConvertTimeFromUtc([DateTime]::UtcNow, $tz)
+            #    
+            #    $stamp  = "v{0:yyyy-MM-dd_HH:mm}" -f $berlin
+            #    $url    = "https://github.com/paule32/WelcomeBackOS"
+            #    
+            #    $msgDE = "✅ Neues Release erfolgreich erstellt, und veröffentlicht: $stamp - $url"
+            #    $msgEN = "✅ New Release created, and published successfully: $stamp - $url"
+            #    
+            #    $client = [System.Net.Sockets.TcpClient]::new()
+            #    $client.Connect($server, $port)
+            #    $stream = $client.GetStream()
+            #    $reader = [System.IO.StreamReader]::new($stream)
+            #    $writer = [System.IO.StreamWriter]::new($stream)
+            #    $writer.NewLine = "`r`n"
+            #    $writer.AutoFlush = $true
+            #    
+            #    function Send-Line([string]$s) {
+            #        Write-Host "IRC > $s"
+            #        $writer.WriteLine($s)
+            #    }
+            #    
+            #    Send-Line "NICK $nick"
+            #    Send-Line "USER $user 0 * :GitHub Release Bot"
+            #    
+            #    $identified = $false
+            #    $joinedDE   = $false
+            #    $joinedEN   = $false
+            #    
+            #    $deadline   = (Get-Date).AddSeconds(45)
+            #    
+            #    while ((Get-Date) -lt $deadline) {
+            #        if (-not $stream.DataAvailable) {
+            #            Start-Sleep -Milliseconds 120
+            #            continue
+            #        }
+            #        
+            #        $line = $reader.ReadLine()
+            #        if ($null -eq $line) { break }
+            #        Write-Host "IRC < $line"
+            #        
+            #        # PING/PONG
+            #        if ($line -match '^PING :(.*)$') {
+            #            Send-Line "PONG :$($Matches[1])"
+            #            continue
+            #        }
+            #        
+            #        # Welcome -> jetzt NickServ IDENTIFY
+            #        if ($line -match " 001 $nick " -and -not $identified) {
+            #            Send-Line "PRIVMSG NickServ :IDENTIFY $pass"
+            #            continue
+            #        }
+            #        
+            #        # Viele Services melden so etwas (Text variiert je nach Network)
+            #        if ($line -match '(identified|You are now identified|SASL authentication successful|now recognized)') {
+            #            $identified = $true
+            #            Send-Line "JOIN $chanDE"
+            #            Send-Line "JOIN $chanEN"
+            #            continue
+            #        }
+            #        
+            #        if (-not $identified -and $line -match '(identified|You are now identified|now recognized|SASL authentication successful)') {
+            #            $identified = $true
+            #            Send-Line "JOIN $chanDE"
+            #            Send-Line "JOIN $chanEN"
+            #            continue
+            #        }
+            #        
+            #        # Fallback: manche Netze bestätigen Identify nicht eindeutig -> nach kurzer Zeit trotzdem joinen
+            #        if(-not $identified -and (Get-Date) -gt $deadline.AddSeconds(-30)){
+            #            $identified = $true
+            #            Send-Line "JOIN $chanDE"
+            #            Send-Line "JOIN $chanEN"
+            #        }
+            #        
+            #        if ($line -match "JOIN :?$([regex]::Escape($chanDE))") { $joinedDE = $true }
+            #        if ($line -match "JOIN :?$([regex]::Escape($chanEN))") { $joinedEN = $true }
+            #        
+            #        # JOIN bestätigt -> dann Nachricht senden
+            #        # Sobald wir (mind.) den jeweiligen Join haben, senden wir die passende Sprache
+            #        if ($joinedDE -and $msgDE) {
+            #            Send-Line "PRIVMSG $chanDE :$msgDE"
+            #            $msgDE = $null
+            #        }
+            #        if ($joinedEN -and $msgEN) {
+            #            Send-Line "PRIVMSG $chanEN :$msgEN"
+            #            $msgEN = $null
+            #        }
+            #        
+            #        # Harte Fehler sichtbar machen
+            #        if ($line -match " 4\d\d " -or $line -match " 5\d\d ") {
+            #            throw "IRC Fehler: $line"
+            #        }
+            #        
+            #        # Wenn wir schon länger warten und keine Identify-Bestätigung kommt:
+            #        if (-not $identified -and (Get-Date) -gt $deadline.AddSeconds(-20)) {
+            #            # Versuch: trotzdem JOIN (manche Netze bestätigen Identify nicht klar)
+            #            $identified = $true
+            #            Send-Line "JOIN $chanDE"
+            #        }
+            #        
+            #        if(($joinedDE  -or [string]::IsNullOrEmpty($env:IRC_CHAN_DE)) -and
+            #            ($joinedEN -or [string]::IsNullOrEmpty($env:IRC_CHAN_EN)) -and
+            #            ($null -eq $msgDE) -and ($null -eq $msgEN)){
+            #            break
+            #        }
+            #    }
+            #    
+            #    Send-Line "QUIT :bye"
+            #    $reader.Dispose(); $writer.Dispose(); $stream.Dispose(); $client.Close()
