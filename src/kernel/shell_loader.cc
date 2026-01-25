@@ -22,8 +22,7 @@ extern "C" void shell_main(void);
 extern "C" void mouse_poll(void);
 extern "C"  int mouse_install(void);
 
-extern     void test_app(void);
-
+extern     void load_txtshell(void);
 extern     void load_c64shell(void);
 extern     void load_amishell(void);
 
@@ -99,13 +98,8 @@ void enter_c64_shell(void)
 void enter_txt_shell(void)
 {
     printformat("in text shell.\n");
-    test_app();
+    load_txtshell();
 
-    FILE *user_file = file_open("/shell/dosshell.exe");
-    if (!user_file) {
-        printformat("dosshell.exe: not found.\n");
-        return;
-    }
     
     /*if (!elf32_load_nomap(user_file, 2, nullptr)) {
         file_close(user_file);

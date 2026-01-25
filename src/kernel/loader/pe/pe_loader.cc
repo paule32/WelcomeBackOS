@@ -9,7 +9,7 @@
 # include "iso9660.h"
 # include "pe_loader.h"
 
-# include "ksymbol_table.h"
+# include "syscall.h"
 
 // ---------- Helpers ----------
 static inline void pe_symtab_init(pe_symtab_t *t) {
@@ -149,23 +149,22 @@ bool pe32_load(FILE *f, pe_user_image_t *out)
 
     return true;
 }
+extern KApi_v1* g_kapi_v1;
 
-typedef void (*pe_entry_t)(uint32_t, kernel_symbol_t* syms);
+typedef void (*pe_entry_t)(uint32_t t, const pe_user_image_t* i, struct KApi_v1* v1api, syscall_fn_t* scall);
 void pe32_start_user(const pe_user_image_t* img) {
-    ((pe_entry_t)img->entry)(
-        get_kernel_symbol_count(),
-        get_kernel_symbol_list ()
-    );
+    ((pe_entry_t)img->entry)(31, img, g_kapi_v1, g_syscalls);
 }
-void test_app(void)
+void load_txtshell(void)
 {
     pe_user_image_t img;
-    FILE *f = file_open("shell/dosshell.exe");
+    FILE *f = file_open("/shell/dosshell.exe");
     if (!f) {
-        printformat("dos32shell.exe could not open.\n");
+        printformat("dosshell.exe could not open.\n");
         return;
     }
     if (pe32_load(f, &img)) {
+        printformat("dosshell.exe open.\n");
         pe32_start_user(&img);
         file_close(f);
         return;
@@ -175,7 +174,7 @@ void test_app(void)
 void load_c64shell(void)
 {
     pe_user_image_t img;
-    FILE *f = file_open("shell/conshell.exe");
+    FILE *f = file_open("/shell/conshell.exe");
     if (!f) {
         printformat("conshell.exe could not open.\n");
         return;
@@ -190,7 +189,7 @@ void load_c64shell(void)
 void load_amishell(void)
 {
     pe_user_image_t img;
-    FILE *f = file_open("shell/amishell.exe");
+    FILE *f = file_open("/shell/amishell.exe");
     if (!f) {
         printformat("amishell.exe could not open.\n");
         return;

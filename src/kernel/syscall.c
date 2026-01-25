@@ -1,7 +1,87 @@
+// ----------------------------------------------------------------------------
+// \file  syscall.c
+// \note  (c) 2025, 2026 by Jens Kallup - paule32
+//        all rights reserved.
+// ----------------------------------------------------------------------------
 # include "stdint.h"
+# include "proto.h"
+# include "kheap.h"
+
 # include "syscall.h"
 # include "idt.h"
 # include "isr.h"
+
+syscall_fn_t g_syscalls[SYS_MAX] = {
+    [SYS_PRINT]     = sys_print,
+    [SYS_ALLOC]     = sys_alloc,
+    [SYS_FREE]      = sys_free,
+};
+
+const KApi_v1 g_kapi_v1 = {
+    .magic = KAPI_MAGIC,
+    .version = 1,
+    .size = sizeof(KApi_v1),
+    .flags = 0,
+
+    .sys_print = SYS_PRINT,
+    .sys_alloc = SYS_ALLOC,
+    .sys_free  = SYS_FREE
+};
+
+size_t strlcpy(char *dst, const char *src, size_t dst_size)
+{
+    const char *s = src;
+    size_t src_len = 0;
+    while (*s++) src_len++;
+
+    if (dst_size == 0) return src_len;
+    size_t to_copy = (src_len >= dst_size) ? (dst_size - 1) : src_len;
+
+    for (size_t i = 0; i < to_copy; i++)
+        dst[i] = src[i];
+
+    dst[to_copy] = '\0';
+    return src_len;
+}
+
+static int32_t sys_print(regs_t* reg)
+{
+    volatile char* VGA = (volatile char*)0xB8000;
+    VGA[10] = 'O'; VGA[11] = 0x0F;
+    VGA[12] = 'P'; VGA[13] = 0x0F;
+    VGA[14] = 'A'; VGA[15] = 0x0F;
+
+    if (reg->ebx != 0) {
+        char*  s = (char*)kmalloc(200);
+        strlcpy(s, (char*)(uintptr_t)reg->ebx, 200);
+        printformat("--> 0x%x\n", s);
+        printformat("--> %s -\n", s);
+        
+        uint32_t addr32 = (uint32_t)reg->ebx;
+        char *p = (char *)(uintptr_t)addr32;
+        printformat("--> 0x%x\n", p);
+        printformat("--> %s -\n", p);
+        kfree(s);
+    }   else {
+        printformat("EBX = null.\n");
+    }
+    return 0;
+}
+
+static int32_t sys_alloc(regs_t* reg)
+{
+    uint32_t size = reg->ebx;
+    void*p = (void*)kmalloc(size);
+    if (!p) return 0;
+    return (int32_t)(uintptr_t)p;
+}
+
+static int32_t sys_free(regs_t* reg)
+{
+    void* p = (void*)reg->ebx;
+    kfree(p);
+    return 0;
+}
 
 static volatile char* const VGA = (volatile char*)0xB8000;
 
@@ -21,11 +101,15 @@ void syscall_init(void)
     // aktuell nur Platzhalter, eigentliche IDT-Eintragung erfolgt bereits in idt_init()
 }
 
-void syscall_dispatch(regs_t* r)
+void syscall_dispatch(regs_t* reg)
 {
     // Konvention: EAX = Syscall ID, EBX, ECX, EDX = Parameter
-    uint32_t num = r->eax;
+    uint32_t num = reg->eax;
 
+    int32_t ret = g_syscalls[num](reg);
+    reg->eax = (uint32_t)ret;
+}
+#if 0
     switch (num) {
         case SYSCALL_PUTCHAR:
             vga_putc((char)r->ebx);   // Beispiel: EBX = Zeichen
@@ -37,6 +121,7 @@ void syscall_dispatch(regs_t* r)
             break;
     }
 }
+#endif
 
 
 

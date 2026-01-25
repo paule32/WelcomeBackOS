@@ -67,11 +67,13 @@ static inline void outb(uint16_t port, uint8_t val) {
     __asm__ volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
 }
 
+extern void printformat(const char* fmt, ...);
 // sehr simpler Handler
 void isr_handler(regs_t* r)
 {
-    if (r->int_no == 0x80) {
+    if (r->int_no == 128) {
         // Syscall
+        printformat("calller calllers\n");
         syscall_dispatch(r);
         return;
     }

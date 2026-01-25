@@ -6,15 +6,13 @@ T:/a/WelcomeBackOS/build/obj/coff/pe_loader.s: \
  T:/a/WelcomeBackOS/src/kernel/include/kheap.h \
  T:/a/WelcomeBackOS/src/kernel/include/iso9660.h \
  T:/a/WelcomeBackOS/src/kernel/include/pe_loader.h \
- T:/a/WelcomeBackOS/src/kernel/include/ksymbol_table.h \
- T:/a/WelcomeBackOS/src/kernel/include/vga.h \
- T:/a/WelcomeBackOS/src/kernel/include/wm.h
+ T:/a/WelcomeBackOS/src/kernel/include/syscall.h \
+ T:/a/WelcomeBackOS/src/kernel/include/isr.h
 T:/a/WelcomeBackOS/src/kernel/include/stdint.h:
 T:/a/WelcomeBackOS/src/kernel/include/proto.h:
 T:/a/WelcomeBackOS/src/kernel/include/stdint.h:
 T:/a/WelcomeBackOS/src/kernel/include/kheap.h:
 T:/a/WelcomeBackOS/src/kernel/include/iso9660.h:
 T:/a/WelcomeBackOS/src/kernel/include/pe_loader.h:
-T:/a/WelcomeBackOS/src/kernel/include/ksymbol_table.h:
-T:/a/WelcomeBackOS/src/kernel/include/vga.h:
-T:/a/WelcomeBackOS/src/kernel/include/wm.h:
+T:/a/WelcomeBackOS/src/kernel/include/syscall.h:
+T:/a/WelcomeBackOS/src/kernel/include/isr.h:
